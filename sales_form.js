@@ -120,8 +120,8 @@ function wireModal() {
             const weight   = parseFloat(weightEl.value) || 0;
             const matErr   = document.getElementById('materialsError');
 
-            if (!name || weight <= 0) {
-                if (matErr) matErr.textContent = 'Please enter a valid weight.';
+            if (!name || weight <= 0 || weight > 10000) {
+                if (matErr) matErr.textContent = !name ? 'Please select a material.' : 'Invalid weight. Please enter a value between 1 and 10,000.';
                 return;
             }
             if (matErr) matErr.textContent = '';
@@ -159,6 +159,7 @@ function wireModal() {
             reader.onload = (e) => {
                 if (receiptPreviewImg) receiptPreviewImg.src = e.target.result;
                 receiptPreview?.classList.add('visible');
+                attachReceiptBtn?.classList.add('hidden');
                 lucide.createIcons();
             };
             reader.readAsDataURL(file);
@@ -168,7 +169,8 @@ function wireModal() {
             if (receiptInput) receiptInput.value = '';
             if (receiptPreviewImg) receiptPreviewImg.src = '';
             receiptPreview?.classList.remove('visible');
-            if (receiptFilenameLabel) receiptFilenameLabel.textContent = 'Attach Receipt';
+            attachReceiptBtn?.classList.remove('hidden');
+            if (receiptFilenameLabel) receiptFilenameLabel.textContent = '';
         });
 
         //  Validate contact
@@ -343,7 +345,9 @@ function wireModal() {
             if (receiptInput) receiptInput.value = '';
             if (receiptPreviewImg) receiptPreviewImg.src = '';
             receiptPreview?.classList.remove('visible');
-            if (receiptFilenameLabel) receiptFilenameLabel.textContent = 'Attach Receipt';
+            attachReceiptBtn?.classList.remove('hidden');
+            if (receiptFilenameLabel) receiptFilenameLabel.textContent = '';
+            
             saleModal.querySelectorAll('.m-tab').forEach((t, i) => {
                 t.classList.toggle('active', i === 0);
                 t.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
@@ -433,7 +437,7 @@ function renderPagination(totalCount) {
 // OPEN EDIT
     async function openEditModal(id) {
         const allSales = await fetchSales();
-        const sale = allSales.find(s => s.id === id);
+        const sale = allSales.find(s => String(s.id) === String(id));
         
         if (!sale) return;
 
