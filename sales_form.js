@@ -187,6 +187,19 @@ function wireModal() {
             e.target.value = fmt;
         });
 
+        document.getElementById('partnerName')?.addEventListener('input', () => {
+            const el = document.getElementById('partnerNameError');
+            if (el) el.textContent = '';
+        });
+        document.getElementById('saleDate')?.addEventListener('change', () => {
+            const el = document.getElementById('saleDateError');
+            if (el) el.textContent = '';
+        });
+        document.getElementById('saleContact')?.addEventListener('input', () => {
+            const el = document.getElementById('saleContactError');
+            if (el) el.textContent = '';
+        });
+
         //  Submit/ Update 
         submitSaleBtn?.addEventListener('click', async () => {
             if (isSubmitting) return; // 🛑 BLOCK DUPLICATE CLICKS
@@ -208,7 +221,9 @@ function wireModal() {
             if (!dateVal)    { if (dateErr)    dateErr.textContent = 'Date is required.'; hasError = true; }
             if (contactVal && !validateContact(contactVal)) { if (contactErr) contactErr.textContent = 'Use format: 09XX-XXX-XXXX'; hasError = true; }
             if (saleMaterials.length === 0) { if (matErr) matErr.textContent = 'Please add at least one material.'; hasError = true; }
-            if (hasError) return;
+            if (hasError) { 
+                isSubmitting = false;
+                return;}
 
             const activeTab = saleModal.querySelector('.m-tab.active');
             const type      = activeTab?.getAttribute('data-type') || 'organization';
