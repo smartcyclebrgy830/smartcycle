@@ -73,17 +73,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!err) {
             err = document.createElement('span');
             err.className = 'field-error';
-            err.style.cssText = 'display:block;font-size:11px;color:#d25353;margin-top:4px;font-weight:500;';
             input.parentElement.appendChild(err);
         }
+        err.style.display = 'block';
         err.textContent = message;
+        err.classList.add('show');
     }
 
     function clearFieldError(input) {
         input.style.borderColor = '';
         input.style.boxShadow = '';
         const err = input.parentElement.querySelector('.field-error');
-        if (err) err.textContent = '';
+        if (err) {
+            err.classList.remove('show');
+            err.textContent = '';
+            err.style.display = 'none';
+        }
     }
 
     function clearAllFieldErrors() {
@@ -201,6 +206,8 @@ document.addEventListener('DOMContentLoaded', () => {
         row.querySelector('.delete-btn').addEventListener('click', () => deleteItem(row));
     
         tableBody.appendChild(row);
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     // EDIT
