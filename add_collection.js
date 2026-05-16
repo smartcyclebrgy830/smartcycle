@@ -174,8 +174,8 @@ window.addItem = function() {
     return;
   }
 
-  if (weight > 9999) {
-    showError('inWeight', 'Weight seems too large (max 9999 kg)');
+  if (weight > 10000) {
+    showError('inWeight', 'Invalid weight. Please enter a value between 1 and 10,000.');
     weightInput.focus();
     return;
   }
