@@ -223,5 +223,5 @@ function handleLogout() {
     sessionStorage.removeItem('userEmail');
     sessionStorage.removeItem('authToken');
 
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
 }
