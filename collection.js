@@ -144,7 +144,7 @@ function renderTable() {
             <td style="text-align:right; font-weight:700; color:#10b981;">₱${collection.totalAmount.toFixed(2)}</td>
             <td onclick="event.stopPropagation()">
               <div class="action-btns">
-                <button class="icon-btn" onclick="viewReceipt(${actualIndex})"><i data-lucide="eye"></i></button>
+                <button class="icon-btn receipt-btn" onclick="viewReceipt(${actualIndex})"><i data-lucide="image"></i></button>
                 <button class="icon-btn" onclick="editEntry(${actualIndex})"><i data-lucide="edit-2"></i></button>
                 <button class="icon-btn delete" onclick="deleteEntry(${actualIndex})"><i data-lucide="trash-2"></i></button>
               </div>
@@ -299,19 +299,18 @@ window.editEntry = function(index) {
   editingIndex = index;
   const data = window.collections[index];
 
+  const modal = document.getElementById('addCollectionModal');
+  if (!modal) return;
+
   document.getElementById('inCustomer').value = data.customer;
   document.getElementById('inAddress').value = data.address || '';
   document.getElementById('inContact').value = data.contact || '';
-
-  const dateParts = data.date.split('-');
-  const fullYear = '20' + dateParts[2];
-  document.getElementById('inDate').value = `${fullYear}-${dateParts[0]}-${dateParts[1]}`;
+  document.getElementById('inDate').value = data.date; // already YYYY-MM-DD from Supabase
 
   currentCategory = data.category;
-  // FIX: removed unused `i` index parameter from forEach
   document.querySelectorAll('.m-tab').forEach(tab => {
     tab.classList.remove('active');
-    if (tab.innerText === data.category) tab.classList.add('active');
+    if (tab.innerText.trim() === data.category) tab.classList.add('active');
   });
 
   currentItems = [...(data.items || [])];
@@ -322,12 +321,11 @@ window.editEntry = function(index) {
     submitBtn.innerHTML = '<i data-lucide="check"></i> Update';
   }
 
-  openAddModal();
-  if (typeof updatePreview === 'function') updatePreview();
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
 
-  if (typeof lucide !== 'undefined') {
-    setTimeout(() => lucide.createIcons(), 100);
-  }
+  if (typeof updatePreview === 'function') updatePreview();
+  if (typeof lucide !== 'undefined') setTimeout(() => lucide.createIcons(), 100);
 };
 
 // DELETE ENTRY
@@ -507,8 +505,11 @@ window.viewReceipt = function(index) {
           color: #111;
           padding-bottom: 2px;
           min-height: 16px;
+          overflow: hidden;
+          word-break: break-all;
+          min-width: 0;
         }
-        table { width: 100%; border-collapse: collapse; border: 1.5px solid #111; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; border: 1.5px solid #111; margin-bottom: 10px; table-layout: fixed; word-break: break-word;}
         th {
           font-size: 11px; font-weight: 800; text-transform: uppercase;
           text-align: center; padding: 8px 6px; border: 1.5px solid #111;
