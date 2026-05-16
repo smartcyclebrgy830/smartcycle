@@ -88,14 +88,14 @@
 .form-grid-modal {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 25px;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
 }
 
 .form-group label {
@@ -105,6 +105,7 @@
 }
 
 .form-group input,
+.form-group input[type="date"],
 .form-group select {
   padding: 12px;
   border: 1px solid #e2e8f0;
@@ -113,6 +114,8 @@
   font-family: inherit;
   background: #fdfdfd;
   transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-group input:focus,
@@ -124,7 +127,7 @@
 
 /* Material Input Section */
 .material-input-section {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .material-input-section > label {
@@ -138,11 +141,22 @@
 .material-row-input {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
-.material-row-input select,
+.material-row-input select {
+  flex: 2;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
 .material-row-input input {
   flex: 1;
+  min-width: 80px;
   padding: 12px;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -177,8 +191,8 @@
 
 /* Items Table */
 .items-table-container {
-  margin: 20px 0;
-  min-height: 120px;
+  margin: 12px 0;
+  min-height: 80px;
 }
 
 .items-table {
@@ -219,77 +233,121 @@
 
 /* Receipt Attach Section */
 .sale-receipt-section {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .receipt-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #475569;
-}
-
-.btn-receipt {
-  background: #f2f4f7;
-  border: 1px dashed #d0d5dd;
-  border-radius: 10px;
-  padding: 10px 16px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  color: #344054;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-  width: fit-content;
-  max-width: 100%;
+  margin-bottom: 10px;
 }
 
-.btn-receipt i { width: 16px; height: 16px; color: #667085; flex-shrink: 0; }
-.btn-receipt .receipt-filename { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.btn-receipt:hover { background: #e8ecf1; border-color: #98A2B3; }
-
-.receipt-preview {
-  display: none;
-  margin-top: 4px;
-  position: relative;
-  width: fit-content;
+.receipt-label i {
+  width: 18px;
+  height: 18px;
+  color: #1e293b;
 }
 
-.receipt-preview.visible { display: block; }
-
-.receipt-preview img {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.receipt-preview .remove-receipt {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
+.receipt-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 20px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   cursor: pointer;
-  color: #667085;
-  padding: 0;
-  transition: color 0.2s, border-color 0.2s;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  text-align: center;
 }
 
-.receipt-preview .remove-receipt:hover { color: #ef4444; border-color: #fca5a5; }
-.receipt-preview .remove-receipt i { width: 11px; height: 11px; }
+.receipt-dropzone:hover {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.receipt-dropzone i {
+  width: 36px;
+  height: 36px;
+  color: #94a3b8;
+}
+
+.receipt-dropzone p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.receipt-dropzone span {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.receipt-dropzone.hidden {
+  display: none;
+}
+
+.receipt-file-confirm {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  border: 2px dashed #46B336;
+  border-radius: 12px;
+  background: #f0fdf4;
+  padding: 16px 20px;
+}
+
+.receipt-file-confirm.visible {
+  display: flex;
+}
+
+.receipt-file-confirm i {
+  width: 28px;
+  height: 28px;
+  color: #46B336;
+  flex-shrink: 0;
+}
+
+.receipt-file-confirm .receipt-file-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.receipt-file-confirm .remove-receipt-confirm {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.receipt-file-confirm .remove-receipt-confirm:hover {
+  color: #ef4444;
+}
+
+.receipt-file-confirm .remove-receipt-confirm i {
+  width: 18px;
+  height: 18px;
+  color: inherit;
+}
 
 /* Modal Footer */
 .modal-footer-actions {
@@ -356,11 +414,15 @@
 /* Inline Validation */
 .field-error {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   color: #d25353;
-  margin-top: 2px;
-  min-height: 14px;
-  font-weight: 500;
+  overflow: hidden;
+  transition: max-height 0.2s ease, opacity 0.2s ease;
+}
+
+.field-error.show {
+  max-height: 40px;
+  opacity: 1;
 }
 
 .input-error {
@@ -395,9 +457,9 @@
 @media (max-width: 768px) {
   .modal-container-large,
   .modal-container-form {
-    width: 100vw;
+    width: calc(100vw - 24px);
     height: 90dvh;
-    max-width: 100vw;
+    max-width: calc(100vw - 24px);
     max-height: 90dvh;
     border-radius: 20px;
     flex-direction: column;
@@ -406,18 +468,26 @@
   .modal-left {
     width: 100%;
     height: 100%;
-    padding: 20px 16px;
+    padding: 14px;
     border-right: none;
+    overflow-x: hidden;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
   }
 
   .form-grid-modal {
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 8px;
   }
 
   .form-grid-modal .form-group:nth-child(3),
   .form-grid-modal .form-group:nth-child(4) {
-    grid-column: 1 / -1;
+    grid-column: auto;
   }
 
   .material-row-input {
@@ -430,7 +500,8 @@
   .material-row-input input { flex: 1; min-width: 0; font-size: 13px; }
 
   .btn-add-item { flex-shrink: 0; padding: 0 12px; font-size: 13px; }
-
+  .btn-add-item span { display: none; }
+  
   .modal-footer-actions { margin-top: 16px; padding-top: 14px; }
 
   .btn-cancel,
