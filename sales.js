@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <i data-lucide="image"></i>
                             </button>
                             <button class="icon-btn" data-action="edit" data-id="${sale.id}" title="Edit">
-                                <i data-lucide="pencil"></i>
+                                <i data-lucide="edit-2"></i>
                             </button>
                             <button class="icon-btn delete" data-action="delete" data-id="${sale.id}" title="Delete">
                                 <i data-lucide="trash-2"></i>
