@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="navbar.css">
+    <link rel="stylesheet" href="user.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+    <nav id="navbar-container"></nav>
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1>User Profile</h1>
+        </header>
+
+        <div class="profile-layout">
+
+            <section class="profile-card" aria-label="My profile">
+                <header class="profile-card-header">
+                    <div class="profile-avatar" id="profileAvatar">
+                        <i data-lucide="user"></i>
+                    </div>
+                    <div class="profile-identity">
+                        <h2 id="displayName">Juan Dela Cruz</h2>
+                        <span class="role-badge role-admin" id="displayRole">Admin</span>
+                    </div>
+                    <button class="icon-btn edit-profile-btn" id="editProfileBtn" aria-label="Edit profile" title="Edit profile">
+                        <i data-lucide="edit-2"></i>
+                    </button>
+                </header>
+
+                <div class="profile-fields" id="profileFields">
+                    <div class="field-row">
+                        <i data-lucide="user" class="field-icon" aria-hidden="true"></i>
+                        <span class="field-value" id="fieldName">Juan Dela Cruz</span>
+                    </div>
+                    <div class="field-row">
+                        <i data-lucide="mail" class="field-icon" aria-hidden="true"></i>
+                        <span class="field-value" id="fieldEmail">juan.delacruz@smartcycle.ph</span>
+                    </div>
+                    <div class="field-row">
+                        <i data-lucide="phone" class="field-icon" aria-hidden="true"></i>
+                        <span class="field-value" id="fieldMobile">+63 917 123 4567</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="users-section" aria-label="System users">
+                <header class="users-header">
+                    <h2>Users</h2>
+                    <div class="users-header-actions">
+                        <div class="users-search-container">
+                            <div class="users-search-input">
+                                <i data-lucide="search" class="search-icon"></i>
+                                <input type="text" id="userSearchInput" placeholder="Search by Name" aria-label="Search users">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" id="addUserBtn" type="button">
+                            <i data-lucide="plus" aria-hidden="true"></i>
+                            <span class="btn-text">Add User</span>
+                        </button>
+                    </div>
+                </header>
+
+                <div class="users-table-wrapper">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">User</th>
+                                <th scope="col">Role</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination"></div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Add & Edit User Modal -->
+    <div id="userModal" class="user-modal-overlay" role="dialog" aria-labelledby="userModalTitle" aria-modal="true">
+        <div class="user-modal-container">
+            <div class="user-modal-inner">
+                <header class="modal-header">
+                    <h3 id="userModalTitle">Add New User</h3>
+                </header>
+
+                <form id="userForm" novalidate>
+                    <div class="form-group">
+                        <label for="modalName">Full Name</label>
+                        <input type="text" id="modalName" class="form-input" placeholder="Enter full name" autocomplete="name">
+                        <span class="field-error" id="modalNameError" role="alert"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="modalEmail">Email Address</label>
+                        <input type="email" id="modalEmail" class="form-input" placeholder="Enter email address" autocomplete="email">
+                        <span class="field-error" id="modalEmailError" role="alert"></span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="modalMobile">Mobile Number</label>
+                            <input type="tel" id="modalMobile" class="form-input" placeholder="09XX-XXX-XXXX" maxlength="13" autocomplete="tel">
+                            <span class="field-error" id="modalMobileError" role="alert"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="modalRole">Role</label>
+                            <select id="modalRole" class="form-input form-select">
+                                <option value="" disabled selected>Select a role</option>
+                                <option value="admin">Admin</option>
+                                <option value="moderator">Moderator</option>
+                                <option value="viewer">Viewer</option>
+                            </select>
+                            <span class="field-error" id="modalRoleError" role="alert"></span>
+                        </div>
+                    </div>
+
+                    <fieldset id="passwordFields">
+                        <legend class="sr-only">Password</legend>
+                        <div class="form-group">
+                            <label for="modalPassword">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="modalPassword" class="form-input" placeholder="Create a password" autocomplete="new-password">
+                                <button type="button" id="toggleButtonPassword" class="toggle-password" aria-pressed="false" aria-label="Show password" onclick="togglePasswordField('modalPassword','toggleIconPassword','toggleButtonPassword')">
+                                    <svg id="toggleIconPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                            <span class="field-error" id="modalPasswordError" role="alert"></span>
+                            <div class="password-strength" id="passwordStrength" hidden>
+                                <div class="strength-bar" role="progressbar" aria-label="Password strength">
+                                    <div class="strength-fill" id="strengthFill"></div>
+                                </div>
+                                <span class="strength-label" id="strengthLabel"></span>
+                            </div>
+                        </div>
+                        <div class="form-group form-group--confirm-password">
+                            <label for="modalConfirmPassword">Confirm Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="modalConfirmPassword" class="form-input" placeholder="Repeat the password" autocomplete="new-password">
+                                <button type="button" id="toggleButtonConfirm" class="toggle-password" aria-pressed="false" aria-label="Show password" onclick="togglePasswordField('modalConfirmPassword','toggleIconConfirm','toggleButtonConfirm')">
+                                    <svg id="toggleIconConfirm" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                            <span class="field-error" id="modalConfirmPasswordError" role="alert"></span>
+                        </div>
+                    </fieldset>
+
+                    <footer class="modal-actions-row">
+                        <button class="btn-cancel" id="cancelUserModal" type="button">
+                            <i data-lucide="x" aria-hidden="true"></i>
+                            Cancel
+                        </button>
+                        <button class="btn-submit-green" id="saveUserBtn" type="submit">
+                            <i data-lucide="check" aria-hidden="true"></i>
+                            Add User
+                        </button>
+                    </footer>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="user-modal-overlay" role="dialog" aria-labelledby="editProfileModalTitle" aria-modal="true">
+        <div class="user-modal-container">
+            <div class="user-modal-inner">
+                <header class="modal-header">
+                    <h3 id="editProfileModalTitle">Edit Profile</h3>
+                </header>
+                <form id="editProfileForm" novalidate>
+                    <div class="form-group">
+                        <label for="editName">Full Name</label>
+                        <input type="text" id="editName" class="form-input" placeholder="Enter full name" autocomplete="name">
+                        <span class="field-error" id="editNameError" role="alert"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="editEmail">Email Address</label>
+                        <input type="email" id="editEmail" class="form-input" placeholder="Enter email address" autocomplete="email">
+                        <span class="field-error" id="editEmailError" role="alert"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="editMobile">Mobile Number</label>
+                        <input type="tel" id="editMobile" class="form-input" placeholder="09XX-XXX-XXXX" maxlength="13" autocomplete="tel">
+                        <span class="field-error" id="editMobileError" role="alert"></span>
+                    </div>
+                    <footer class="modal-actions-row">
+                        <button class="btn-cancel" id="cancelEditBtn" type="button">
+                            <i data-lucide="x" aria-hidden="true"></i>
+                            Cancel
+                        </button>
+                        <button class="btn-submit-green" id="saveProfileBtn" type="submit">
+                            <i data-lucide="check" aria-hidden="true"></i>
+                            Save Changes
+                        </button>
+                    </footer>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="navbar.js"></script>
+    <script src="user.js"></script>
+</body>
+</html>
