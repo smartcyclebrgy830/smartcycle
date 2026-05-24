@@ -14,11 +14,11 @@ async function fetchProfilesFromSupabase() {
     const tableBody = document.getElementById('contactsTableBody');
     tableBody.innerHTML = '';
     
-    // Step A: Fetch core profiles and transaction tables with their respective foreign keys
+    // Step A: Fetch core profiles and transaction tables with their auto-incremented receipt IDs
     const [profilesRes, collectionsRes, salesRes] = await Promise.all([
         _supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-        _supabase.from('collections').select('customer_name, contact_number, address, type, customer_id'), 
-        _supabase.from('sales').select('partner, contact, address, type, partner_id') 
+        _supabase.from('collections').select('id, customer_name, contact_number, address, type, customer_id'), 
+        _supabase.from('sales').select('id, partner, contact, address, type, partner_id') 
     ]);
 
     if (profilesRes.error) {
@@ -31,7 +31,7 @@ async function fetchProfilesFromSupabase() {
     const collectionsData = collectionsRes.data || [];
     const salesData = salesRes.data || [];
 
-    // Tracks names/IDs we've processed so we avoid UI duplicates
+    // Tracks names we've processed so we avoid UI duplicates
     const processedNames = new Set();
     const combinedContacts = [];
 
@@ -70,7 +70,7 @@ async function fetchProfilesFromSupabase() {
         const rawCategory = (derivedCategory || 'walk-ins').toLowerCase().trim();
 
         combinedContacts.push({
-            id: profile.id,
+            id: profile.id, // Keep master profile ID for registered accounts
             isTemporary: false, 
             name: profile.name,
             address: derivedAddress || 'N/A',
@@ -81,7 +81,7 @@ async function fetchProfilesFromSupabase() {
         });
     });
 
-    // Step C: Fallback discovery for partners found inside Sales but not registered yet
+    // Step C: Fallback discovery for partners found inside Sales but not in Profiles table
     salesData.forEach(sale => {
         const nameKey = (sale.partner || '').trim().toLowerCase();
         if (!nameKey || processedNames.has(nameKey)) return; 
@@ -89,12 +89,12 @@ async function fetchProfilesFromSupabase() {
         processedNames.add(nameKey);
         const rawCategory = (sale.type || 'junkshop').toLowerCase().trim();
 
-        // Use partner_id from sales if it exists; otherwise fall back to a clean label string
-        const finalId = sale.partner_id ? sale.partner_id : 'No ID';
+        // FIX: Fall back to the auto-incremented Sales receipt ID if partner_id is missing
+        const finalId = sale.partner_id ? sale.partner_id : sale.id;
 
         combinedContacts.push({
             id: finalId, 
-            isTemporary: !sale.partner_id, // If it has a partner_id, treat it safely
+            isTemporary: true,
             name: sale.partner,
             address: sale.address || 'N/A',
             contactNumber: sale.contact || 'N/A',
@@ -104,7 +104,7 @@ async function fetchProfilesFromSupabase() {
         });
     });
 
-    // Step D: Fallback discovery for customers found inside Collections but not registered yet
+    // Step D: Fallback discovery for customers found inside Collections but not in Profiles table
     collectionsData.forEach(collection => {
         const nameKey = (collection.customer_name || '').trim().toLowerCase();
         if (!nameKey || processedNames.has(nameKey)) return; 
@@ -112,12 +112,12 @@ async function fetchProfilesFromSupabase() {
         processedNames.add(nameKey);
         const rawCategory = (collection.type || 'walk-ins').toLowerCase().trim();
 
-        // Use customer_id from collections if it exists; otherwise fall back to a clean label string
-        const finalId = collection.customer_id ? collection.customer_id : 'No ID';
+        // FIX: Fall back to the auto-incremented Collections receipt ID if customer_id is missing
+        const finalId = collection.customer_id ? collection.customer_id : collection.id;
 
         combinedContacts.push({
             id: finalId, 
-            isTemporary: !collection.customer_id,
+            isTemporary: true,
             name: collection.customer_name,
             address: collection.address || 'N/A',
             contactNumber: collection.contact_number || 'N/A',
@@ -168,9 +168,7 @@ function addContactToTable(contact) {
     row.setAttribute('data-category', contact.category);
     row.setAttribute('data-id', String(contact.id));
 
-    const isActionDisabled = contact.isTemporary || contact.id === 'No ID';
-
-    const deleteButtonHtml = isActionDisabled 
+    const deleteButtonHtml = contact.isTemporary 
         ? `<button class="action-btn delete-btn" title="Cannot delete direct transactional entries" disabled style="opacity: 0.4; cursor: not-allowed;">
                 <i data-lucide="trash-2"></i>
            </button>`
@@ -193,7 +191,7 @@ function addContactToTable(contact) {
         <td>${contact.contactNumber}</td>
         <td>
             <div class="action-buttons">
-                <button class="action-btn edit-btn" title="Edit" ${isActionDisabled ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>
+                <button class="action-btn edit-btn" title="Edit" ${contact.isTemporary ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>
                     <i data-lucide="edit-2"></i>
                 </button>
                 ${deleteButtonHtml}
@@ -201,7 +199,7 @@ function addContactToTable(contact) {
         </td>
     `;
 
-    if (!isActionDisabled) {
+    if (!contact.isTemporary) {
         row.querySelector('.delete-btn').addEventListener('click', async function() {
             if (confirm(`Are you sure you want to delete ${contact.name}?`)) {
                 const { error } = await _supabase.from('profiles').delete().eq('id', contact.id);
@@ -257,6 +255,7 @@ function initializeTabSwitching() {
     });
 }
 
+// Filter contacts
 function filterContacts(tab) {
     const rows = document.querySelectorAll('#contactsTableBody tr:not(.empty-state-row)');
     rows.forEach(row => {
