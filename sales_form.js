@@ -70,11 +70,13 @@ function wireModal() {
     
     // Form Input Elements
     const partnerInput = document.getElementById('partnerName');
+    const addressInput = document.getElementById('saleAddress');
     const dateInput = document.getElementById('saleDate');
     const contactInput = document.getElementById('saleContact');
     
     // Error Fields
     const partnerErr = document.getElementById('partnerNameError');
+    const addressErr = document.getElementById('saleAddressError');
     const dateErr = document.getElementById('saleDateError');
     const contactErr = document.getElementById('saleContactError');
     const matErr = document.getElementById('materialsError');
@@ -197,6 +199,7 @@ function wireModal() {
 
     // Real-time clear error text inputs
     partnerInput?.addEventListener('input', () => { if (partnerErr) partnerErr.textContent = ''; });
+    addressInput?.addEventListener('input', () => { if (addressErr) addressErr.textContent = ''; });
     dateInput?.addEventListener('change', () => { if (dateErr) dateErr.textContent = ''; });
     contactInput?.addEventListener('input', () => { if (contactErr) contactErr.textContent = ''; });
 
@@ -206,11 +209,12 @@ function wireModal() {
         isSubmitting = true;
         
         const partnerVal = partnerInput?.value.trim();
+        const addressVal = addressInput?.value.trim();
         const dateVal = dateInput?.value;
         const contactVal = contactInput?.value.trim();
 
         // Clear all old errors
-        [partnerErr, dateErr, contactErr, matErr].forEach(el => { if (el) el.textContent = ''; });
+        [partnerErr, addressErr, dateErr, contactErr, matErr].forEach(el => { if (el) el.textContent = ''; });
 
         let hasError = false;
         if (!partnerVal) { if (partnerErr) partnerErr.textContent = 'Partner name is required.'; hasError = true; }
@@ -243,6 +247,7 @@ function wireModal() {
             date: displayDate,
             raw_date: dateVal, 
             partner: partnerVal,
+            address: addressVal, 
             contact: contactVal,
             type: type,
             total_amount: totalAmount,
@@ -301,6 +306,7 @@ function wireModal() {
         saleMaterials = [];
         renderMaterialsTable();
         if (partnerInput) partnerInput.value = '';
+        if (addressInput) addressInput.value = ''; 
         if (dateInput) dateInput.value = '';
         if (contactInput) contactInput.value = '';
         
@@ -315,7 +321,7 @@ function wireModal() {
             t.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
         });
         
-        [partnerErr, dateErr, contactErr, matErr].forEach(el => { if (el) el.textContent = ''; });
+        [partnerErr, addressErr, dateErr, contactErr, matErr].forEach(el => { if (el) el.textContent = ''; });
         if (submitSaleBtn) submitSaleBtn.innerHTML = '<i data-lucide="check"></i> Submit';
         lucide.createIcons();
     }
@@ -386,6 +392,7 @@ async function openEditModal(id) {
     if (!modal) return;
 
     document.getElementById('partnerName').value = sale.partner || '';
+    document.getElementById('saleAddress').value = sale.address || '';
     document.getElementById('saleContact').value = sale.contact || '';
 
     if (sale.raw_date) {
