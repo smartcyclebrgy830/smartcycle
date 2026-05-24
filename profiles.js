@@ -14,11 +14,11 @@ async function fetchProfilesFromSupabase() {
     const tableBody = document.getElementById('contactsTableBody');
     tableBody.innerHTML = '';
     
-    // Step A: Fetch your core profiles, collections, and sales records concurrently
+    // Step A: Fetch core profiles, collections, and sales records concurrently
     const [profilesRes, collectionsRes, salesRes] = await Promise.all([
         _supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-        _supabase.from('collections').select('customer_name, contact_number, address, type'), // Added type
-        _supabase.from('sales').select('partner, contact, address, type') // Added type
+        _supabase.from('collections').select('customer_name, contact_number, address, type'), 
+        _supabase.from('sales').select('partner, contact, address, type') 
     ]);
 
     if (profilesRes.error) {
@@ -31,66 +31,109 @@ async function fetchProfilesFromSupabase() {
     const collectionsData = collectionsRes.data || [];
     const salesData = salesRes.data || [];
 
-    contacts = profilesData; 
-    
-    if (profilesData.length === 0) {
+    // Keep track of names we've processed so we don't duplicate them
+    const processedNames = new Set();
+    const combinedContacts = [];
+
+    // Step B: Process explicitly registered profiles first
+    profilesData.forEach(profile => {
+        const nameKey = (profile.name || '').trim().toLowerCase();
+        if (!nameKey) return;
+
+        processedNames.add(nameKey);
+
+        const collectionMatch = collectionsData.find(c => (c.customer_name || '').trim().toLowerCase() === nameKey);
+        const salesMatch = salesData.find(s => (s.partner || '').trim().toLowerCase() === nameKey);
+
+        let derivedAddress = profile.address;
+        let derivedContact = profile.contact_num;
+        let derivedCategory = profile.category;
+
+        // --- CONTACT BACKFILL ---
+        if (!derivedContact || derivedContact === 'N/A') {
+            if (collectionMatch && collectionMatch.contact_number) derivedContact = collectionMatch.contact_number;
+            else if (salesMatch && salesMatch.contact) derivedContact = salesMatch.contact;
+        }
+
+        // --- ADDRESS BACKFILL ---
+        if (!derivedAddress || derivedAddress === 'N/A') {
+            if (collectionMatch && collectionMatch.address) derivedAddress = collectionMatch.address;
+            else if (salesMatch && salesMatch.address) derivedAddress = salesMatch.address;
+        }
+
+        // --- CATEGORY BACKFILL ---
+        if (!derivedCategory || derivedCategory.trim() === '' || derivedCategory === 'N/A') {
+            if (salesMatch && salesMatch.type) derivedCategory = salesMatch.type;
+            else if (collectionMatch && collectionMatch.type) derivedCategory = collectionMatch.type;
+        }
+
+        const rawCategory = (derivedCategory || 'walk-ins').toLowerCase().trim();
+
+        combinedContacts.push({
+            id: profile.id,
+            isTemporary: false, // Flag to differentiate DB profiles from auto-generated ones
+            name: profile.name,
+            address: derivedAddress || 'N/A',
+            contactNumber: derivedContact || 'N/A',
+            category: rawCategory,
+            displayCategory: getCategoryDisplayName(rawCategory),
+            avatarColor: getRandomColor()
+        });
+    });
+
+    // Step C: Discover and append missing partners found ONLY in the Sales table
+    salesData.forEach(sale => {
+        const nameKey = (sale.partner || '').trim().toLowerCase();
+        if (!nameKey || processedNames.has(nameKey)) return; // Skip if empty or already added
+
+        processedNames.add(nameKey);
+
+        const rawCategory = (sale.type || 'junkshop').toLowerCase().trim();
+
+        combinedContacts.push({
+            id: 'TXT-S', // Temporary ID indicator for Sales transaction origin
+            isTemporary: true,
+            name: sale.partner,
+            address: sale.address || 'N/A',
+            contactNumber: sale.contact || 'N/A',
+            category: rawCategory,
+            displayCategory: getCategoryDisplayName(rawCategory),
+            avatarColor: getRandomColor()
+        });
+    });
+
+    // Step D: Discover and append missing customers found ONLY in the Collections table
+    collectionsData.forEach(collection => {
+        const nameKey = (collection.customer_name || '').trim().toLowerCase();
+        if (!nameKey || processedNames.has(nameKey)) return; 
+
+        processedNames.add(nameKey);
+
+        const rawCategory = (collection.type || 'walk-ins').toLowerCase().trim();
+
+        combinedContacts.push({
+            id: 'TXT-C', // Temporary ID indicator for Collection transaction origin
+            isTemporary: true,
+            name: collection.customer_name,
+            address: collection.address || 'N/A',
+            contactNumber: collection.contact_number || 'N/A',
+            category: rawCategory,
+            displayCategory: getCategoryDisplayName(rawCategory),
+            avatarColor: getRandomColor()
+        });
+    });
+
+    // Save globally to our contacts tracker
+    contacts = combinedContacts;
+
+    if (contacts.length === 0) {
         checkEmptyState();
         return;
     }
 
-    // Step B: Render each profile, with backfilled lookups
-    profilesData.forEach(profile => {
-        // Find matches across both operational tables
-        const collectionMatch = collectionsData.find(c => c.customer_name === profile.name);
-        const salesMatch = salesData.find(s => s.partner === profile.name);
-
-        // Step C: Fallback lookup logic if profile table fields are empty/NULL
-        let derivedAddress = profile.address;
-        let derivedContact = profile.contact_num;
-        let derivedCategory = profile.category; // Track category dynamically
-
-        // --- INDEPENDENT CONTACT BACKFILL ---
-        if (!derivedContact || derivedContact === 'N/A') {
-            if (collectionMatch && collectionMatch.contact_number) {
-                derivedContact = collectionMatch.contact_number;
-            } else if (salesMatch && salesMatch.contact) {
-                derivedContact = salesMatch.contact;
-            }
-        }
-
-        // --- INDEPENDENT ADDRESS BACKFILL ---
-        if (!derivedAddress || derivedAddress === 'N/A') {
-            if (collectionMatch && collectionMatch.address) {
-                derivedAddress = collectionMatch.address;
-            } else if (salesMatch && salesMatch.address) {
-                derivedAddress = salesMatch.address;
-            }
-        }
-
-        // --- INDEPENDENT CATEGORY BACKFILL ---
-        if (!derivedCategory || derivedCategory.trim() === '' || derivedCategory === 'N/A') {
-            if (collectionMatch && collectionMatch.type) {
-                derivedCategory = collectionMatch.type;
-            } else if (salesMatch && salesMatch.type) {
-                derivedCategory = salesMatch.type;
-            }
-        }
-
-        // Clean up the finalized category string for uniform evaluation
-        const rawCategory = (derivedCategory || 'walk-ins').toLowerCase().trim();
-
-        // Map the finalized properties safely to your table row structure
-        const contactObj = {
-            id: profile.id,
-            name: profile.name || 'Unknown',
-            address: derivedAddress || 'N/A',
-            contactNumber: derivedContact || 'N/A',
-            category: rawCategory,
-            displayCategory: getCategoryDisplayName(rawCategory), // Use helper function for proper formatting
-            avatarColor: getRandomColor()
-        };
-        
-        addContactToTable(contactObj);
+    // Step E: Render all structured entries directly onto the table
+    contacts.forEach(contact => {
+        addContactToTable(contact);
     });
 }
 
@@ -101,7 +144,7 @@ function getCategoryDisplayName(category) {
         'school': 'School',
         'junkshop': 'Junkshop',
         'organization': 'Organization',
-        'barangay': 'Barangay' // Added mapping for Barangay
+        'barangay': 'Barangay'
     };
     return categoryMap[category] || category;
 }
@@ -121,7 +164,16 @@ function addContactToTable(contact) {
 
     const row = document.createElement('tr');
     row.setAttribute('data-category', contact.category);
-    row.setAttribute('data-id', contact.id);
+    row.setAttribute('data-id', String(contact.id));
+
+    // Disable action buttons or handle them carefully for dynamic transaction items
+    const deleteButtonHtml = contact.isTemporary 
+        ? `<button class="action-btn delete-btn" title="Cannot delete transaction record" disabled style="opacity: 0.4; cursor: not-allowed;">
+                <i data-lucide="trash-2"></i>
+           </button>`
+        : `<button class="action-btn delete-btn" title="Delete Profile">
+                <i data-lucide="trash-2"></i>
+           </button>`;
 
     row.innerHTML = `
         <td>
@@ -138,28 +190,28 @@ function addContactToTable(contact) {
         <td>${contact.contactNumber}</td>
         <td>
             <div class="action-buttons">
-                <button class="action-btn edit-btn" title="Edit">
+                <button class="action-btn edit-btn" title="Edit" ${contact.isTemporary ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>
                     <i data-lucide="edit-2"></i>
                 </button>
-                <button class="action-btn delete-btn" title="Delete">
-                    <i data-lucide="trash-2"></i>
-                </button>
+                ${deleteButtonHtml}
             </div>
         </td>
     `;
 
-    // Delete Logic (Update to delete from Supabase)
-    row.querySelector('.delete-btn').addEventListener('click', async function() {
-        if (confirm(`Are you sure you want to delete ${contact.name}?`)) {
-            const { error } = await _supabase.from('profiles').delete().eq('id', contact.id);
-            if (!error) {
-                row.remove();
-                checkEmptyState();
-            } else {
-                alert("Error deleting: " + error.message);
+    // Only hook up live database deletion if the item actually has a profile database record
+    if (!contact.isTemporary) {
+        row.querySelector('.delete-btn').addEventListener('click', async function() {
+            if (confirm(`Are you sure you want to delete ${contact.name}?`)) {
+                const { error } = await _supabase.from('profiles').delete().eq('id', contact.id);
+                if (!error) {
+                    row.remove();
+                    checkEmptyState();
+                } else {
+                    alert("Error deleting: " + error.message);
+                }
             }
-        }
-    });
+        });
+    }
 
     tableBody.appendChild(row);
     lucide.createIcons();
@@ -210,7 +262,6 @@ function filterContacts(tab) {
         if (tab === 'all') {
             row.style.display = '';
         } else if (tab === 'collections') {
-            // Added 'barangay' alongside your other group profile categories
             row.style.display = ['walk-ins', 'school', 'organization', 'partner', 'barangay'].includes(category) ? '' : 'none';
         } else if (tab === 'sales') {
             row.style.display = ['junkshop', 'customer'].includes(category) ? '' : 'none';
@@ -235,9 +286,10 @@ function initializeSearch() {
         checkEmptyState();
     });
 }
+
 // 3. INITIALIZE ON LOAD
 document.addEventListener('DOMContentLoaded', () => {
-    fetchProfilesFromSupabase(); // Call Supabase instead of LocalStorage
+    fetchProfilesFromSupabase(); 
     initializeTabSwitching();
     initializeSearch();
 });
