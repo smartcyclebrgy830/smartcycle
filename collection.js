@@ -29,10 +29,12 @@ function refreshIcons() {
 
 // 2. DATA MANAGEMENT (FETCH)
 window.fetchAllCollections = async function() {
+    // AFTER (Fixed Multi-column Sort)
     const { data, error } = await _supabase
         .from('collections')
         .select(`*, collection_items (*)`)
-        .order('date_collected', { ascending: false });
+        .order('date_collected', { ascending: false })
+        .order('id', { ascending: false }); // Ensures incremental IDs sort cleanly within the same date
 
     if (error) {
         console.error("Error fetching data:", error.message);
