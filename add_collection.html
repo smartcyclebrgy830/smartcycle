@@ -43,11 +43,7 @@
         <label for="selMaterial">Material</label>
         <div class="material-row-input">
           <select id="selMaterial">
-            <option value="Plastic" data-rate="9">Plastic - ₱9/kg</option>
-            <option value="Bakal" data-rate="9">Bakal - ₱9/kg</option>
-            <option value="PET-Assorted" data-rate="5">PET-Assorted - ₱5/kg</option>
-            <option value="Paper Assorted" data-rate="8">Paper Assorted - ₱8/kg</option>
-            <option value="Yero" data-rate="7">Yero - ₱7/kg</option>
+            <option value="" disabled selected>Loading materials...</option>
           </select>
           <input type="number" id="inWeight" placeholder="Weight (kg)" min="0.1" step="0.1">
           <button class="btn-add-item" type="button" onclick="addItem()">
