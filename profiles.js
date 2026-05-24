@@ -9,6 +9,14 @@ let contacts = [];
 lucide.createIcons();
 let nextId = 1;
 
+// Generates a random 7-digit ID with the given prefix
+function generateTransactionId(prefix) {
+    const min = 1000000;
+    const max = 9999999;
+    const randomDigits = Math.floor(Math.random() * (max - min + 1)) + min;
+    return `${prefix}-${randomDigits}`;
+}
+
 // 1. FETCH PROFILES AND ENRICH WITH TRANSACTION DATA
 async function fetchProfilesFromSupabase() {
     const tableBody = document.getElementById('contactsTableBody');
@@ -81,7 +89,7 @@ async function fetchProfilesFromSupabase() {
         });
     });
 
-    // Step C: Fallback discovery for partners found inside Sales but not in Profiles table
+// Step C: Fallback discovery for partners found inside Sales but not in Profiles table
     salesData.forEach(sale => {
         const nameKey = (sale.partner || '').trim().toLowerCase();
         if (!nameKey || processedNames.has(nameKey)) return; 
@@ -89,8 +97,8 @@ async function fetchProfilesFromSupabase() {
         processedNames.add(nameKey);
         const rawCategory = (sale.type || 'junkshop').toLowerCase().trim();
 
-        // FIX: Fall back to the auto-incremented Sales receipt ID if partner_id is missing
-        const finalId = sale.partner_id ? sale.partner_id : sale.id;
+        // REPLACED: Use Sales specific custom random prefix ID format
+        const finalId = generateTransactionId('S');
 
         combinedContacts.push({
             id: finalId, 
@@ -104,7 +112,7 @@ async function fetchProfilesFromSupabase() {
         });
     });
 
-    // Step D: Fallback discovery for customers found inside Collections but not in Profiles table
+// Step D: Fallback discovery for customers found inside Collections but not in Profiles table
     collectionsData.forEach(collection => {
         const nameKey = (collection.customer_name || '').trim().toLowerCase();
         if (!nameKey || processedNames.has(nameKey)) return; 
@@ -112,8 +120,8 @@ async function fetchProfilesFromSupabase() {
         processedNames.add(nameKey);
         const rawCategory = (collection.type || 'walk-ins').toLowerCase().trim();
 
-        // FIX: Fall back to the auto-incremented Collections receipt ID if customer_id is missing
-        const finalId = collection.customer_id ? collection.customer_id : collection.id;
+        // REPLACED: Use Collections specific custom random prefix ID format
+        const finalId = generateTransactionId('C');
 
         combinedContacts.push({
             id: finalId, 
