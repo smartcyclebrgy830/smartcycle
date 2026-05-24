@@ -146,7 +146,7 @@ function resetForm() {
 
 window.setCategory = (category, btn) => {
     currentCategory = category;
-    document.querySelectorAll('.m-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.m-tab').forEach(tab => tab.remove('active'));
     btn.classList.add('active');
     updatePreview();
 };
@@ -291,16 +291,69 @@ window.submitCollection = async function() {
     try {
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.innerHTML = 'Saving...';
+            submitBtn.innerHTML = editingIndex !== -1 ? 'Updating...' : 'Saving...';
         }
 
+        const collectionPayload = { 
+            customer_name: customer, 
+            date_collected: date, 
+            address: address, 
+            contact_number: contact, 
+            type: currentCategory 
+        };
+
         if (editingIndex !== -1) {
-            alert("Edit mode via Supabase coming soon! Currently only supporting new adds.");
+            // --- ACTUAL DB UPDATE MODE ---
+            // Fetch the accurate collection object based on your main script tracker logic context
+            const targetedCollection = (typeof getFilteredCollections === 'function') 
+                ? getFilteredCollections()[editingIndex] 
+                : window.collections[editingIndex];
+
+            if (!targetedCollection || !targetedCollection.id) {
+                throw new Error("Unable to identify targeted collection ID context.");
+            }
+
+            const targetId = targetedCollection.id;
+
+            // 1. Mutate parent row in collections table
+            const { error: headerUpdateError } = await _supabase
+                .from('collections')
+                .update(collectionPayload)
+                .eq('id', targetId);
+
+            if (headerUpdateError) throw headerUpdateError;
+
+            // 2. Clear out older sub-row item references linked with this transaction
+            const { error: itemsClearError } = await _supabase
+                .from('collection_items')
+                .delete()
+                .eq('collection_id', targetId);
+
+            if (itemsClearError) throw itemsClearError;
+
+            // 3. Re-serialize array values inside collection_items subtable
+            const itemsToInsert = currentItems.map(item => ({
+                collection_id: targetId,
+                material_name: item.material,
+                rate: item.rate,
+                weight: item.weight,
+                subtotal: item.subtotal
+            }));
+
+            const { error: itemsInsertError } = await _supabase
+                .from('collection_items')
+                .insert(itemsToInsert);
+
+            if (itemsInsertError) throw itemsInsertError;
+
+            alert("Collection entry updated successfully!");
+
         } else {
+            // --- INSERT MODE ---
             // 1. Insert Base Document
             const { data: headerData, error: headerError } = await _supabase
                 .from('collections')
-                .insert([{ customer_name: customer, date_collected: date, address: address, contact_number: contact, type: currentCategory }])
+                .insert([collectionPayload])
                 .select()
                 .single();
 
@@ -324,9 +377,10 @@ window.submitCollection = async function() {
 
             const { error: itemsError } = await _supabase.from('collection_items').insert(itemsToInsert);
             if (itemsError) throw itemsError;
+
+            alert("Collection saved to database!");
         }
 
-        alert("Collection saved to database!");
         closeAddModal();
         
         if (typeof fetchAllCollections === 'function') await fetchAllCollections();
