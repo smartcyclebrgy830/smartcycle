@@ -29,18 +29,19 @@ async function fetchProfilesFromSupabase() {
         checkEmptyState();
         return;
     }
-
+    
     profiles.forEach(profile => {
-        // Safe fallback normalization for categories
         const rawCategory = profile.category ? String(profile.category).trim() : 'N/A';
         const normalizedCategory = rawCategory.toLowerCase();
         
-        // Corrected dynamic ID generation based on your exact business mapping
-        const formattedId = formatProfileId(profile.display_id, normalizedCategory);
+        // Fallback: If display_id is missing/null, use a clean slice of the database UUID string
+        const targetId = profile.display_id || profile.id.replace(/\D/g, '').slice(-7);
+        
+        const formattedId = formatProfileId(targetId, normalizedCategory);
         
         addContactToTable({
-            id: formattedId,                                      // ✅ Formatted short ID (e.g., C-7654321 or S-2200953)
-            dbId: profile.id,                                     // ✅ REAL UUID
+            id: formattedId,                                      
+            dbId: profile.id,                                     
             name: profile.display_name || profile.name || 'Unknown Name',
             address: profile.address || 'N/A',
             contactNumber: profile.contact_num || 'N/A',
@@ -55,26 +56,25 @@ async function fetchProfilesFromSupabase() {
 
 // Helper function with the corrected business rules mapping
 function formatProfileId(displayId, normalizedCategory) {
-    if (!displayId || displayId === 'N/A') return 'N/A';
+    if (!displayId) return 'N/A';
 
-    let prefix = 'C'; // Default fallback to Customer (Collections tab)
-    
-    // Explicitly define who gets the "S" prefix based on your architecture
+    let prefix = 'C'; 
     const salesPartners = ['junkshop', 'organization'];
     
     if (salesPartners.includes(normalizedCategory)) {
         prefix = 'S';
     }
 
-    // Extract only the numeric digits from the existing long ID string
+    // Safely extract numeric digits
     const numericPart = displayId.replace(/\D/g, '');
+    
+    // Ensure we have a number string to slice, default to fallback random if empty
+    const cleanNumbers = numericPart || Math.floor(1000000 + Math.random() * 9000000).toString();
 
-    // Grab the last 7 digits (or pad with 0s if it's somehow shorter)
-    const sevenDigits = numericPart.slice(-7).padStart(7, '0');
+    const sevenDigits = cleanNumbers.slice(-7).padStart(7, '0');
 
     return `${prefix}-${sevenDigits}`;
 }
-
 // Get category display name safely regardless of DB casing
 function getCategoryDisplayName(category) {
     if (!category || category === 'N/A') return 'N/A';
