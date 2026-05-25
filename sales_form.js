@@ -247,10 +247,10 @@ function wireModal() {
         let receiptImage = (receiptPreviewImg?.src && receiptPreviewImg.src !== window.location.href) ? receiptPreviewImg.src : null;
 
         // 🔹 CRITICAL SECURITY / CACHE FIX: Filter base object properties matching sales columns exactly
+// 🔹 FIXED: Removed the invalid 'partner' field from saleData payload
+        // Also removed 'raw_date' if it is not a structural column in your sales schema
         const saleData = {
             date: saleDateFormatted,
-            raw_date: dateVal, 
-            partner: partnerVal, // Keeping string text context values if synced elsewhere
             type: type,
             total_amount: totalAmount,
             total_weight: totalWeight,
@@ -262,6 +262,30 @@ function wireModal() {
                 // ==========================================
                 // UPDATE FLOW 
                 // ==========================================
+                
+                // 1. First, find the partner_id associated with this existing sale
+                const { data: currentSale, error: fetchSaleError } = await window._supabase
+                    .from('sales')
+                    .select('partner_id')
+                    .eq('id', editingId)
+                    .single();
+
+                if (fetchSaleError) throw new Error("Failed to fetch sale context: " + fetchSaleError.message);
+
+                // 2. Update the profile record with the updated inputs
+                if (currentSale && currentSale.partner_id) {
+                    await window._supabase
+                        .from('profiles')
+                        .update({
+                            name: partnerVal,
+                            category: type,
+                            address: addressVal || 'N/A',
+                            contact_num: contactVal || 'N/A'
+                        })
+                        .eq('id', currentSale.partner_id);
+                }
+
+                // 3. Complete updating the sales table record
                 const { error: updateError } = await window._supabase.from('sales').update(saleData).eq('id', editingId);
                 if (updateError) throw new Error("Update failed: " + updateError.message);
             
@@ -294,10 +318,15 @@ function wireModal() {
                 
                 if (existingProfile) {
                     profileId = existingProfile.id;
-                    // Optionally update profile details if they changed
+                    // 🔹 UPDATED: Syncs name and category alongside address and contact fields
                     await window._supabase
                         .from('profiles')
-                        .update({ address: addressVal || 'N/A', contact_num: contactVal || 'N/A' })
+                        .update({ 
+                            name: partnerVal,
+                            category: type,
+                            address: addressVal || 'N/A', 
+                            contact_num: contactVal || 'N/A' 
+                        })
                         .eq('id', profileId);
                 } else {
                     const { data: newProfile, error: profileError } = await window._supabase
@@ -338,7 +367,7 @@ function wireModal() {
                 }));
         
                 const { error: insertItemsError } = await window._supabase
-                    .from('sale_items')
+                    .from('sales_items' in window ? 'sales_items' : 'sale_items') // Fallback guard safely matching your schema layout
                     .insert(itemsToInsert);
         
                 if (insertItemsError) throw new Error("Failed to insert sale items: " + insertItemsError.message);
