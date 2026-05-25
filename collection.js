@@ -26,6 +26,16 @@ function refreshIcons() {
     }
 }
 
+// Helper utility to convert YYYY-MM-DD string to MM-DD-YYYY
+function formatDateToMDY(dateString) {
+    if (!dateString) return 'N/A';
+    // Splits the 'YYYY-MM-DD' format explicitly to prevent timezone shifts
+    const parts = dateString.split('-');
+    if (parts.length !== 3) return dateString; 
+    const [year, month, day] = parts;
+    return `${month}-${day}-${year}`;
+}    
+
 // 2. DATA MANAGEMENT (FETCH)
 window.fetchAllCollections = async function() {
     console.log("Fetching collections from Supabase...");
@@ -82,7 +92,7 @@ window.fetchAllCollections = async function() {
         // Map database fields directly to the keys your renderTable() expects
         return {
             id: col.id,
-            date: col.date_collected,
+            date: formatDateToMDY(col.date_collected),
             customer: col.customer_name,
             category: col.type || 'School',
             totalAmount: mappedItems.reduce((sum, i) => sum + i.subtotal, 0),
@@ -325,7 +335,19 @@ window.editEntry = function(index) {
     document.getElementById('inCustomer').value = data.customer;
     document.getElementById('inAddress').value = data.address || '';
     document.getElementById('inContact').value = data.contact || '';
-    document.getElementById('inDate').value = data.date;
+    
+    // Convert 'MM-DD-YYYY' back to 'YYYY-MM-DD' for the native HTML date input field
+    if (data.date && data.date.includes('-')) {
+        const parts = data.date.split('-');
+        if (parts.length === 3) {
+            const [month, day, year] = parts;
+            document.getElementById('inDate').value = `${year}-${month}-${day}`;
+        } else {
+            document.getElementById('inDate').value = data.date;
+        }
+    } else {
+        document.getElementById('inDate').value = data.date;
+    }
 
     currentCategory = data.category;
     document.querySelectorAll('.m-tab').forEach(tab => {
