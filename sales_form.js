@@ -125,15 +125,14 @@ function wireModal() {
     });
 
     // Add Material to list
-    // Add Material to list
     addMaterialBtn?.addEventListener('click', () => {
         const sel = document.getElementById('materialSelect');
         const weightEl = document.getElementById('materialWeight');
         if (!sel || !weightEl) return;
     
-        const materialId = parseInt(sel.value); // This is now your database integer ID
+        const materialId = parseInt(sel.value); 
         const selectedOption = sel.selectedOptions[0];
-        const name = selectedOption?.dataset.name || ''; // Pull string name from dataset
+        const name = selectedOption?.dataset.name || ''; 
         const rate = Number(selectedOption?.dataset.rate || 0);
         const weight = parseFloat(weightEl.value) || 0;
     
@@ -143,7 +142,6 @@ function wireModal() {
         }
         if (matErr) matErr.textContent = '';
     
-        // Track the materialId integer along with your UI layout keys
         saleMaterials.push({ materialId, name, rate, weight });
         weightEl.value = '';
         weightEl.focus();
@@ -239,12 +237,8 @@ function wireModal() {
         const activeTab = saleModal.querySelector('.m-tab.active');
         const type = activeTab?.getAttribute('data-type') || 'organization';
 
-        // Format Date (MM-DD-YY)
-        const dateObj = new Date(dateVal);
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const day = String(dateObj.getDate()).padStart(2, '0');
-        const year = String(dateObj.getFullYear()).slice(-2);
-        const displayDate = `${month}-${day}-${year}`;
+        // Format Date (YYYY-MM-DD) for database compatibility since sales.date is a Date field type
+        const saleDateFormatted = dateVal; 
 
         let totalAmount = 0;
         let totalWeight = 0;
@@ -252,12 +246,11 @@ function wireModal() {
 
         let receiptImage = (receiptPreviewImg?.src && receiptPreviewImg.src !== window.location.href) ? receiptPreviewImg.src : null;
 
+        // 🔹 CRITICAL SECURITY / CACHE FIX: Filter base object properties matching sales columns exactly
         const saleData = {
-            date: displayDate,
+            date: saleDateFormatted,
             raw_date: dateVal, 
-            partner: partnerVal,
-            address: addressVal, 
-            contact: contactVal,
+            partner: partnerVal, // Keeping string text context values if synced elsewhere
             type: type,
             total_amount: totalAmount,
             total_weight: totalWeight,
@@ -267,7 +260,7 @@ function wireModal() {
         try {
             if (editingId) {
                 // ==========================================
-                // UPDATE FLOW (This part was working)
+                // UPDATE FLOW 
                 // ==========================================
                 const { error: updateError } = await window._supabase.from('sales').update(saleData).eq('id', editingId);
                 if (updateError) throw new Error("Update failed: " + updateError.message);
@@ -277,7 +270,7 @@ function wireModal() {
             
                 const itemsToInsert = saleMaterials.map(m => ({
                     sale_id: editingId,
-                    material_id: m.materialId, // Change key here
+                    material_id: m.materialId, 
                     weight: m.weight,
                     rate: m.rate,
                     amount: m.rate * m.weight
@@ -288,7 +281,7 @@ function wireModal() {
             
             } else {
                 // ==========================================
-                // INSERT FLOW (The Fix is here 👇)
+                // INSERT FLOW
                 // ==========================================
                 const displayId = generateDisplayId('S');
                 let profileId = null;
@@ -301,6 +294,11 @@ function wireModal() {
                 
                 if (existingProfile) {
                     profileId = existingProfile.id;
+                    // Optionally update profile details if they changed
+                    await window._supabase
+                        .from('profiles')
+                        .update({ address: addressVal || 'N/A', contact_num: contactVal || 'N/A' })
+                        .eq('id', profileId);
                 } else {
                     const { data: newProfile, error: profileError } = await window._supabase
                         .from('profiles')
@@ -318,7 +316,7 @@ function wireModal() {
                     profileId = newProfile.id;
                 }
                 
-                // 1. Insert the parent Sale record
+                // 1. Insert the parent Sale record with the verified relational key link
                 const { data: insertedSale, error: insertError } = await window._supabase
                     .from('sales')
                     .insert([{
@@ -330,10 +328,10 @@ function wireModal() {
                 
                 if (insertError) throw insertError;
         
-                // 2. Map and insert your child items using the new parent sale ID!
+                // 2. Map and insert child items using structural material IDs
                 const itemsToInsert = saleMaterials.map(m => ({
-                    sale_id: insertedSale.id,
-                    material_id: m.materialId, // Change key here
+                    sale_id: insertedSale.id, 
+                    material_id: m.materialId, 
                     weight: m.weight,
                     rate: m.rate,
                     amount: m.rate * m.weight
@@ -403,11 +401,10 @@ async function loadMaterialsToDropdown() {
 
     data.forEach(item => {
         const option = document.createElement('option');
-        // Change value from item.material_name to item.id
         option.value = item.id; 
         option.textContent = `${item.material_name} (₱${parseFloat(item.price).toFixed(2)}/${item.unit})`;
         option.dataset.rate = item.price; 
-        option.dataset.name = item.material_name; // Store the text name here for local rendering
+        option.dataset.name = item.material_name; 
         select.appendChild(option);
     });
 }
@@ -420,13 +417,12 @@ function renderPagination(totalCount) {
 // Initialize and Fetch HTML Component Templates
 fetch('sales_form.html')
     .then(res => res.text())
-    .then(async html => { // 1. Added async here
+    .then(async html => { 
         document.getElementById('sale-modal-container').innerHTML = html;
         lucide.createIcons();
         
         wireModal();
         
-        // 2. 🔹 CRITICAL FIX: Run this here now that #materialSelect is safely in the DOM
         await loadMaterialsToDropdown(); 
         
         if (typeof window.renderTable === 'function') window.renderTable();
@@ -448,10 +444,10 @@ async function openEditModal(id) {
 
     editingId = id;
     
-    // Fallback assignment context so tracking handles existing values correctly
+    // Fixed name mapper resolution reference pointing to proper fields
     saleMaterials = (sale.items || []).map(item => ({
-        materialId: item.material_id, // Assign relational backlink
-        name: item.name, 
+        materialId: item.material_id, 
+        name: item.material_name || item.price_list?.material_name || 'Unknown Material', 
         rate: item.rate,
         weight: item.weight
     }));
