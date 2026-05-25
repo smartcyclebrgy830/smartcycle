@@ -42,9 +42,9 @@ async function fetchProfilesFromSupabase() {
     const combinedContacts = [];
 
     // Step B: Process explicitly registered records inside the profiles table
-    profilesData.forEach(profile => {
+    for (const profile of profilesData) {
         const nameKey = (profile.name || '').trim().toLowerCase();
-        if (!nameKey) return;
+        if (!nameKey) continue;
 
         processedNames.add(nameKey);
 
@@ -75,21 +75,31 @@ async function fetchProfilesFromSupabase() {
 
         const rawCategory = (derivedCategory || 'walk-ins').toLowerCase().trim();
 
-        // --- FIXED: Dynamically assign the visual ID format based on category/origin ---
-        let visualId = profile.id; // Default fallback to original ID
+        // --- FIXED: Permanent assignment if it isn't formatted yet ---
+        let visualId = profile.id; 
         
-        // Check if it belongs to Sales categories or matches a sales record
-        if (['junkshop', 'customer'].includes(rawCategory) || salesMatch) {
-            visualId = generateTransactionId('S');
-        } 
-        // Otherwise, if it belongs to Collections categories or matches a collection record
-        else if (['walk-ins', 'school', 'organization', 'barangay'].includes(rawCategory) || collectionMatch) {
-            visualId = generateTransactionId('C');
+        // Check if the current profile ID is a raw structural integer instead of our string pattern
+        if (!visualId || (!visualId.startsWith('S-') && !visualId.startsWith('C-'))) {
+            if (['junkshop', 'customer'].includes(rawCategory) || salesMatch) {
+                visualId = generateTransactionId('S');
+            } else {
+                visualId = generateTransactionId('C');
+            }
+
+            // Save the permanent alpha-numeric ID back to Supabase
+            const { error: updateError } = await _supabase
+                .from('profiles')
+                .update({ id: visualId })
+                .eq('name', profile.name);
+                
+            if (updateError) {
+                console.error(`Error saving permanent ID for ${profile.name}:`, updateError.message);
+            }
         }
 
         combinedContacts.push({
-            id: visualId, // Use the generated string ID
-            dbId: profile.id, // Save the original database ID separately for deletion tracking
+            id: visualId, 
+            dbId: visualId, // Now the unique text ID matches the db database reference key safely
             isTemporary: false, 
             name: profile.name,
             address: derivedAddress || 'N/A',
@@ -98,51 +108,77 @@ async function fetchProfilesFromSupabase() {
             displayCategory: getCategoryDisplayName(rawCategory),
             avatarColor: getRandomColor()
         });
-    });
+    }
 
     // Step C: Fallback discovery for partners found inside Sales but not in Profiles table
-    salesData.forEach(sale => {
+    for (const sale of salesData) {
         const nameKey = (sale.partner || '').trim().toLowerCase();
-        if (!nameKey || processedNames.has(nameKey)) return; 
+        if (!nameKey || processedNames.has(nameKey)) continue; 
 
         processedNames.add(nameKey);
         const rawCategory = (sale.type || 'junkshop').toLowerCase().trim();
         const finalId = generateTransactionId('S');
 
-        combinedContacts.push({
-            id: finalId, 
-            dbId: null,
-            isTemporary: true,
-            name: sale.partner,
-            address: sale.address || 'N/A',
-            contactNumber: sale.contact || 'N/A',
-            category: rawCategory,
-            displayCategory: getCategoryDisplayName(rawCategory),
-            avatarColor: getRandomColor()
-        });
-    });
+        // Automatically write discovered background data straight to permanent database profile record
+        const { error: insertError } = await _supabase.from('profiles').insert([
+            {
+                id: finalId,
+                name: sale.partner,
+                category: rawCategory,
+                address: sale.address || 'N/A',
+                contact_num: sale.contact || 'N/A'
+            }
+        ]);
+
+        if (!insertError) {
+            combinedContacts.push({
+                id: finalId, 
+                dbId: finalId,
+                isTemporary: false, // It is now safely registered inside DB, removing temporary state lock
+                name: sale.partner,
+                address: sale.address || 'N/A',
+                contactNumber: sale.contact || 'N/A',
+                category: rawCategory,
+                displayCategory: getCategoryDisplayName(rawCategory),
+                avatarColor: getRandomColor()
+            });
+        }
+    }
 
     // Step D: Fallback discovery for customers found inside Collections but not in Profiles table
-    collectionsData.forEach(collection => {
+    for (const collection of collectionsData) {
         const nameKey = (collection.customer_name || '').trim().toLowerCase();
-        if (!nameKey || processedNames.has(nameKey)) return; 
+        if (!nameKey || processedNames.has(nameKey)) continue; 
 
         processedNames.add(nameKey);
         const rawCategory = (collection.type || 'walk-ins').toLowerCase().trim();
         const finalId = generateTransactionId('C');
 
-        combinedContacts.push({
-            id: finalId, 
-            dbId: null,
-            isTemporary: true,
-            name: collection.customer_name,
-            address: collection.address || 'N/A',
-            contactNumber: collection.contact_number || 'N/A',
-            category: rawCategory,
-            displayCategory: getCategoryDisplayName(rawCategory),
-            avatarColor: getRandomColor()
-        });
-    });
+        // Automatically write discovered background data straight to permanent database profile record
+        const { error: insertError } = await _supabase.from('profiles').insert([
+            {
+                id: finalId,
+                name: collection.customer_name,
+                category: rawCategory,
+                address: collection.address || 'N/A',
+                contact_num: collection.contact_number || 'N/A'
+            }
+        ]);
+
+        if (!insertError) {
+            combinedContacts.push({
+                id: finalId, 
+                dbId: finalId,
+                isTemporary: false, // It is now safely registered inside DB, removing temporary state lock
+                name: collection.customer_name,
+                address: collection.address || 'N/A',
+                contactNumber: collection.contact_number || 'N/A',
+                category: rawCategory,
+                displayCategory: getCategoryDisplayName(rawCategory),
+                avatarColor: getRandomColor()
+            });
+        }
+    }
 
     contacts = combinedContacts;
 
@@ -219,7 +255,6 @@ function addContactToTable(contact) {
     if (!contact.isTemporary) {
         row.querySelector('.delete-btn').addEventListener('click', async function() {
             if (confirm(`Are you sure you want to delete ${contact.name}?`)) {
-                // Change contact.id to contact.dbId in the delete query:
                 const { error } = await _supabase.from('profiles').delete().eq('id', contact.dbId);
                 if (!error) {
                     row.remove();
