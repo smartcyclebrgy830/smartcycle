@@ -28,7 +28,8 @@ function refreshIcons() {
 
 // 2. DATA MANAGEMENT (FETCH)
 window.fetchAllCollections = async function() {
-    // Fetch material_name from the price_list table via the foreign key relation
+    console.log("Fetching collections from Supabase...");
+    
     const { data, error } = await _supabase
         .from('collections')
         .select(`
@@ -41,17 +42,33 @@ window.fetchAllCollections = async function() {
             )
         `)
         .order('date_collected', { ascending: false })
-        .order('id', { ascending: false }); 
+        .order('id', { ascending: false });
 
     if (error) {
-        console.error("Error fetching data:", error.message);
+        console.error("Error fetching data from Supabase:", error.message);
         return;
     }
 
+    console.log("Raw Data Received:", data);
+
     window.collections = data.map(col => {
-        const mappedItems = (col.collection_items || []).map(item => {
-            // Match the exact nested relation properties returned from your Supabase schema join
-            const materialName = item.price_list?.material_name || 'Unknown';
+        // Safe extraction of collection items
+        const rawItems = col.collection_items || [];
+        
+        const mappedItems = rawItems.map(item => {
+            // DEBUGGING LOGIC: Handle both object and array-wrapped relation joins
+            let materialName = 'Unknown';
+            
+            if (item.price_list) {
+                if (Array.isArray(item.price_list) && item.price_list.length > 0) {
+                    materialName = item.price_list[0].material_name;
+                } else if (item.price_list.material_name) {
+                    materialName = item.price_list.material_name;
+                }
+            } else if (item.material_name) {
+                // Fallback in case material_name was temporarily stored flat
+                materialName = item.material_name;
+            }
             
             return {
                 material: materialName,
@@ -61,6 +78,7 @@ window.fetchAllCollections = async function() {
             };
         });
 
+        // Map database fields directly to the keys your renderTable() expects
         return {
             id: col.id,
             date: col.date_collected,
@@ -70,10 +88,11 @@ window.fetchAllCollections = async function() {
             totalWeight: mappedItems.reduce((sum, i) => sum + i.weight, 0),
             address: col.address,
             contact: col.contact_number,
-            items: mappedItems
+            items: mappedItems // Crucial: This populates the expanded sub-rows
         };
     });
 
+    console.log("Parsed Collections State:", window.collections);
     renderTable();
 };
 
