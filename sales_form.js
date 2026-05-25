@@ -369,7 +369,7 @@ async function loadMaterialsToDropdown() {
     const { data, error } = await window._supabase
         .from('price_list')
         .select('*')
-        .eq('status', 'Active')
+        .eq('status', 'active') // Ensure case matches your Supabase row records exactly
         .order('material_name', { ascending: true });
 
     if (error) {
@@ -399,14 +399,19 @@ function renderPagination(totalCount) {
 // Initialize and Fetch HTML Component Templates
 fetch('sales_form.html')
     .then(res => res.text())
-    .then(html => {
+    .then(async html => { // 1. Added async here
         document.getElementById('sale-modal-container').innerHTML = html;
         lucide.createIcons();
+        
         wireModal();
+        
+        // 2. 🔹 CRITICAL FIX: Run this here now that #materialSelect is safely in the DOM
+        await loadMaterialsToDropdown(); 
+        
         if (typeof window.renderTable === 'function') window.renderTable();
     })
-    .catch(() => {
-        console.error('Could not load sales form');
+    .catch((err) => {
+        console.error('Could not load sales form:', err);
         if (typeof window.renderTable === 'function') window.renderTable();
     });
 
