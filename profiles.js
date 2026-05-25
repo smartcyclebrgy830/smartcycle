@@ -78,28 +78,32 @@ async function fetchProfilesFromSupabase() {
         // --- FIXED: Permanent assignment if it isn't formatted yet ---
         let visualId = profile.id; 
         
-        // Check if the current profile ID is a raw structural integer instead of our string pattern
-        if (!visualId || (!visualId.startsWith('S-') && !visualId.startsWith('C-'))) {
+        // Check if the current profile ID is missing or doesn't start with our alpha prefix code patterns
+        if (!visualId || (!String(visualId).startsWith('S-') && !String(visualId).startsWith('C-'))) {
+            const originalOldId = profile.id; // Remember old ID (e.g. "1", "2") to target the correct row safely
+
             if (['junkshop', 'customer'].includes(rawCategory) || salesMatch) {
                 visualId = generateTransactionId('S');
             } else {
                 visualId = generateTransactionId('C');
             }
 
-            // Save the permanent alpha-numeric ID back to Supabase
+            // FIX: Match using the exact unique primary key ID column field rather than string names
             const { error: updateError } = await _supabase
                 .from('profiles')
                 .update({ id: visualId })
-                .eq('name', profile.name);
+                .eq('id', originalOldId); 
                 
             if (updateError) {
                 console.error(`Error saving permanent ID for ${profile.name}:`, updateError.message);
+                // Fallback attempt by name if old ID matching failed due to casting shifts
+                await _supabase.from('profiles').update({ id: visualId }).eq('name', profile.name);
             }
         }
 
         combinedContacts.push({
             id: visualId, 
-            dbId: visualId, // Now the unique text ID matches the db database reference key safely
+            dbId: visualId, 
             isTemporary: false, 
             name: profile.name,
             address: derivedAddress || 'N/A',
@@ -134,7 +138,7 @@ async function fetchProfilesFromSupabase() {
             combinedContacts.push({
                 id: finalId, 
                 dbId: finalId,
-                isTemporary: false, // It is now safely registered inside DB, removing temporary state lock
+                isTemporary: false, 
                 name: sale.partner,
                 address: sale.address || 'N/A',
                 contactNumber: sale.contact || 'N/A',
@@ -169,7 +173,7 @@ async function fetchProfilesFromSupabase() {
             combinedContacts.push({
                 id: finalId, 
                 dbId: finalId,
-                isTemporary: false, // It is now safely registered inside DB, removing temporary state lock
+                isTemporary: false, 
                 name: collection.customer_name,
                 address: collection.address || 'N/A',
                 contactNumber: collection.contact_number || 'N/A',
