@@ -31,7 +31,7 @@ window.openAddModal = async () => {
     setTimeout(refreshIcons, 100);
 };
 
-// FIXED ENGINE: Added 'id' to the select string so item.id isn't undefined!
+// FIXED ENGINE: Added 'id' to the select string so item.id isn't undefined
 async function loadActivePrices() {
     const selMaterial = document.getElementById('selMaterial');
     if (!selMaterial) return;
