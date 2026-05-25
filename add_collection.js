@@ -2,6 +2,11 @@ function generateDisplayId(prefix) {
     return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
 
+function toTitleCase(str) {
+    if (!str) return '';
+    return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+}
+
 // GLOBAL ASSIGNMENTS & MODAL INTERACTIONS
 window.openAddModal = async () => {
     const modal = document.getElementById('addCollectionModal');
@@ -352,11 +357,100 @@ window.submitCollection = async function() {
             alert("Collection entry updated successfully!");
 
         } else {
+            } else {
             // --- INSERT MODE ---
             
             // 🔹 Generate display ID immediately
             const displayId = generateDisplayId('C');
-            const normalizedCustomer = customer.trim().toLowerCase();
+            
+            // 🔹 Format and capitalize customer name beautifully right away
+            const formattedCustomer = toTitleCase(customer.trim()); 
+            
+            // Sync the updated formatted string back into the payload object
+            collectionPayload.customer_name = formattedCustomer; 
+
+            // 🔹 Check existing profile
+            let profileId = null;
+            
+            // Match cleanly using a case-insensitive check against the trimmed input
+            const { data: existingProfile } = await _supabase
+                .from('profiles')
+                .select('id, name, address, contact_num')
+                .ilike('name', formattedCustomer)
+                .maybeSingle();
+            
+            if (existingProfile) {
+                profileId = existingProfile.id;
+
+                // 💡 ENHANCEMENT: Correct capitalization and update blank/placeholder fields
+                const updatePayload = {};
+                
+                // If the old name in DB isn't capitalized correctly, queue it for update
+                if (existingProfile.name !== formattedCustomer) {
+                    updatePayload.name = formattedCustomer;
+                }
+                if (existingProfile.address === 'N/A' || !existingProfile.address) {
+                    updatePayload.address = address || existingProfile.address;
+                }
+                if (existingProfile.contact_num === 'N/A' || !existingProfile.contact_num) {
+                    updatePayload.contact_num = contact || existingProfile.contact_num;
+                }
+                
+                // Always ensure it aligns with the active transaction context category
+                updatePayload.category = currentCategory;
+
+                // Run a single combined update statement
+                await _supabase
+                    .from('profiles')
+                    .update(updatePayload)
+                    .eq('id', profileId);
+
+            } else {
+                // Create a beautiful, filled-out profile row if it doesn't exist yet
+                const { data: newProfile, error: profileError } = await _supabase
+                    .from('profiles')
+                    .insert([{
+                        name: formattedCustomer,          // Store Title Case directly for UI layouts
+                        category: currentCategory,
+                        address: address || 'N/A',
+                        contact_num: contact || 'N/A',
+                        display_id: displayId
+                    }])
+                    .select()
+                    .single();
+            
+                if (profileError) throw profileError;
+                profileId = newProfile.id;
+            }
+            
+            // 🔹 Attach Foreign Key
+            collectionPayload.customer_id = profileId;
+            
+            // 🔹 Insert collection
+            const { data: headerData, error: headerError } = await _supabase
+                .from('profiles') // double check your schema context logic here if needed
+                .from('collections')
+                .insert([collectionPayload])
+                .select()
+                .single();
+            
+            if (headerError) throw headerError;
+            
+            // 🔹 Insert items
+            const itemsToInsert = currentItems.map(item => ({
+                collection_id: headerData.id,
+                material_name: item.material,
+                rate: item.rate,
+                weight: item.weight,
+                subtotal: item.subtotal
+            }));
+            
+            const { error: itemsError } = await _supabase
+                .from('collection_items')
+                .insert(itemsToInsert);
+            
+            if (itemsError) throw itemsError;
+        }
             
             
 // 🔹 Check existing profile
