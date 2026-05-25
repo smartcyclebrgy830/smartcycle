@@ -4,188 +4,43 @@ const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentTab = 'all';
-let contacts = [];
+
 // Initialize Lucide icons
 lucide.createIcons();
-let nextId = 1;
 
 
 async function fetchProfilesFromSupabase() {
     const tableBody = document.getElementById('contactsTableBody');
     tableBody.innerHTML = '';
-    
-    // Step A: Fetch core profiles and transaction tables
-    const [profilesRes, collectionsRes, salesRes] = await Promise.all([
-        _supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-        _supabase.from('collections').select('id, customer_name, contact_number, address, type, customer_id'), 
-        _supabase.from('sales').select('id, partner, contact, address, type, partner_id') 
-    ]);
 
-    if (profilesRes.error) {
-        console.error("Error fetching profiles:", profilesRes.error.message);
+    const { data: profiles, error } = await _supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("Error fetching profiles:", error.message);
         checkEmptyState();
         return;
     }
 
-    const profilesData = profilesRes.data || [];
-    const collectionsData = collectionsRes.data || [];
-    const salesData = salesRes.data || [];
+    if (!profiles || profiles.length === 0) {
+        checkEmptyState();
+        return;
+    }
 
-    const processedNames = new Set();
-    const combinedContacts = [];
-
-    // Step B: Process explicitly registered records inside the profiles table
-    for (const profile of profilesData) {
-        const nameKey = (profile.name || '').trim().toLowerCase();
-        if (!nameKey) continue;
-
-        processedNames.add(nameKey);
-
-        const collectionMatch = collectionsData.find(c => (c.customer_name || '').trim().toLowerCase() === nameKey);
-        const salesMatch = salesData.find(s => (s.partner || '').trim().toLowerCase() === nameKey);
-
-        let derivedAddress = profile.address;
-        let derivedContact = profile.contact_num;
-        let derivedCategory = profile.category;
-
-        // --- CONTACT BACKFILL ---
-        if (!derivedContact || derivedContact === 'N/A') {
-            if (collectionMatch && collectionMatch.contact_number) derivedContact = collectionMatch.contact_number;
-            else if (salesMatch && salesMatch.contact) derivedContact = salesMatch.contact;
-        }
-
-        // --- ADDRESS BACKFILL ---
-        if (!derivedAddress || derivedAddress === 'N/A') {
-            if (collectionMatch && collectionMatch.address) derivedAddress = collectionMatch.address;
-            else if (salesMatch && salesMatch.address) derivedAddress = salesMatch.address;
-        }
-
-        // --- CATEGORY BACKFILL ---
-        if (!derivedCategory || derivedCategory.trim() === '' || derivedCategory === 'N/A') {
-            if (salesMatch && salesMatch.type) derivedCategory = salesMatch.type;
-            else if (collectionMatch && collectionMatch.type) derivedCategory = collectionMatch.type;
-        }
-
-        const rawCategory = (derivedCategory || 'walk-ins').toLowerCase().trim();
-
-        // --- FIXED: Permanent assignment if it isn't formatted yet ---
-        let visualId = profile.id; 
-        
-        // Check if the current profile ID is missing or doesn't start with our alpha prefix code patterns
-        if (!visualId || (!String(visualId).startsWith('S-') && !String(visualId).startsWith('C-'))) {
-            const originalOldId = profile.id; // Remember old ID (e.g. "1", "2") to target the correct row safely
-
-            if (['junkshop', 'customer'].includes(rawCategory) || salesMatch) {
-                visualId = generateTransactionId('S');
-            } else {
-                visualId = generateTransactionId('C');
-            }
-
-            // FIX: Match using the exact unique primary key ID column field rather than string names
-            const { error: updateError } = await _supabase
-                .from('profiles')
-                .update({ id: visualId })
-                .eq('id', originalOldId); 
-                
-            if (updateError) {
-                console.error(`Error saving permanent ID for ${profile.name}:`, updateError.message);
-                // Fallback attempt by name if old ID matching failed due to casting shifts
-                await _supabase.from('profiles').update({ id: visualId }).eq('name', profile.name);
-            }
-        }
-
-        combinedContacts.push({
-            id: visualId, 
-            dbId: visualId, 
-            isTemporary: false, 
-            name: profile.name,
-            address: derivedAddress || 'N/A',
-            contactNumber: derivedContact || 'N/A',
-            category: rawCategory,
-            displayCategory: getCategoryDisplayName(rawCategory),
-            avatarColor: getRandomColor()
+    profiles.forEach(profile => {
+        addContactToTable({
+            id: profile.display_id || 'N/A', // ✅ USE DISPLAY ID
+            dbId: profile.id,                // ✅ REAL UUID
+            name: profile.display_name || profile.name,
+            address: profile.address || 'N/A',
+            contactNumber: profile.contact_num || 'N/A',
+            category: (profile.category || '').toLowerCase(),
+            displayCategory: getCategoryDisplayName(profile.category),
+            avatarColor: getRandomColor(),
+            isTemporary: false
         });
-    }
-
-    // Step C: Fallback discovery for partners found inside Sales but not in Profiles table
-    for (const sale of salesData) {
-        const nameKey = (sale.partner || '').trim().toLowerCase();
-        if (!nameKey || processedNames.has(nameKey)) continue; 
-
-        processedNames.add(nameKey);
-        const rawCategory = (sale.type || 'junkshop').toLowerCase().trim();
-        const finalId = generateTransactionId('S');
-
-        // Automatically write discovered background data straight to permanent database profile record
-        const { error: insertError } = await _supabase.from('profiles').insert([
-            {
-                id: finalId,
-                name: sale.partner,
-                category: rawCategory,
-                address: sale.address || 'N/A',
-                contact_num: sale.contact || 'N/A'
-            }
-        ]);
-
-        if (!insertError) {
-            combinedContacts.push({
-                id: finalId, 
-                dbId: finalId,
-                isTemporary: false, 
-                name: sale.partner,
-                address: sale.address || 'N/A',
-                contactNumber: sale.contact || 'N/A',
-                category: rawCategory,
-                displayCategory: getCategoryDisplayName(rawCategory),
-                avatarColor: getRandomColor()
-            });
-        }
-    }
-
-    // Step D: Fallback discovery for customers found inside Collections but not in Profiles table
-    for (const collection of collectionsData) {
-        const nameKey = (collection.customer_name || '').trim().toLowerCase();
-        if (!nameKey || processedNames.has(nameKey)) continue; 
-
-        processedNames.add(nameKey);
-        const rawCategory = (collection.type || 'walk-ins').toLowerCase().trim();
-        const finalId = generateTransactionId('C');
-
-        // Automatically write discovered background data straight to permanent database profile record
-        const { error: insertError } = await _supabase.from('profiles').insert([
-            {
-                id: finalId,
-                name: collection.customer_name,
-                category: rawCategory,
-                address: collection.address || 'N/A',
-                contact_num: collection.contact_number || 'N/A'
-            }
-        ]);
-
-        if (!insertError) {
-            combinedContacts.push({
-                id: finalId, 
-                dbId: finalId,
-                isTemporary: false, 
-                name: collection.customer_name,
-                address: collection.address || 'N/A',
-                contactNumber: collection.contact_number || 'N/A',
-                category: rawCategory,
-                displayCategory: getCategoryDisplayName(rawCategory),
-                avatarColor: getRandomColor()
-            });
-        }
-    }
-
-    contacts = combinedContacts;
-
-    if (contacts.length === 0) {
-        checkEmptyState();
-        return;
-    }
-
-    contacts.forEach(contact => {
-        addContactToTable(contact);
     });
 }
 
