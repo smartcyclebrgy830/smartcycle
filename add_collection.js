@@ -357,7 +357,6 @@ window.submitCollection = async function() {
             alert("Collection entry updated successfully!");
 
         } else {
-            } else {
             // --- INSERT MODE ---
             
             // 🔹 Generate display ID immediately
