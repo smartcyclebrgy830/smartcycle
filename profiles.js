@@ -30,22 +30,27 @@ async function fetchProfilesFromSupabase() {
     }
 
     profiles.forEach(profile => {
+        // Safe fallback normalization for categories
+        const rawCategory = profile.category ? String(profile.category).trim() : 'N/A';
+        
         addContactToTable({
             id: profile.display_id || 'N/A', // ✅ USE DISPLAY ID
             dbId: profile.id,                // ✅ REAL UUID
-            name: profile.display_name || profile.name,
+            name: profile.display_name || profile.name || 'Unknown Name',
             address: profile.address || 'N/A',
             contactNumber: profile.contact_num || 'N/A',
-            category: (profile.category || '').toLowerCase(),
-            displayCategory: getCategoryDisplayName(profile.category),
+            category: rawCategory.toLowerCase(),
+            displayCategory: getCategoryDisplayName(rawCategory), // Handled by updated helper
             avatarColor: getRandomColor(),
             isTemporary: false
         });
     });
 }
 
-// Get category display name
+// Get category display name safely regardless of DB casing
 function getCategoryDisplayName(category) {
+    if (!category || category === 'N/A') return 'N/A';
+    
     const categoryMap = {
         'walk-ins': 'Walk-ins',
         'school': 'School',
@@ -53,7 +58,12 @@ function getCategoryDisplayName(category) {
         'organization': 'Organization',
         'barangay': 'Barangay'
     };
-    return categoryMap[category] || category;
+    
+    // Normalize key to lowercase to guarantee a match
+    const normalizedKey = category.toLowerCase().trim();
+    
+    // Return map match, or capitalize the raw database string if it's a new group type
+    return categoryMap[normalizedKey] || (category.charAt(0).toUpperCase() + category.slice(1));
 }
 
 // Generate random color for avatar
