@@ -375,7 +375,6 @@ window.submitCollection = async function() {
                     .from('profiles')
                     .insert([{
                         name: normalizedCustomer,
-                        display_name: customer,          // 👀 for UI
                         category: currentCategory,
                         address: address || 'N/A',
                         contact_num: contact || 'N/A',
