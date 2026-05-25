@@ -9,13 +9,6 @@ let contacts = [];
 lucide.createIcons();
 let nextId = 1;
 
-// Generates a random 7-digit ID with the given prefix
-function generateTransactionId(prefix) {
-    const min = 1000000;
-    const max = 9999999;
-    const randomDigits = Math.floor(Math.random() * (max - min + 1)) + min;
-    return `${prefix}-${randomDigits}`;
-}
 
 async function fetchProfilesFromSupabase() {
     const tableBody = document.getElementById('contactsTableBody');
