@@ -55,28 +55,29 @@ window.fetchAllCollections = async function() {
         // Safe extraction of collection items
         const rawItems = col.collection_items || [];
         
-        const mappedItems = rawItems.map(item => {
-            // DEBUGGING LOGIC: Handle both object and array-wrapped relation joins
-            let materialName = 'Unknown';
-            
-            if (item.price_list) {
-                if (Array.isArray(item.price_list) && item.price_list.length > 0) {
-                    materialName = item.price_list[0].material_name;
-                } else if (item.price_list.material_name) {
-                    materialName = item.price_list.material_name;
-                }
-            } else if (item.material_name) {
-                // Fallback in case material_name was temporarily stored flat
-                materialName = item.material_name;
+    // Locate this block inside window.fetchAllCollections inside collection.js
+    const mappedItems = rawItems.map(item => {
+        let materialName = 'Unknown';
+        
+        // Check if the relation object exists and isn't null
+        if (item.price_list) {
+            if (Array.isArray(item.price_list) && item.price_list.length > 0) {
+                materialName = item.price_list[0].material_name || 'Unknown';
+            } else if (item.price_list.material_name) {
+                materialName = item.price_list.material_name;
             }
-            
-            return {
-                material: materialName,
-                rate: parseFloat(item.rate) || 0,
-                weight: parseFloat(item.weight) || 0,
-                subtotal: parseFloat(item.subtotal) || 0
-            };
-        });
+        } else if (item.material_name) {
+            // Fallback for flat tables or alternative inserts
+            materialName = item.material_name;
+        }
+        
+        return {
+            material: materialName,
+            rate: parseFloat(item.rate) || 0,
+            weight: parseFloat(item.weight) || 0,
+            subtotal: parseFloat(item.subtotal) || 0
+        };
+    });
 
         // Map database fields directly to the keys your renderTable() expects
         return {
@@ -411,26 +412,25 @@ async function saveCollection() {
                 .from('collections')
                 .insert([collectionData])
                 .select();
-
+            
             if (insertCollectionError) throw insertCollectionError;
-
+            
             if (currentItems.length > 0 && newCollection && newCollection.length > 0) {
                 const collectionId = newCollection[0].id;
                 const itemsToInsert = currentItems.map(item => ({
                     collection_id: collectionId,
-                    material_name: item.material,
+                    material_id: item.materialId, //  Changed from material_name to match your schema constraint
                     rate: item.rate,
                     weight: item.weight,
                     subtotal: item.subtotal
                 }));
-
+            
                 const { error: insertItemsError } = await _supabase
                     .from('collection_items')
                     .insert(itemsToInsert);
-
+            
                 if (insertItemsError) throw insertItemsError;
             }
-
             alert("Collection saved successfully!");
         }
 
