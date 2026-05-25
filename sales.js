@@ -8,13 +8,21 @@ const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
 window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// STORAGE & DATA SANITIZATION
+// STORAGE & DATA SANITIZATION (UPDATED FOR RELATED TABLES)
 async function fetchSales() {
     const { data, error } = await window._supabase
         .from('sales')
         .select(`
             *,
-            sale_items (*)
+            profiles (
+                name
+            ),
+            sale_items (
+                *,
+                price_list (
+                    material_name
+                )
+            )
         `)
         .order('created_at', { ascending: false });
 
@@ -28,8 +36,12 @@ async function fetchSales() {
 
         return {
             ...sale,
+            // 🔹 FIX: Map the partner name from the joined profiles table
+            partner: sale.profiles ? sale.profiles.name : 'Unknown',
+            
             items: items.map(i => ({
-                name: i.material_name,
+                // 🔹 FIX: Extract the material name from the joined price_list table
+                name: i.price_list ? i.price_list.material_name : 'Unknown Material',
                 weight: Number(i.weight) || 0,
                 rate: Number(i.rate) || 0,
                 subtotal: Number(i.amount) || 0
@@ -72,7 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (currentSearch) {
             filtered = filtered.filter(s =>
-                `${s.id} ${s.partner} ${s.raw_date}`.toLowerCase().includes(currentSearch)
+                `${s.id} ${s.partner} ${s.date}`.toLowerCase().includes(currentSearch)
             );
         }
 
