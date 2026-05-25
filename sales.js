@@ -42,7 +42,9 @@ async function fetchSales() {
             
             partner: sale.profiles ? sale.profiles.name : 'Unknown',
             
+            // Inside your sales.js fetchSales() data mapping transformation loop:
             items: items.map(i => ({
+                material_id: i.material_id, // 🔹 ADD THIS LINE so edit mode can read it!
                 name: i.price_list ? i.price_list.material_name : 'Unknown Material',
                 weight: Number(i.weight) || 0,
                 rate: Number(i.rate) || 0,
