@@ -129,10 +129,10 @@ function addContactToTable(contact) {
                 <span>${contact.name}</span>
             </div>
         </td>
-        <td style="width: 130px; min-width: 130px;">${contact.id}</td>
-        <td style="width: 150px; min-width: 150px;">${contact.displayCategory}</td>
+        <td style="width: 100px; min-width: 130px;">${contact.id}</td>
+        <td style="width: 130px; min-width: 150px;">${contact.displayCategory}</td>
         <td style="width: 250px; min-width: 250px;">${contact.address}</td>
-        <td style="width: 160px; min-width: 160px;">${contact.contactNumber}</td>
+        <td style="width: 140px; min-width: 160px;">${contact.contactNumber}</td>
         <td style="width: 100px; min-width: 100px;">
             <div class="action-buttons" style="justify-content: center;">
                 <button class="action-btn edit-btn" title="Edit" ${contact.isTemporary ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>
