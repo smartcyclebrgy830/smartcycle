@@ -28,10 +28,18 @@ function refreshIcons() {
 
 // 2. DATA MANAGEMENT (FETCH)
 window.fetchAllCollections = async function() {
-    // AFTER (Fixed Multi-column Sort)
+    // FIXED: Added a join to fetch material_name from the price_list table via material_id
     const { data, error } = await _supabase
         .from('collections')
-        .select(`*, collection_items (*)`)
+        .select(`
+            *, 
+            collection_items (
+                *,
+                price_list (
+                    material_name
+                )
+            )
+        `)
         .order('date_collected', { ascending: false })
         .order('id', { ascending: false }); // Ensures incremental IDs sort cleanly within the same date
 
@@ -41,12 +49,17 @@ window.fetchAllCollections = async function() {
     }
 
     window.collections = data.map(col => {
-        const mappedItems = (col.collection_items || []).map(item => ({
-            material: item.material_name || 'Unknown',
-            rate: parseFloat(item.rate) || 0,
-            weight: parseFloat(item.weight) || 0,
-            subtotal: parseFloat(item.subtotal) || 0
-        }));
+        const mappedItems = (col.collection_items || []).map(item => {
+            // FIXED: Extract the nested material name safely from the joined price_list relation
+            const materialName = item.price_list?.material_name || 'Unknown';
+            
+            return {
+                material: materialName,
+                rate: parseFloat(item.rate) || 0,
+                weight: parseFloat(item.weight) || 0,
+                subtotal: parseFloat(item.subtotal) || 0
+            };
+        });
 
         return {
             id: col.id,
