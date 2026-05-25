@@ -1,16 +1,15 @@
 // CONFIGURATION
-// Consider moving these credentials to a separate config.js or an environment file
 const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
 window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// GLOBAL APP STATE
+// 🟩 FIXED GLOBAL APP STATE (Explicitly shared with the window context)
 window.collections = [];
-let currentItems = [];
-let currentCategory = 'School';
+window.currentItems = [];       // Changed from let to window.
+window.currentCategory = 'School'; // Changed from let to window.
+window.editingIndex = -1;       // Changed from let to window.
 let currentPage = 1;
 let currentFilter = 'all';
-let editingIndex = -1;
 const itemsPerPage = 10;
 
 // 1. INITIALIZATION
