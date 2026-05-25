@@ -28,7 +28,7 @@ function refreshIcons() {
 
 // 2. DATA MANAGEMENT (FETCH)
 window.fetchAllCollections = async function() {
-    // FIXED: Added a join to fetch material_name from the price_list table via material_id
+    // Fetch material_name from the price_list table via the foreign key relation
     const { data, error } = await _supabase
         .from('collections')
         .select(`
@@ -41,7 +41,7 @@ window.fetchAllCollections = async function() {
             )
         `)
         .order('date_collected', { ascending: false })
-        .order('id', { ascending: false }); // Ensures incremental IDs sort cleanly within the same date
+        .order('id', { ascending: false }); 
 
     if (error) {
         console.error("Error fetching data:", error.message);
@@ -50,7 +50,7 @@ window.fetchAllCollections = async function() {
 
     window.collections = data.map(col => {
         const mappedItems = (col.collection_items || []).map(item => {
-            // FIXED: Extract the nested material name safely from the joined price_list relation
+            // Match the exact nested relation properties returned from your Supabase schema join
             const materialName = item.price_list?.material_name || 'Unknown';
             
             return {
@@ -369,9 +369,10 @@ async function saveCollection() {
 
             // 3. Map and Insert updated array back into sub-table
             if (currentItems.length > 0) {
+                // Map your objects to explicitly match your database column parameters
                 const itemsToInsert = currentItems.map(item => ({
                     collection_id: collectionId,
-                    material_name: item.material,
+                    material_id: item.materialId, // Ensure you store and pass the numeric ID from your selector here!
                     rate: item.rate,
                     weight: item.weight,
                     subtotal: item.subtotal
