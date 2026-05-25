@@ -359,22 +359,37 @@ window.submitCollection = async function() {
             const normalizedCustomer = customer.trim().toLowerCase();
             
             
-            // 🔹 Check existing profile
+// 🔹 Check existing profile
             let profileId = null;
             
+            // Match cleanly using an case-insensitive check against the trimmed input
             const { data: existingProfile } = await _supabase
                 .from('profiles')
-                .select('id')
-                .ilike('name', normalizedCustomer)
+                .select('id, address, contact_num')
+                .ilike('name', customer)
                 .maybeSingle();
             
             if (existingProfile) {
                 profileId = existingProfile.id;
+
+                // 💡 OPTIONAL ENHANCEMENT: Update fields if they were previously 'N/A' or empty
+                if (existingProfile.address === 'N/A' || !existingProfile.contact_num || existingProfile.contact_num === 'N/A') {
+                    await _supabase
+                        .from('profiles')
+                        .update({
+                            name: customer, // Save the nicely formatted display name (e.g., "Nikolas")
+                            address: address || existingProfile.address,
+                            contact_num: contact || existingProfile.contact_num,
+                            category: currentCategory
+                        })
+                        .eq('id', profileId);
+                }
             } else {
+                // Create a beautiful, filled-out profile row if it doesn't exist yet
                 const { data: newProfile, error: profileError } = await _supabase
                     .from('profiles')
                     .insert([{
-                        name: normalizedCustomer,
+                        name: customer,                  // Store the capitalized version directly for your UI layout
                         category: currentCategory,
                         address: address || 'N/A',
                         contact_num: contact || 'N/A',
