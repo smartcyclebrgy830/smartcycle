@@ -328,7 +328,9 @@ const JunkshopExport = ((supabaseClient) => {
             wx = ML + colMat;
             doc.setFont('times', 'normal'); doc.setFontSize(6.5);
 
-            for (let i = 0; i < 28; i++) {
+            const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            for (let i = 0; i < totalDaysInMonth; i++) {
                 box(wx, ry, dayW, rh3);
                 const dayWeight = item.dailyWeights[i];
 
