@@ -1,30 +1,12 @@
 // Pass the supabase client directly into the IIFE parameter
 const JunkshopExport = ((supabaseClient) => {
 
-    const RECYCLABLE_MATERIALS = [
-        'Old Newspaper',
-        'White Paper',
-        'Assorted',
-        'Paper/Magazines',
-        'Cartons',
-        'PET Bottles',
-        'Plastics Containers',
-        'Bottles (Glass)',
-        'Aluminum',
-        'Copper',
-        'Tin',
-        'Steel',
-        'Others',
+    // Fallback static array used only if database connections completely fail
+    const DEFAULT_MATERIALS = [
+        'Old Newspaper', 'White Paper', 'Assorted', 'Paper/Magazines',
+        'Cartons', 'PET Bottles', 'Plastics Containers', 'Bottles (Glass)',
+        'Aluminum', 'Copper', 'Tin', 'Steel', 'Others'
     ];
-
-    // Case-insulated mapper to target official form category headers
-    const MATERIAL_MAPPING = {
-        'plastic': 'Plastics Containers',
-        'pet assorted': 'PET Bottles',
-        'bakal': 'Steel',
-        'paper assorted': 'Paper/Magazines',
-        'yero': 'Tin'
-    };
 
     function parseCollectionDate(raw) {
         if (!raw) return null;
@@ -33,31 +15,55 @@ const JunkshopExport = ((supabaseClient) => {
     }
 
     /**
-     * Fetches collections and items directly from Supabase for the targeted month and year.
+     * Fetches materials dynamically from the price_list table, then pairs collections and items.
      */
     async function aggregateSupabaseData(month, year) {
-        // Fallback safely if client initialization was skipped
         const db = supabaseClient || window.supabase;
         
+        let materialsList = [...DEFAULT_MATERIALS];
         const result = {};
-        RECYCLABLE_MATERIALS.forEach(m => {
-            result[m] = {
-                dailyWeights: Array(31).fill(0),
-                total: 0
-            };
-        });
 
         if (!db || typeof db.from !== 'function') {
             console.error("Supabase client instance is missing or misconfigured! Dropping to local storage fallback.");
-            return aggregateFallbackLocalData(month, year);
+            return aggregateFallbackLocalData(month, year, materialsList);
         }
 
-        const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-        const lastDay = new Date(year, month + 1, 0).getDate();
-        const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-
         try {
-            // 1. Fetch collections bounded within the month range
+            // 1. Fetch live active materials dynamically from your price_list table
+            const { data: priceList, error: priceError } = await db
+                .from('price_list')
+                .select('id, material_name')
+                .eq('status', 'Active'); // Only grab active items
+
+            if (priceError) throw priceError;
+
+            const materialMap = {};
+            if (priceList && priceList.length > 0) {
+                // Override our materials array with exactly what's on your database list
+                materialsList = priceList.map(p => p.material_name);
+                if (!materialsList.includes('Others')) {
+                    materialsList.push('Others'); // Keep an "Others" bucket for safety
+                }
+                
+                priceList.forEach(p => {
+                    materialMap[p.id] = p.material_name;
+                });
+            }
+
+            // Initialize results grid based strictly on your database items
+            materialsList.forEach(m => {
+                result[m] = {
+                    dailyWeights: Array(31).fill(0),
+                    total: 0
+                };
+            });
+
+            // 2. Setup date boundaries
+            const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+            const lastDay = new Date(year, month + 1, 0).getDate();
+            const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+            // 3. Fetch collections bounded within the month range
             const { data: collections, error } = await db
                 .from('collections')
                 .select(`
@@ -73,47 +79,33 @@ const JunkshopExport = ((supabaseClient) => {
 
             if (error) throw error;
 
-            // 2. Fetch price_list to decode material_ids
-            const { data: priceList, error: priceError } = await db
-                .from('price_list')
-                .select('id, material_name');
-
-            if (priceError) throw priceError;
-
-            const materialMap = {};
-            priceList.forEach(p => {
-                materialMap[p.id] = p.material_name;
-            });
-
-            // 3. Populate matrix grid
+            // 4. Populate matrix grid
             if (collections) {
                 collections.forEach(col => {
                     const d = parseCollectionDate(col.date_collected);
                     if (!d) return;
 
                     const dayOfMonth = d.getDate();
-                    // Maps 1-28 cleanly. Days 29, 30, 31 blend gracefully into index 27 (Day 28 slot)
                     const layoutIndex = dayOfMonth - 1;
 
                     (col.collection_items || []).forEach(item => {
-                        const dbName = materialMap[item.material_id] || 'Others';
-                        const normalizedDbName = dbName.trim().toLowerCase();
-                        
-                        // Check explicit mappings first, then look for loose matches in standard array
-                        let standardFormName = MATERIAL_MAPPING[normalizedDbName] || 
-                            RECYCLABLE_MATERIALS.find(m => m.toLowerCase() === normalizedDbName) || 
-                            'Others';
-
+                        // Look up the exact name from database map, default to 'Others'
+                        const matchedMaterialName = materialMap[item.material_id] || 'Others';
                         const itemWeight = Number(item.weight) || 0;
                         
-                        result[standardFormName].dailyWeights[layoutIndex] += itemWeight;
-                        result[standardFormName].total += itemWeight;
+                        if (result[matchedMaterialName]) {
+                            result[matchedMaterialName].dailyWeights[layoutIndex] += itemWeight;
+                            result[matchedMaterialName].total += itemWeight;
+                        } else {
+                            result['Others'].dailyWeights[layoutIndex] += itemWeight;
+                            result['Others'].total += itemWeight;
+                        }
                     });
                 });
             }
         } catch (err) {
             console.error("Error pulling data from Supabase, looking at local cache fallback:", err);
-            return aggregateFallbackLocalData(month, year);
+            return aggregateFallbackLocalData(month, year, DEFAULT_MATERIALS);
         }
 
         // Clean rounding parameters
@@ -122,30 +114,30 @@ const JunkshopExport = ((supabaseClient) => {
             r.dailyWeights = r.dailyWeights.map(w => Math.round(w * 100) / 100);
         });
 
-        return result;
+        return { dataGrid: result, materialsList };
     }
 
-    function aggregateFallbackLocalData(month, year) {
+    function aggregateFallbackLocalData(month, year, materialsList) {
         const raw = JSON.parse(localStorage.getItem('smartCycleCollections') || '[]');
         const result = {};
-        RECYCLABLE_MATERIALS.forEach(m => {
-            result[m] = { dailyWeights: Array(28).fill(0), total: 0 };
+        materialsList.forEach(m => {
+            result[m] = { dailyWeights: Array(31).fill(0), total: 0 };
         });
         
         raw.forEach(col => {
             const d = parseCollectionDate(col.date);
             if (!d || d.getMonth() !== month || d.getFullYear() !== year) return;
-            const dayIdx = Math.min(28, d.getDate()) - 1;
+            const dayIdx = d.getDate() - 1;
             
             (col.items || []).forEach(item => {
                 const mat = item.material;
-                const known = RECYCLABLE_MATERIALS.find(m => m.toLowerCase() === mat.toLowerCase()) || 'Others';
+                const known = materialsList.find(m => m.toLowerCase() === mat.toLowerCase()) || 'Others';
                 const wt = Number(item.weight) || 0;
                 result[known].dailyWeights[dayIdx] += wt;
                 result[known].total += wt;
             });
         });
-        return result;
+        return { dataGrid: result, materialsList };
     }
 
     const MONTHS = [
@@ -164,7 +156,8 @@ const JunkshopExport = ((supabaseClient) => {
         const month      = opts.month ?? now.getMonth();
         const year       = opts.year  ?? now.getFullYear();
         
-        const data       = await aggregateSupabaseData(month, year);
+        // Unpack dynamic dataset properties from the returned payload
+        const { dataGrid, materialsList } = await aggregateSupabaseData(month, year);
         const monthLabel = `${MONTHS[month]} ${year}`;
 
         const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
@@ -272,7 +265,7 @@ const JunkshopExport = ((supabaseClient) => {
         const dayW     = colWeek / dayCount;
 
         const rh0 = 16, rh1 = 14, rh2 = 11, rh3 = 13;  
-        const nMat = RECYCLABLE_MATERIALS.length;
+        const nMat = materialsList.length;
         const tableH = rh0 + rh1 + rh2 + (nMat + 2) * rh3;  
         const tableTop = y;
 
@@ -318,8 +311,8 @@ const JunkshopExport = ((supabaseClient) => {
         }
         ry += rh2;
 
-        RECYCLABLE_MATERIALS.forEach(mat => {
-            const item = data[mat];
+        materialsList.forEach(mat => {
+            const item = dataGrid[mat];
 
             box(ML, ry, colMat, rh3);
             doc.setFont('times', 'normal'); doc.setFontSize(8);
@@ -327,12 +320,17 @@ const JunkshopExport = ((supabaseClient) => {
 
             wx = ML + colMat;
             doc.setFont('times', 'normal'); doc.setFontSize(6.5);
-
-            const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
             
-            for (let i = 0; i < totalDaysInMonth; i++) {
+            // Render exactly 28 layout cells. Combine any overflow days into the 28th slot.
+            for (let i = 0; i < 28; i++) {
                 box(wx, ry, dayW, rh3);
-                const dayWeight = item.dailyWeights[i];
+                let dayWeight = item.dailyWeights[i] || 0;
+
+                if (i === 27) {
+                    dayWeight += (item.dailyWeights[28] || 0) + 
+                                 (item.dailyWeights[29] || 0) + 
+                                 (item.dailyWeights[30] || 0);
+                }
 
                 if (dayWeight > 0) {
                     doc.text(dayWeight.toFixed(1), wx + dayW / 2, ry + rh3 - 4, { align: 'center' });
@@ -354,10 +352,14 @@ const JunkshopExport = ((supabaseClient) => {
             ry += rh3;
         });
 
+        // Bottom monitoring metadata empty rows
         for (let i = 0; i < 2; i++) {
             box(ML, ry, colMat, rh3);
             wx = ML + colMat;
-            for (let d = 0; d < 4 * dayCount; d++) { box(wx, ry, dayW, rh3); wx += dayW; }
+            for (let d = 0; d < 28; d++) { 
+                box(wx, ry, dayW, rh3); 
+                wx += dayW; 
+            }
             box(totX, ry, colTotal, rh3);
             ry += rh3;
         }
@@ -400,7 +402,6 @@ const JunkshopExport = ((supabaseClient) => {
         doc.save(`JunkshopMonitoringForm_${MONTHS[month]}${year}.pdf`);
     }
 
-    return { exportPDF, aggregateData: aggregateSupabaseData, RECYCLABLE_MATERIALS };
+    return { exportPDF, aggregateData: aggregateSupabaseData, DEFAULT_MATERIALS };
 
-// Send your global instance inside the executing wrapper parameter
 })(window.supabase);
