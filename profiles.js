@@ -147,7 +147,7 @@ function addContactToTable(contact) {
     row.addEventListener('click', function(e) {
         if(e.target.closest('.action-buttons')) return;
         window.location.href = `profile_transaction.html?id=${contact.dbId}`;
-    }
+    });
 
     if (!contact.isTemporary) {
         row.querySelector('.delete-btn').addEventListener('click', async function() {
