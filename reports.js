@@ -11,9 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // FIX: Variable renamed to 'supabase' to match lines downstream
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // -------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     // POPOVER HELPERS
-    // -------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     const allPairs = [];
 
     function openPopover(btn, popover) {
