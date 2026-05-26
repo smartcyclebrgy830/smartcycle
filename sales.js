@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             trSub.id = rowId;
             trSub.className = 'sub-row-container';
             trSub.innerHTML = `
-                <td colspan="8" style="padding:0 !important; border:none;">
+                <td colspan="8" style="border:none;">
                     <div class="expanded-content">
                         <table class="expanded-table">
                             <thead>
