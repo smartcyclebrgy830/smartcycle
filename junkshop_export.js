@@ -16,46 +16,131 @@ const JunkshopExport = (() => {
         'Others',
     ];
 
+    // Maps your database material names to the official form category headers
+    const MATERIAL_MAPPING = {
+        'Plastic': 'Plastics Containers',
+        'PET Assorted': 'PET Bottles',
+        'Bakal': 'Steel',
+        'Paper Assorted': 'Paper/Magazines',
+        'Yero': 'Tin' // Adjust maps if 'Yero' fits better under 'Others' or 'Steel' based on your localized specs
+    };
+
     function parseCollectionDate(raw) {
         if (!raw) return null;
-        const slashMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-        if (slashMatch) {
-            let [, m, d, y] = slashMatch;
-            if (y.length === 2) y = '20' + y;
-            return new Date(+y, +m - 1, +d);
-        }
         const d = new Date(raw);
         return isNaN(d) ? null : d;
     }
 
-    function weekOfMonth(date) {
-        return Math.min(4, Math.ceil(date.getDate() / 7));
+    /**
+     * Fetches collections and items directly from Supabase for the targeted month and year,
+     * then aggregates them directly by the calendar day (1 to 28+).
+     */
+    async function aggregateSupabaseData(month, year) {
+        // Initialize blank matrix rows for all 28 layout points
+        const result = {};
+        RECYCLABLE_MATERIALS.forEach(m => {
+            result[m] = {
+                dailyWeights: Array(28).fill(0),
+                total: 0
+            };
+        });
+
+        // 1. Define date bounds for the selected month (Months are 0-indexed in JS, format: YYYY-MM-DD)
+        const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+        const lastDay = new Date(year, month + 1, 0).getDate();
+        const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+        try {
+            // 2. Fetch parent collections and join their respective child line items
+            const { data: collections, error } = await supabase
+                .from('collections')
+                .select(`
+                    id,
+                    date_collected,
+                    collection_items (
+                        weight,
+                        material_id
+                    )
+                `)
+                .gte('date_collected', startDate)
+                .lte('date_collected', endDate);
+
+            if (error) throw error;
+
+            // 3. Fetch price_list references to translate material_ids to human strings
+            const { data: priceList, error: priceError } = await supabase
+                .from('price_list')
+                .select('id, material_name');
+
+            if (priceError) throw priceError;
+
+            // Create a quick-lookup map for item ids
+            const materialMap = {};
+            priceList.forEach(p => {
+                materialMap[p.id] = p.material_name;
+            });
+
+            // 4. Process each record and calculate its position in the 28-day grid
+            if (collections) {
+                collections.forEach(col => {
+                    const d = parseCollectionDate(col.date_collected);
+                    if (!d) return;
+
+                    const dayOfMonth = d.getDate(); // 1 to 31
+                    
+                    // The form layout shows exactly 4 weeks × 7 days = 28 slot positions.
+                    // If a collection happens on day 29, 30, or 31, we accumulate it into day 28 
+                    // or handle it gracefully to prevent array overflow errors.
+                    const layoutIndex = Math.min(28, dayOfMonth) - 1;
+
+                    (col.collection_items || []).forEach(item => {
+                        const dbName = materialMap[item.material_id] || 'Others';
+                        
+                        // Map the database string profile to the specific standard form row header
+                        const standardFormName = MATERIAL_MAPPING[dbName] || 
+                            RECYCLABLE_MATERIALS.find(m => m.toLowerCase() === dbName.toLowerCase()) || 
+                            'Others';
+
+                        const itemWeight = Number(item.weight) || 0;
+                        
+                        result[standardFormName].dailyWeights[layoutIndex] += itemWeight;
+                        result[standardFormName].total += itemWeight;
+                    });
+                });
+            }
+        } catch (err) {
+            console.error("Error pulling data from Supabase, looking at local cache fallback:", err);
+            return aggregateFallbackLocalData(month, year);
+        }
+
+        // Round numeric figures cleanly
+        Object.values(result).forEach(r => {
+            r.total = Math.round(r.total * 100) / 100;
+            r.dailyWeights = r.dailyWeights.map(w => Math.round(w * 100) / 100);
+        });
+
+        return result;
     }
 
-    function aggregateData(month, year) {
+    // Fallback local layout matrix parsing logic if Supabase drops offline
+    function aggregateFallbackLocalData(month, year) {
         const raw = JSON.parse(localStorage.getItem('smartCycleCollections') || '[]');
         const result = {};
         RECYCLABLE_MATERIALS.forEach(m => {
-            result[m] = { w1: 0, w2: 0, w3: 0, w4: 0, total: 0 };
+            result[m] = { dailyWeights: Array(28).fill(0), total: 0 };
         });
+        
         raw.forEach(col => {
             const d = parseCollectionDate(col.date);
-            if (!d) return;
-            if (d.getMonth() !== month || d.getFullYear() !== year) return;
-            const wk  = weekOfMonth(d);
-            const key = `w${wk}`;
+            if (!d || d.getMonth() !== month || d.getFullYear() !== year) return;
+            const dayIdx = Math.min(28, d.getDate()) - 1;
+            
             (col.items || []).forEach(item => {
-                const mat   = item.material;
-                const known = RECYCLABLE_MATERIALS.find(
-                    m => m.toLowerCase() === mat.toLowerCase()
-                ) || 'Others';
-                result[known][key]  += Number(item.weight) || 0;
-                result[known].total += Number(item.weight) || 0;
-            });
-        });
-        Object.values(result).forEach(r => {
-            ['w1', 'w2', 'w3', 'w4', 'total'].forEach(k => {
-                r[k] = Math.round(r[k] * 100) / 100;
+                const mat = item.material;
+                const known = RECYCLABLE_MATERIALS.find(m => m.toLowerCase() === mat.toLowerCase()) || 'Others';
+                const wt = Number(item.weight) || 0;
+                result[known].dailyWeights[dayIdx] += wt;
+                result[known].total += wt;
             });
         });
         return result;
@@ -66,61 +151,7 @@ const JunkshopExport = (() => {
         'July','August','September','October','November','December'
     ];
 
-
-    // CSV EXPORT
-
-    function exportCSV(opts = {}) {
-        const now   = new Date();
-        const month = opts.month ?? now.getMonth();
-        const year  = opts.year  ?? now.getFullYear();
-        const data  = aggregateData(month, year);
-        const monthLabel = `${MONTHS[month]} ${year}`;
-
-        const rows = [
-            ['JUNKSHOP MONITORING FORM - Data Sheet'],
-            [`Month: ${monthLabel}`],
-            [],
-            ['Junkshop Name:', opts.junkshopName || ''],
-            ['Address:', opts.address || ''],
-            ['Barangay:', opts.barangay || '', 'Zone:', opts.zone || '', 'District:', opts.district || ''],
-            ['Owner:', opts.owner || ''],
-            ['Mobile No.:', opts.mobile || '', 'Landline:', opts.landline || ''],
-            ['Date Established:', opts.dateEstablished || '', 'Floor Area:', opts.floorArea || '', 'No. of Aide:', opts.noOfAide || ''],
-            [],
-            ['RECYCLABLE MATERIALS (Kilos / Day)', 'WEEK 1', '', 'WEEK 2', '', 'WEEK 3', '', 'WEEK 4', '', 'Monthly Total'],
-            ['RECYCLABLE', 'D1','D2','D3','D4','D5','D6','D7', 'D1','D2','D3','D4','D5','D6','D7',
-                           'D1','D2','D3','D4','D5','D6','D7', 'D1','D2','D3','D4','D5','D6','D7', 'TOTAL'],
-        ];
-        RECYCLABLE_MATERIALS.forEach(mat => {
-            const r = data[mat];
-            rows.push([mat, '', '', '', '', '', '', r.w1||'',
-                            '', '', '', '', '', '', r.w2||'',
-                            '', '', '', '', '', '', r.w3||'',
-                            '', '', '', '', '', '', r.w4||'', r.total||'']);
-        });
-        rows.push([]);
-        rows.push(['Certified by:', '', '', '', '', 'Monitored by:']);
-        rows.push(['Junkshop Owner/In-Charge', '', 'Date', '', '', 'DPS - Monitoring', '', 'Date']);
-
-        const csv = rows.map(r =>
-            r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
-        ).join('\r\n');
-
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href     = url;
-        a.download = `JunkshopMonitoringForm_${MONTHS[month]}${year}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-
     // PDF EXPORT
-
- // PDF EXPORT
-
     async function exportPDF(opts = {}) {
         const jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
         if (!jsPDF) {
@@ -131,19 +162,19 @@ const JunkshopExport = (() => {
         const now        = new Date();
         const month      = opts.month ?? now.getMonth();
         const year       = opts.year  ?? now.getFullYear();
-        const data       = aggregateData(month, year);
+        
+        // Await the live database payload aggregation asynchronously
+        const data       = await aggregateSupabaseData(month, year);
         const monthLabel = `${MONTHS[month]} ${year}`;
 
-        // A4 landscape
+        // A4 landscape layout settings
         const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-        const W   = doc.internal.pageSize.getWidth();   // 841.89
-        const H   = doc.internal.pageSize.getHeight();  // 595.28
+        const W   = doc.internal.pageSize.getWidth();   
+        const H   = doc.internal.pageSize.getHeight();  
         const ML  = 30, MR = 30;
-        const usableW = W - ML - MR;  // ~781.89
+        const usableW = W - ML - MR;  
 
         let y = 18;
-
-        const sf = (fam, sty, sz) => { doc.setFont(fam, sty); doc.setFontSize(sz); doc.setTextColor(0,0,0); };
 
         const ctext = (txt, yy, sz, sty = 'normal', col = [0,0,0]) => {
             doc.setFont('times', sty); doc.setFontSize(sz); doc.setTextColor(...col);
@@ -163,7 +194,7 @@ const JunkshopExport = (() => {
             doc.setDrawColor(0,0,0); doc.setLineWidth(0.4); doc.rect(x, yy, w, h, 'S');
         };
 
-        // Logo
+        // Header Logos setup
         const loadImage = async (path) => {
             try {
                 const resp = await fetch(path);
@@ -178,9 +209,8 @@ const JunkshopExport = (() => {
             } catch { return null; }
         };
 
-        // HEADER
-        const logoW   = 54, logoH = 54;
-        const logoY   = y + 10;
+        const logoW = 54, logoH = 54;
+        const logoY = y + 10;
         const centerX = W / 2;
 
         const leftLogoData  = await loadImage('photo/left_logo.jpg');
@@ -194,26 +224,21 @@ const JunkshopExport = (() => {
         ctext('Manila, Philippines',           y + 57, 9.5, 'normal');
 
         y += 70;
-
-        // Double rule
         hline(ML, W - MR, y,     2.5);
         hline(ML, W - MR, y + 4, 0.8);
         y += 14;
 
-        // FORM TITLE
         ctext('JUNKSHOP MONITORING FORM', y + 12, 13, 'bold');
         y += 20;
         ctext('Data Sheet', y + 2, 10.5, 'normal');
         y += 14;
 
-        // Month with underline
         ltext('Month: ', ML, y, 10, 'normal');
         const mw = doc.getTextWidth('Month: ');
         hline(ML + mw, ML + mw + 140, y + 1, 0.6);
         if (monthLabel) ltext(monthLabel, ML + mw + 2, y, 10, 'normal');
         y += 18;
 
-        // INFO FIELDS
         const field = (label, value, x, yy, ulLen) => {
             ltext(label, x, yy, 9, 'bold');
             const lw = doc.getTextWidth(label);
@@ -221,7 +246,6 @@ const JunkshopExport = (() => {
             hline(x + lw + 1, x + lw + 1 + ulLen, yy + 1.5, 0.5);
         };
 
-        // Row 1: Junkshop Name | Address | Brgy | Zone | District
         field('Junkshop Name: ', opts.junkshopName || '', ML,       y, 130);
         field('Address: ',       opts.address      || '', ML + 240, y, 170);
         field('Brgy: ',    opts.barangay || '', ML + 490, y, 55);
@@ -229,7 +253,6 @@ const JunkshopExport = (() => {
         field('District: ', opts.district || '', ML + 648, y, 60);
         y += 14;
 
-        // Row 2: Owner | Mobile No. | Landline | Date Established | Floor Area | No. of Aide
         field('Owner: ',            opts.owner          || '', ML,       y, 110);
         field('Mobile No. : ',      opts.mobile         || '', ML + 207, y, 80);
         field('Landline: ',         opts.landline        || '', ML + 350, y, 75);
@@ -238,12 +261,10 @@ const JunkshopExport = (() => {
         field('No. of Aide: ',      opts.noOfAide        || '', ML + 694, y, 40);
         y += 12;
 
-        // Bold double underline
         hline(ML, W - MR, y,     2);
         hline(ML, W - MR, y + 4, 0.6);
         y += 12;
 
-        // TABLE METRICS
         const colMat   = 88;
         const colTotal = 44;
         const colWeeks = usableW - colMat - colTotal;
@@ -251,34 +272,27 @@ const JunkshopExport = (() => {
         const dayCount = 7;
         const dayW     = colWeek / dayCount;
 
-        const rh0 = 16
-        const rh1 = 14; 
-        const rh2 = 11;
-        const rh3 = 13;  
+        const rh0 = 16, rh1 = 14, rh2 = 11, rh3 = 13;  
         const nMat = RECYCLABLE_MATERIALS.length;
         const tableH = rh0 + rh1 + rh2 + (nMat + 2) * rh3;  
         const tableTop = y;
 
-        // Outer bold border
         doc.setDrawColor(0,0,0);
         doc.setLineWidth(0.8);
         doc.rect(ML, tableTop, usableW, tableH, 'S');
 
-        // Title row
         let ry = tableTop;
         hline(ML, ML + usableW, ry + rh0, 0.6);
-        doc.setFont('times', 'bold'); doc.setFontSize(9); doc.setTextColor(0,0,0);
+        doc.setFont('times', 'bold'); doc.setFontSize(9);
         doc.text('COLLECTED RECYCLABLE MATERIALS (Kilos / Day)', W / 2, ry + rh0 - 4, { align: 'center' });
         ry += rh0;
 
-        // Header row 1
         box(ML, ry, colMat, rh1 + rh2);
         const totX = ML + colMat + colWeeks;
         box(totX, ry, colTotal, rh1 + rh2);
 
-        // WEEK 1-4
         let wx = ML + colMat;
-        doc.setFont('times', 'bold'); doc.setFontSize(8.5); doc.setTextColor(0,0,0);
+        doc.setFont('times', 'bold'); doc.setFontSize(8.5);
         for (let w = 1; w <= 4; w++) {
             box(wx, ry, colWeek, rh1);
             doc.text(`WEEK ${w}`, wx + colWeek / 2, ry + rh1 - 4, { align: 'center' });
@@ -294,9 +308,8 @@ const JunkshopExport = (() => {
 
         ry += rh1;
 
-        // Header row 2: D1..D7
         wx = ML + colMat;
-        doc.setFont('times', 'bold'); doc.setFontSize(6.5); doc.setTextColor(0,0,0);
+        doc.setFont('times', 'bold'); doc.setFontSize(6.5);
         for (let w = 0; w < 4; w++) {
             for (let d = 1; d <= dayCount; d++) {
                 box(wx, ry, dayW, rh2);
@@ -306,47 +319,33 @@ const JunkshopExport = (() => {
         }
         ry += rh2;
 
-        // =========================================================
-        // DATA ROW PROCESSING WITH MATRIX MAPPING
-        // =========================================================
+        // Render rows using fetched matrix values
         RECYCLABLE_MATERIALS.forEach(mat => {
-            // Check if our options payload passed reportData matrix, otherwise fall back to aggregated data
-            const item = (opts.reportData && opts.reportData[mat]) ? opts.reportData[mat] : null;
-            const fallbackItem = data[mat];
+            const item = data[mat];
 
-            // Material Label Column
             box(ML, ry, colMat, rh3);
-            doc.setFont('times', 'normal'); doc.setFontSize(8); doc.setTextColor(0,0,0);
+            doc.setFont('times', 'normal'); doc.setFontSize(8);
             doc.text(mat, ML + 3, ry + rh3 - 4);
 
-            // Iterate across all 28 day cell points sequentially
             wx = ML + colMat;
             doc.setFont('times', 'normal'); doc.setFontSize(6.5);
 
             for (let i = 0; i < 28; i++) {
                 box(wx, ry, dayW, rh3);
-                
-                let dayWeight = 0;
-                if (item && item.dailyWeights) {
-                    dayWeight = Number(item.dailyWeights[i]) || 0;
-                }
+                const dayWeight = item.dailyWeights[i];
 
-                // Render value if it exists
                 if (dayWeight > 0) {
                     doc.text(dayWeight.toFixed(1), wx + dayW / 2, ry + rh3 - 4, { align: 'center' });
                 } else {
-                    // Clean look for blank days matching official forms
                     doc.text('-', wx + dayW / 2, ry + rh3 - 4, { align: 'center' });
                 }
                 wx += dayW;
             }
 
-            // Monthly Total Column
             box(totX, ry, colTotal, rh3);
-            const totalValue = item ? item.total : (fallbackItem ? fallbackItem.total : 0);
-            if (totalValue > 0) {
+            if (item.total > 0) {
                 doc.setFont('times', 'bold'); doc.setFontSize(8);
-                doc.text(totalValue.toFixed(1), totX + colTotal / 2, ry + rh3 - 4, { align: 'center' });
+                doc.text(item.total.toFixed(1), totX + colTotal / 2, ry + rh3 - 4, { align: 'center' });
             } else {
                 doc.setFont('times', 'normal'); doc.setFontSize(8);
                 doc.text('-', totX + colTotal / 2, ry + rh3 - 4, { align: 'center' });
@@ -355,7 +354,6 @@ const JunkshopExport = (() => {
             ry += rh3;
         });
 
-        // Two blank rows at bottom for physical/manual logs
         for (let i = 0; i < 2; i++) {
             box(ML, ry, colMat, rh3);
             wx = ML + colMat;
@@ -366,13 +364,12 @@ const JunkshopExport = (() => {
 
         y = ry + 16;
 
-        // SIGNATURES
         ltext('Certified by:', ML, y, 9, 'bold');
         ltext('Monitored by:', W / 2 + 8, y, 9, 'bold');
         y += 28;
 
         const sigL = 175, dateL = 75;
-        hline(ML,         ML + sigL,                  y, 0.8);
+        hline(ML,          ML + sigL,                  y, 0.8);
         hline(ML + sigL + 14, ML + sigL + 14 + dateL, y, 0.8);
         hline(W / 2 + 8,              W / 2 + 8 + sigL,                  y, 0.8);
         hline(W / 2 + 8 + sigL + 14,  W / 2 + 8 + sigL + 14 + dateL,    y, 0.8);
@@ -388,8 +385,6 @@ const JunkshopExport = (() => {
         ltext('(Signature over printed name)', W / 2 + 8, y, 7.5, 'normal');
 
         y += 22;
-
-        // BOTTOM TAGLINE
         hline(ML, W - MR, y,     2.5);
         hline(ML, W - MR, y + 4, 0.8);
         y += 18;
@@ -402,21 +397,9 @@ const JunkshopExport = (() => {
         y += 11;
         ctext('Email: dps.cityofmanila@gmail.com', y, 7.5);
 
-        // SAVE
         doc.save(`JunkshopMonitoringForm_${MONTHS[month]}${year}.pdf`);
     }
 
-    function loadScript(src) {
-        return new Promise((resolve, reject) => {
-            if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
-            const s   = document.createElement('script');
-            s.src     = src;
-            s.onload  = resolve;
-            s.onerror = reject;
-            document.head.appendChild(s);
-        });
-    }
-
-    return { exportPDF, exportCSV, aggregateData, RECYCLABLE_MATERIALS };
+    return { exportPDF, aggregateData: aggregateSupabaseData, RECYCLABLE_MATERIALS };
 
 })();
