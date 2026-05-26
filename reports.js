@@ -106,6 +106,28 @@ document.addEventListener('DOMContentLoaded', () => {
         ]);
     });
 
+    // EXPORT INTERFACE REGISTRATION (Desktop Actions & Dropdown Modules)
+    const exportDropdownBtn = document.getElementById('exportDropdownBtn');
+    const exportDropdown    = document.getElementById('exportDropdown');
+
+    registerPair(exportDropdownBtn, exportDropdown);
+
+    exportDropdownBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        togglePopover(exportDropdownBtn, exportDropdown);
+    });
+
+    document.querySelectorAll('.export-dropdown-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            handleExport(btn.getAttribute('data-format'));
+            closePopover(exportDropdownBtn, exportDropdown);
+        });
+    });
+
+    document.querySelectorAll('.btn-export').forEach(btn => {
+        btn.addEventListener('click', () => handleExport(btn.getAttribute('data-format')));
+    });
+
     // STATE MANAGEMENT FOR FILTERS
     let selectedStart = null;
     let selectedEnd = null;
@@ -232,7 +254,167 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------------------------------------
-    // UI EVENT LISTENERS (Category & Calendar Range Sync)
+    // 4. EXPORT UTILITIES & DYNAMIC MODAL GENERATION
+    // -------------------------------------------------------------------------
+    function handleExport(format) {
+        showExportModal(format);
+    }
+
+    function showExportModal(format) {
+        document.getElementById('exportFormModal')?.remove();
+
+        const now = new Date();
+        const fieldStyle = `border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;color:#0f172a;outline:none;width:100%;box-sizing:border-box;`;
+        const labelStyle = `font-size:12px;font-weight:600;color:#374151;display:flex;flex-direction:column;gap:4px;`;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'exportFormModal';
+        overlay.style.cssText = `
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; font-family: 'Inter', sans-serif;
+        `;
+
+        overlay.innerHTML = `
+            <div style="background:#fff; border-radius:16px; padding:28px 32px; width:460px; max-width:92vw;
+                        box-shadow:0 24px 48px rgba(0,0,0,0.18); position:relative;">
+                <button id="exportModalClose" style="position:absolute;top:14px;right:16px;background:none;
+                    border:none;font-size:20px;cursor:pointer;color:#64748b;line-height:1;">&#10005;</button>
+
+                <h2 style="margin:0 0 4px;font-size:17px;font-weight:700;color:#0f172a;">
+                    Export Junkshop Monitoring Form
+                </h2>
+                <p style="margin:0 0 20px;font-size:13px;color:#64748b;">
+                    Fill in the form details for the <strong>${format}</strong> report.
+                </p>
+
+                <div style="display:grid;gap:10px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <label style="${labelStyle}">
+                            Month
+                            <select id="expMonth" style="${fieldStyle}">
+                                ${['January','February','March','April','May','June',
+                                   'July','August','September','October','November','December']
+                                   .map((m,i)=>`<option value="${i}" ${i===now.getMonth()?'selected':''}>${m}</option>`).join('')}
+                            </select>
+                        </label>
+                        <label style="${labelStyle}">
+                            Year
+                            <input id="expYear" type="number" value="${now.getFullYear()}" min="2000" max="2099" style="${fieldStyle}">
+                        </label>
+                    </div>
+
+                    <label style="${labelStyle}">Junkshop Name
+                        <input id="expJunkshop" type="text" placeholder="e.g. Juan's Junkshop" style="${fieldStyle}">
+                    </label>
+                    <label style="${labelStyle}">Address
+                        <input id="expAddress" type="text" placeholder="Street, City" style="${fieldStyle}">
+                    </label>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                        <label style="${labelStyle}">Barangay
+                            <input id="expBrgy" type="text" style="${fieldStyle}">
+                        </label>
+                        <label style="${labelStyle}">Zone
+                            <input id="expZone" type="text" style="${fieldStyle}">
+                        </label>
+                        <label style="${labelStyle}">District
+                            <input id="expDistrict" type="text" style="${fieldStyle}">
+                        </label>
+                    </div>
+
+                    <label style="${labelStyle}">Owner / In-Charge
+                        <input id="expOwner" type="text" placeholder="Full name" style="${fieldStyle}">
+                    </label>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <label style="${labelStyle}">Mobile No.
+                            <input id="expMobile" type="text" placeholder="09XX-XXX-XXXX" style="${fieldStyle}">
+                        </label>
+                        <label style="${labelStyle}">Landline
+                            <input id="expLandline" type="text" placeholder="(02) XXXX-XXXX" style="${fieldStyle}">
+                        </label>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                        <label style="${labelStyle}">Date Established
+                            <input id="expDateEst" type="text" placeholder="MM/DD/YYYY" style="${fieldStyle}">
+                        </label>
+                        <label style="${labelStyle}">Floor Area (sqm)
+                            <input id="expFloor" type="text" style="${fieldStyle}">
+                        </label>
+                        <label style="${labelStyle}">No. of Aide
+                            <input id="expAide" type="text" style="${fieldStyle}">
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px;">
+                    <button id="exportModalCancel" style="padding:9px 20px;border:1px solid #e5e7eb;
+                        border-radius:8px;background:#fff;font-size:13px;cursor:pointer;color:#374151;
+                        font-weight:500;">Cancel</button>
+                    <button id="exportModalConfirm" style="padding:9px 22px;border:none;border-radius:8px;
+                        background:#46B336;color:#fff;font-size:13px;font-weight:600;cursor:pointer;
+                        display:flex;align-items:center;gap:6px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Export ${format}
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const close = () => overlay.remove();
+        overlay.querySelector('#exportModalClose').addEventListener('click', close);
+        overlay.querySelector('#exportModalCancel').addEventListener('click', close);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+        overlay.querySelector('#exportModalConfirm').addEventListener('click', () => {
+            const opts = {
+                month:           parseInt(overlay.querySelector('#expMonth').value),
+                year:            parseInt(overlay.querySelector('#expYear').value),
+                junkshopName:    overlay.querySelector('#expJunkshop').value.trim(),
+                address:         overlay.querySelector('#expAddress').value.trim(),
+                barangay:        overlay.querySelector('#expBrgy').value.trim(),
+                zone:            overlay.querySelector('#expZone').value.trim(),
+                district:        overlay.querySelector('#expDistrict').value.trim(),
+                owner:           overlay.querySelector('#expOwner').value.trim(),
+                mobile:          overlay.querySelector('#expMobile').value.trim(),
+                landline:        overlay.querySelector('#expLandline').value.trim(),
+                dateEstablished: overlay.querySelector('#expDateEst').value.trim(),
+                floorArea:       overlay.querySelector('#expFloor').value.trim(),
+                noOfAide:        overlay.querySelector('#expAide').value.trim(),
+            };
+
+            close();
+
+            if (format === 'PDF') {
+                if (typeof JunkshopExport !== 'undefined' && JunkshopExport.exportPDF) {
+                    JunkshopExport.exportPDF(opts).catch(err => {
+                        console.error('PDF export error:', err);
+                        alert('PDF export failed. Please try again.');
+                    });
+                } else {
+                    console.error('JunkshopExport handler library is missing.');
+                }
+            } else {
+                if (typeof JunkshopExport !== 'undefined' && JunkshopExport.exportCSV) {
+                    JunkshopExport.exportCSV(opts);
+                } else {
+                    console.error('JunkshopExport handler library is missing.');
+                }
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. UI EVENT LISTENERS (Category & Calendar Range Sync)
     // -------------------------------------------------------------------------
     const allCheckboxes = document.querySelectorAll('.category-popover input[type="checkbox"]');
 
