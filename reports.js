@@ -6,14 +6,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. SUPABASE INITIALIZATION
     // -------------------------------------------------------------------------
     const SUPABASE_URL = "https://nlybbvlhhdjjmqkzjnhx.supabase.co"; 
-    // CRITICAL: Double-check that this is your ANON key, not your Service Role key!
     const SUPABASE_KEY = "sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au"; 
     
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // ------------------------------------------------------------------------
-    // POPOVER HELPERS
-    // ------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // 2. POPOVER HELPERS & LIFECYCLE MANAGEMENT
+    // -------------------------------------------------------------------------
     const allPairs = [];
 
     function openPopover(btn, popover) {
@@ -106,21 +105,24 @@ document.addEventListener('DOMContentLoaded', () => {
         ]);
     });
 
-    // EXPORT INTERFACE REGISTRATION (Desktop Actions & Dropdown Modules)
+    // EXPORT INTERFACE REGISTRATION
     const exportDropdownBtn = document.getElementById('exportDropdownBtn');
     const exportDropdown    = document.getElementById('exportDropdown');
 
-    registerPair(exportDropdownBtn, exportDropdown);
-
-    exportDropdownBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        togglePopover(exportDropdownBtn, exportDropdown);
-    });
+    if (exportDropdownBtn && exportDropdown) {
+        registerPair(exportDropdownBtn, exportDropdown);
+        exportDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            togglePopover(exportDropdownBtn, exportDropdown);
+        });
+    }
 
     document.querySelectorAll('.export-dropdown-item').forEach(btn => {
         btn.addEventListener('click', () => {
             handleExport(btn.getAttribute('data-format'));
-            closePopover(exportDropdownBtn, exportDropdown);
+            if (exportDropdownBtn && exportDropdown) {
+                closePopover(exportDropdownBtn, exportDropdown);
+            }
         });
     });
 
@@ -128,12 +130,13 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => handleExport(btn.getAttribute('data-format')));
     });
 
-    // STATE MANAGEMENT FOR FILTERS
+    // -------------------------------------------------------------------------
+    // 3. STATE MANAGEMENT & DATA COUPLING ENGINE
+    // -------------------------------------------------------------------------
     let selectedStart = null;
     let selectedEnd = null;
     let activeCategories = ['collections', 'sales']; 
 
-    // Initialize with current month as default date range
     const initDates = () => {
         const today = new Date();
         selectedStart = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -149,9 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${year}-${month}-${day}`;
     }
 
-    // -------------------------------------------------------------------------
-    // 2. DIRECT SUPABASE FETCHING ENGINE
-    // -------------------------------------------------------------------------
     async function fetchAndRenderReportData(startDate, endDate) {
         try {
             const finalStart = startDate || formatDateToSQL(selectedStart);
@@ -180,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
             if (emptyState) emptyState.style.display = 'none';
         
-            // Filter categories client-side based on active checkboxes
             const filteredData = data.filter(item => {
                 if (!item.type) return true; 
                 return activeCategories.includes(item.type.toLowerCase());
@@ -193,27 +192,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // 3. WEEK GENERATION LOGIC
-    // -------------------------------------------------------------------------
     function renderReportTable(transactions, startRangeDate) {
         const tableBody = document.getElementById('reportsTableBody'); 
         if (!tableBody) return;
         
         tableBody.innerHTML = ''; 
-        
-        // Target midnight safely using the local calendar instantiation layout
         const startRange = new Date(startRangeDate.getFullYear(), startRangeDate.getMonth(), startRangeDate.getDate());
-    
         const materialSummary = {};
     
         transactions.forEach(tx => {
-            // Split string directly to avoid JS timestamp parsing converting to UTC shifts
+            if (!tx.transaction_date) return;
             const parts = tx.transaction_date.split('T')[0].split('-');
             const txDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
             
-            const name = tx.material_name;
-    
+            const name = tx.material_name || "Unknown Material";
             const diffTime = txDate.getTime() - startRange.getTime();
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
             
@@ -254,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------------------------------------
-    // 4. EXPORT UTILITIES & DYNAMIC MODAL GENERATION
+    // 4. FIX: EXPORT ENGINE AND MODAL INTERACTION CORRECTION
     // -------------------------------------------------------------------------
     function handleExport(format) {
         showExportModal(format);
@@ -290,16 +282,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 <div style="display:grid;gap:10px;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                        <label style="${labelStyle}">
-                            Month
+                        <label style="${labelStyle}">Month
                             <select id="expMonth" style="${fieldStyle}">
                                 ${['January','February','March','April','May','June',
                                    'July','August','September','October','November','December']
                                    .map((m,i)=>`<option value="${i}" ${i===now.getMonth()?'selected':''}>${m}</option>`).join('')}
                             </select>
                         </label>
-                        <label style="${labelStyle}">
-                            Year
+                        <label style="${labelStyle}">Year
                             <input id="expYear" type="number" value="${now.getFullYear()}" min="2000" max="2099" style="${fieldStyle}">
                         </label>
                     </div>
@@ -401,25 +391,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert('PDF export failed. Please try again.');
                     });
                 } else {
-                    console.error('JunkshopExport handler library is missing.');
+                    console.error('Missing: JunkshopExport object handler for PDF targets.');
                 }
             } else {
                 if (typeof JunkshopExport !== 'undefined' && JunkshopExport.exportCSV) {
                     JunkshopExport.exportCSV(opts);
                 } else {
-                    console.error('JunkshopExport handler library is missing.');
+                    console.error('Missing: JunkshopExport object handler for CSV targets.');
                 }
             }
         });
     }
 
     // -------------------------------------------------------------------------
-    // 5. UI EVENT LISTENERS (Category & Calendar Range Sync)
+    // 5. CALENDAR & INTERFACE LOGIC SYNC
     // -------------------------------------------------------------------------
-    const allCheckboxes = document.querySelectorAll('.category-popover input[type="checkbox"]');
+    // FIX: Fallback selectors to account for structural changes across layouts
+    const allCheckboxes = document.querySelectorAll('.category-popover input[type="checkbox"], .popover-content input[type="checkbox"]');
 
     allCheckboxes.forEach(cb => {
-        if (activeCategories.includes(cb.value)) {
+        if (activeCategories.includes(cb.value.toLowerCase())) {
             cb.checked = true;
         }
 
@@ -434,14 +425,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             activeCategories = [
-                ...new Set([...allCheckboxes].filter(c => c.checked).map(c => c.value))
+                ...new Set([...allCheckboxes].filter(c => c.checked).map(c => c.value.toLowerCase()))
             ];
             
             fetchAndRenderReportData(formatDateToSQL(selectedStart), formatDateToSQL(selectedEnd));
         });
     });
 
-    // CALENDAR LOGIC
     function buildCalendar(tbodyId, year, month, labelId) {
         const tbody = document.getElementById(tbodyId);
         const label = document.getElementById(labelId);
@@ -533,7 +523,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let desktopYear = new Date().getFullYear();
     let desktopMonth = new Date().getMonth();
-    
     let mobileYear = new Date().getFullYear();
     let mobileMonth = new Date().getMonth();
 
@@ -570,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
         buildMobile(); 
     }
 
-    // QUICK RANGES LOGIC
+    // QUICK RANGES LINK ENGINE
     document.querySelectorAll('.quick-dates li button').forEach(btn => {
         btn.addEventListener('click', () => {
             btn.closest('ul').querySelectorAll('button').forEach(b => b.classList.remove('active'));
@@ -610,12 +599,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             rebuildAllCalendars();
-            // Pass parameters explicitly to avoid race condition delays 
             fetchAndRenderReportData(formatDateToSQL(selectedStart), formatDateToSQL(selectedEnd));
         });
     });
 
-    // RUN ON LOAD (Single entry point clean execution)
+    // -------------------------------------------------------------------------
+    // 6. INITIAL RUN SEQUENCE
+    // -------------------------------------------------------------------------
     rebuildAllCalendars();
     fetchAndRenderReportData(formatDateToSQL(selectedStart), formatDateToSQL(selectedEnd));
 });
