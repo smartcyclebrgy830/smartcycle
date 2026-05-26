@@ -42,7 +42,7 @@ const JunkshopExport = ((supabaseClient) => {
         const result = {};
         RECYCLABLE_MATERIALS.forEach(m => {
             result[m] = {
-                dailyWeights: Array(28).fill(0),
+                dailyWeights: Array(31).fill(0),
                 total: 0
             };
         });
@@ -93,7 +93,7 @@ const JunkshopExport = ((supabaseClient) => {
 
                     const dayOfMonth = d.getDate();
                     // Maps 1-28 cleanly. Days 29, 30, 31 blend gracefully into index 27 (Day 28 slot)
-                    const layoutIndex = Math.min(28, dayOfMonth) - 1;
+                    const layoutIndex = dayOfMonth - 1;
 
                     (col.collection_items || []).forEach(item => {
                         const dbName = materialMap[item.material_id] || 'Others';
