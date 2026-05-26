@@ -333,11 +333,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    let desktopYear = new Date().getFullYear();
+let desktopYear = new Date().getFullYear();
     let desktopMonth = new Date().getMonth();
+    
+    let mobileYear = new Date().getFullYear();
+    let mobileMonth = new Date().getMonth();
 
     function buildDesktop() {
         buildCalendar('calBody', desktopYear, desktopMonth, 'calMonthLabel');
+    }
+
+    function buildMobile() {
+        buildCalendar('calBodyMobile', mobileYear, mobileMonth, 'calMonthLabelMobile');
     }
 
     document.getElementById('calPrev')?.addEventListener('click', () => {
@@ -350,8 +357,20 @@ document.addEventListener('DOMContentLoaded', () => {
         buildDesktop();
     });
 
+    // Add Fallbacks for Mobile navigation controls if they exist in your DOM
+    document.getElementById('calPrevMobile')?.addEventListener('click', () => {
+        if (--mobileMonth < 0) { mobileMonth = 11; mobileYear--; }
+        buildMobile();
+    });
+
+    document.getElementById('calNextMobile')?.addEventListener('click', () => {
+        if (++mobileMonth > 11) { mobileMonth = 0; mobileYear++; }
+        buildMobile();
+    });
+
     function rebuildAllCalendars() {
         buildDesktop();
+        buildMobile(); // Safely keep mobile rendering synchronized 
     }
 
     // QUICK RANGES LINK CODES
