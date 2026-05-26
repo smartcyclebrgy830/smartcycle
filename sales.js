@@ -184,11 +184,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <table class="expanded-table">
                             <thead>
                                 <tr>
-                                    <th>QTY</th>
-                                    <th>UNIT</th>
-                                    <th>DESCRIPTION</th>
-                                    <th>PRICE</th>
-                                    <th>AMOUNT</th>
+                                    <th style="text-align:center">QTY</th>
+                                    <th style="text-align:center">UNIT</th>
+                                    <th style="text-align:left; padding-left:8px;">DESCRIPTION</th>
+                                    <th style="text-align:center">PRICE</th>
+                                    <th style="text-align:center">AMOUNT</th>
                                 </tr>
                             </thead>
                             <tbody>${itemsHTML}</tbody>
