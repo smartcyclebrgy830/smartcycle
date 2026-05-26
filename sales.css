@@ -322,6 +322,8 @@ body {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
+    table-layout: auto;
+    min-width: 500px;
 }
 
 .expanded-table thead th {
