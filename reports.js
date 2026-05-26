@@ -6,7 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. SUPABASE INITIALIZATION
     // -------------------------------------------------------------------------
     const SUPABASE_URL = "https://nlybbvlhhdjjmqkzjnhx.supabase.co"; 
-    const SUPABASE_KEY = "sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au";
+    // CRITICAL: Double-check that this is your ANON key, not your Service Role key!
+    const SUPABASE_KEY = "sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au"; 
     
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -62,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const categoryBtnMobile = document.getElementById('categoryBtnMobile');
     const categoryPopoverMobile = document.getElementById('categoryPopoverMobile');
 
-    // Register pairs for click away detection
     registerPair(dateBtn, datePopover);
     registerPair(categoryBtn, categoryPopover);
     registerPair(dateBtnMobile, datePopoverMobile);
@@ -132,17 +132,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------------------
     async function fetchAndRenderReportData(startDate, endDate) {
         try {
-            // Assuming 'supabase' is your initialized client instance
+            const finalStart = startDate || formatDateToSQL(selectedStart);
+            const finalEnd = endDate || formatDateToSQL(selectedEnd);
+
+            if (!finalStart || !finalEnd) return;
+
             const { data, error } = await supabase.rpc('get_material_transactions', {
-                start_date: startDate,
-                end_date: endDate
+                start_date: finalStart,
+                end_date: finalEnd
             });
         
             if (error) {
                 console.error("Supabase RPC Execution Error:", error.message);
                 return;
             }
-    
+        
             const emptyState = document.getElementById('emptyState');
             const tableBody = document.getElementById('reportsTableBody');
 
@@ -151,17 +155,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (emptyState) emptyState.style.display = 'flex';
                 return;
             }
-    
+        
             if (emptyState) emptyState.style.display = 'none';
-    
+        
             // Filter categories client-side based on active checkboxes
             const filteredData = data.filter(item => {
                 if (!item.type) return true; 
                 return activeCategories.includes(item.type.toLowerCase());
             });
-    
+        
             renderReportTable(filteredData, selectedStart);
-    
+        
         } catch (err) {
             console.error("Error handling interface rendering workflow:", err);
         }
@@ -175,17 +179,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!tableBody) return;
         
         tableBody.innerHTML = ''; 
-        const startRange = new Date(startRangeDate);
-        startRange.setHours(0,0,0,0);
+        
+        // Target midnight safely using the local calendar instantiation layout
+        const startRange = new Date(startRangeDate.getFullYear(), startRangeDate.getMonth(), startRangeDate.getDate());
     
         const materialSummary = {};
     
         transactions.forEach(tx => {
-            const txDate = new Date(tx.transaction_date);
-            txDate.setHours(0,0,0,0);
+            // Split string directly to avoid JS timestamp parsing converting to UTC shifts
+            const parts = tx.transaction_date.split('T')[0].split('-');
+            const txDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            
             const name = tx.material_name;
     
-            const diffTime = txDate - startRange;
+            const diffTime = txDate.getTime() - startRange.getTime();
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
             
             let weekKey = 'week1';
@@ -197,8 +204,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 materialSummary[name] = { week1: 0, week2: 0, week3: 0, week4: 0, total: 0 };
             }
     
-            materialSummary[name][weekKey] += parseFloat(tx.weight || 0);
-            materialSummary[name].total += parseFloat(tx.weight || 0);
+            const currentWeight = parseFloat(tx.weight || 0);
+            materialSummary[name][weekKey] += currentWeight;
+            materialSummary[name].total += currentWeight;
         });
     
         if (Object.keys(materialSummary).length === 0) {
@@ -226,12 +234,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------------------
     // UI EVENT LISTENERS (Category & Calendar Range Sync)
     // -------------------------------------------------------------------------
-    
-    // Target all category checkboxes across both desktop and mobile containers
     const allCheckboxes = document.querySelectorAll('.category-popover input[type="checkbox"]');
 
     allCheckboxes.forEach(cb => {
-        // Apply default checking configuration
         if (activeCategories.includes(cb.value)) {
             cb.checked = true;
         }
@@ -240,19 +245,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const changedValue = e.target.value;
             const isChecked = e.target.checked;
 
-            // Cross-synchronize changes between Desktop and Mobile configurations
             allCheckboxes.forEach(item => {
                 if (item.value === changedValue) {
                     item.checked = isChecked;
                 }
             });
 
-            // Recalculate unique values currently selected
             activeCategories = [
                 ...new Set([...allCheckboxes].filter(c => c.checked).map(c => c.value))
             ];
             
-            fetchAndRenderReportData();
+            fetchAndRenderReportData(formatDateToSQL(selectedStart), formatDateToSQL(selectedEnd));
         });
     });
 
@@ -314,15 +317,15 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.classList.remove('selected', 'range-start', 'range-end', 'in-range');
         if (!selectedStart) return;
 
-        const t = date.setHours(0,0,0,0);
-        const s = new Date(selectedStart).setHours(0,0,0,0);
+        const t = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+        const s = new Date(selectedStart.getFullYear(), selectedStart.getMonth(), selectedStart.getDate()).getTime();
 
         if (!selectedEnd) {
             if (t === s) btn.classList.add('selected');
             return;
         }
 
-        const e = new Date(selectedEnd).setHours(0,0,0,0);
+        const e = new Date(selectedEnd.getFullYear(), selectedEnd.getMonth(), selectedEnd.getDate()).getTime();
         if (t === s) btn.classList.add('range-start');
         else if (t === e) btn.classList.add('range-end');
         else if (t > s && t < e) btn.classList.add('in-range');
@@ -342,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         rebuildAllCalendars();
         if (selectedStart && selectedEnd) {
-            fetchAndRenderReportData();
+            fetchAndRenderReportData(formatDateToSQL(selectedStart), formatDateToSQL(selectedEnd));
         }
     }
 
@@ -425,11 +428,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             rebuildAllCalendars();
-            fetchAndRenderReportData();
+            // Pass parameters explicitly to avoid race condition delays 
+            fetchAndRenderReportData(formatDateToSQL(selectedStart), formatDateToSQL(selectedEnd));
         });
     });
 
-    // RUN ON LOAD
+    // RUN ON LOAD (Single entry point clean execution)
     rebuildAllCalendars();
-    fetchAndRenderReportData();
+    fetchAndRenderReportData(formatDateToSQL(selectedStart), formatDateToSQL(selectedEnd));
 });
