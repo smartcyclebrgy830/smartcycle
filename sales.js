@@ -166,11 +166,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 itemsHTML = sale.items.map(m => `
                     <tr>
-                        <td>${m.weight.toFixed(1)}</td>
-                        <td>kg</td>
-                        <td>${m.name || 'Unknown'}</td>
-                        <td>₱${m.rate.toFixed(2)}</td>
-                        <td>₱${m.subtotal.toFixed(2)}</td>
+                        <td style="text-align:center;">${m.weight.toFixed(1)}</td>
+                        <td style="text-align:center;">kg</td>
+                        <td style="text-align:left; padding-left:8px;">${m.name || 'Unknown'}</td>
+                        <td style="text-align:center;">₱${m.rate.toFixed(2)}</td>
+                        <td style="text-align:center;">₱${m.subtotal.toFixed(2)}</td>
                     </tr>
                 `).join('');
             }
