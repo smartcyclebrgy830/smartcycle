@@ -96,13 +96,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------------------
     async function fetchAndRenderReportData() {
         try {
-            // FIX: Read date states inside the call block dynamically if params aren't passed
             const sqlStart = formatDateToSQL(selectedStart);
             const sqlEnd = formatDateToSQL(selectedEnd);
 
             if (!sqlStart || !sqlEnd) return;
 
-            // FIX: Invoking client using global 'supabase' target match
+            // Call your Supabase RPC function directly
             const { data, error } = await supabase
                 .rpc('get_material_transactions', { 
                     start_date: sqlStart, 
@@ -125,17 +124,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
             if (emptyState) emptyState.style.display = 'none';
     
-            // FIX: Clean up matching case-insensitive array checks
+            // Filter categories client-side based on checkboxes
             const filteredData = data.filter(item => {
-                // If item.type doesn't exist yet from RPC, default to true
                 if (!item.type) return true; 
                 return activeCategories.includes(item.type.toLowerCase());
             });
     
+            // Render rows to your UI table wrapper
             renderReportTable(filteredData, selectedStart);
     
         } catch (err) {
-            console.error("Failed handling interface rendering workflow:", err);
+            console.error("Error handling interface rendering workflow:", err);
         }
     }
 
