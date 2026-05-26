@@ -130,19 +130,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------------------
     // 2. DIRECT SUPABASE FETCHING ENGINE
     // -------------------------------------------------------------------------
-    async function fetchAndRenderReportData() {
+    async function fetchAndRenderReportData(startDate, endDate) {
         try {
-            const sqlStart = formatDateToSQL(selectedStart);
-            const sqlEnd = formatDateToSQL(selectedEnd);
-
-            if (!sqlStart || !sqlEnd) return;
-
-            const { data, error } = await supabase
-                .rpc('get_material_transactions', { 
-                    start_date: sqlStart, 
-                    end_date: sqlEnd 
-                });
-    
+            // Assuming 'supabase' is your initialized client instance
+            const { data, error } = await supabase.rpc('get_material_transactions', {
+                start_date: startDate,
+                end_date: endDate
+            });
+        
             if (error) {
                 console.error("Supabase RPC Execution Error:", error.message);
                 return;
