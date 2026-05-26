@@ -324,7 +324,7 @@ body {
     font-size: 13px;
 }
 
-.expanded-table thead tr {
+.expanded-table thead th {
     padding: 10px 12px;
     background: #edf3f8;
     color: #526072;
