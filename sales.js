@@ -134,10 +134,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td class="chevron-cell"><i data-lucide="chevron-down"></i></td>
                 <td>${sale.raw_date || 'N/A'}</td>
                 <td><span class="id-badge">${sale.id}</span></td>
-                <td>${sale.partner || 'Unknown'}</td>
+                <td style="font-weight: 600;">${sale.partner || 'Unknown'}</td>
                 <td>${materialSummary}</td>
                 <td style="text-align:center;">${sale.total_weight.toFixed(1)} kg</td>
-                <td style="text-align:right; font-weight:700;">₱${sale.total_amount.toFixed(2)}</td>
+                <td style="text-align:right; font-weight:700; color:#10b981;">₱${sale.total_amount.toFixed(2)}</td>
                 <td>
                     <div class="action-btns">
                         <button class="icon-btn receipt-btn" data-action="view-receipt" data-id="${sale.id}" title="View Receipt">
