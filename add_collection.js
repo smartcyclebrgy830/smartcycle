@@ -3,6 +3,9 @@ let editingIndex = -1;
 let currentCategory = 'School';
 window.currentItems = []; // Initializing to prevent undefined array pushes
 
+// Local cache to resolve names during edit mode if needed
+let loadedPricesCache = [];
+
 function generateDisplayId(prefix) {
     return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
@@ -31,6 +34,75 @@ window.openAddModal = async () => {
     setTimeout(refreshIcons, 100);
 };
 
+/**
+ * NEW FIXED ENGINE FUNCTION: Called from your main dashboard controller to safely open edit mode.
+ * Resolves the missing 'material' name mapping bug from 'collection_items' structural relations.
+ */
+window.openEditModal = async (index, collectionHeader, detailedItems) => {
+    const modal = document.getElementById('addCollectionModal');
+    if (!modal) return;
+
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    editingIndex = index;
+    clearAllErrors();
+
+    // 1. Force reload live prices into dropdown select first to avoid async timing issues
+    await loadActivePrices();
+
+    // 2. Populate Header Fields
+    currentCategory = collectionHeader.type || 'School';
+    document.querySelectorAll('.m-tab').forEach(tab => {
+        const tabCategory = tab.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+        tab.classList.toggle('active', tabCategory === currentCategory);
+    });
+
+    if (document.getElementById('inCustomer')) document.getElementById('inCustomer').value = collectionHeader.customer_name || '';
+    if (document.getElementById('inDate')) document.getElementById('inDate').value = collectionHeader.date_collected || '';
+    if (document.getElementById('inAddress')) document.getElementById('inAddress').value = collectionHeader.address || '';
+    if (document.getElementById('inContact')) document.getElementById('inContact').value = collectionHeader.contact_number || '';
+
+    // 3. Map line items securely matching current selector options to cure the "Unknown" rendering issue
+    window.currentItems = (detailedItems || []).map(item => {
+        // Attempt to match the material id against options currently loaded inside the drop-down selector
+        const selMaterial = document.getElementById('selMaterial');
+        let matchedName = '';
+        
+        if (selMaterial) {
+            const matchedOption = Array.from(selMaterial.options).find(opt => parseInt(opt.value, 10) === parseInt(item.material_id, 10));
+            if (matchedOption) {
+                matchedName = matchedOption.dataset.name;
+            }
+        }
+
+        // Fallback to cache or simple lookup array if element parsing isn't finished in DOM tree
+        if (!matchedName) {
+            const cachedItem = loadedPricesCache.find(p => parseInt(p.id, 10) === parseInt(item.material_id, 10));
+            matchedName = cachedItem ? cachedItem.material_name : 'Unknown Material';
+        }
+
+        return {
+            materialId: parseInt(item.material_id, 10),
+            material: item.material_name || matchedName, // Prefers joined field string if available, otherwise handles manually
+            rate: Number(item.rate || 0),
+            weight: Number(item.weight || 0),
+            subtotal: Number(item.subtotal || (item.rate * item.weight) || 0)
+        };
+    });
+
+    // 4. Transform Action Button to Update context
+    const submitBtn = document.querySelector('.btn-submit-green');
+    if (submitBtn) {
+        submitBtn.onclick = () => submitCollection();
+        submitBtn.innerHTML = '<i data-lucide="check"></i> Update Entry';
+    }
+
+    updatePreview();
+    renderItems();
+    setTimeout(refreshIcons, 100);
+};
+
 // FIXED ENGINE: Added 'id' to the select string so item.id isn't undefined
 async function loadActivePrices() {
     const selMaterial = document.getElementById('selMaterial');
@@ -39,12 +111,13 @@ async function loadActivePrices() {
     try {
         const { data: prices, error } = await _supabase
             .from('price_list')
-            .select('id, material_name, price') // <-- FIXED: Added 'id' here
+            .select('id, material_name, price')
             .eq('status', 'Active'); 
 
         if (error) throw error;
 
         if (prices && prices.length > 0) {
+            loadedPricesCache = prices; // Store references globally to parse safely on edit tasks
             selMaterial.innerHTML = prices.map((item, idx) => {
                 const rate = Math.round(item.price); 
                 return `<option value="${item.id}" data-name="${item.material_name}" data-rate="${rate}" ${idx === 0 ? 'selected' : ''}>
@@ -54,18 +127,24 @@ async function loadActivePrices() {
         } else {
             selMaterial.innerHTML = '<option value="" disabled>No active materials found</option>';
         }
-        // Change this specific block inside loadActivePrices()
-        } catch (err) {
-            console.error("Error fetching live price rates from database:", err.message);
-            // FIXED: Removed the quotes around values so they pass integer values cleanly
-            selMaterial.innerHTML = `
-                <option value=1 data-name="Plastic" data-rate="3" selected>Plastic - ₱3/kg</option>
-                <option value=2 data-name="Bakal" data-rate="15">Bakal - ₱15/kg</option>
-                <option value=3 data-name="PET-Assorted" data-rate="5">PET-Assorted - ₱5/kg</option>
-                <option value=4 data-name="Paper Assorted" data-rate="8">Paper Assorted - ₱8/kg</option>
-                <option value=5 data-name="Yero" data-rate="8">Yero - ₱8/kg</option>
-            `;
-        }
+    } catch (err) {
+        console.error("Error fetching live price rates from database:", err.message);
+        // Fallback structures initialized cleanly to maintain operational tracking integrity
+        loadedPricesCache = [
+            { id: 1, material_name: "Plastic", price: 3 },
+            { id: 2, material_name: "Bakal", price: 15 },
+            { id: 3, material_name: "PET-Assorted", price: 5 },
+            { id: 4, material_name: "Paper Assorted", price: 8 },
+            { id: 5, material_name: "Yero", price: 8 }
+        ];
+        selMaterial.innerHTML = `
+            <option value=1 data-name="Plastic" data-rate="3" selected>Plastic - ₱3/kg</option>
+            <option value=2 data-name="Bakal" data-rate="15">Bakal - ₱15/kg</option>
+            <option value=3 data-name="PET-Assorted" data-rate="5">PET-Assorted - ₱5/kg</option>
+            <option value=4 data-name="Paper Assorted" data-rate="8">Paper Assorted - ₱8/kg</option>
+            <option value=5 data-name="Yero" data-rate="8">Yero - ₱8/kg</option>
+        `;
+    }
 }
 
 window.closeAddModal = () => {
@@ -197,11 +276,9 @@ window.addItem = function() {
     const selectedOption = sel.selectedOptions[0];
     const rate = Number(selectedOption?.dataset.rate || 0);
     
-    // FIXED: Explicitly parse the value to a clear integer base 10
     const materialId = parseInt(sel.value, 10); 
     const material = selectedOption?.dataset.name || '';
 
-    // Guard rail: Verify it parsed successfully before tracking it
     if (isNaN(materialId)) {
         alert("Please select a valid material collection type.");
         return;
@@ -218,7 +295,7 @@ window.addItem = function() {
     if (itemsErr) itemsErr.textContent = '';
 
     window.currentItems.push({ 
-        materialId, // Now safely guaranteed to be a solid integer
+        materialId,
         material, 
         rate, 
         weight, 
@@ -250,7 +327,7 @@ function renderItems() {
             total += item.subtotal;
             mainRowsHtml += `
                 <tr>
-                  <td>${item.material}</td>
+                  <td>${item.material || 'Unknown'}</td>
                   <td>₱${item.rate}</td>
                   <td>${item.weight} kg</td>
                   <td><strong>₱${item.subtotal.toFixed(2)}</strong></td>
@@ -265,7 +342,7 @@ function renderItems() {
                 <tr>
                   <td style="text-align:center;">${item.weight}</td>
                   <td style="text-align:center;">kg</td>
-                  <td style="text-align:left;">${item.material}</td>
+                  <td style="text-align:left;">${item.material || 'Unknown'}</td>
                   <td style="text-align:center;">₱${item.rate}</td>
                   <td style="text-align:center;">₱${item.subtotal.toFixed(2)}</td>
                 </tr>`;
