@@ -1,9 +1,7 @@
-// Ensure strict tracking context variables exist safely at module/global scale
 let editingIndex = -1;
 let currentCategory = 'School';
 window.currentItems = []; // Initializing to prevent undefined array pushes
 
-// Local cache to resolve names during edit mode if needed
 let loadedPricesCache = [];
 
 function generateDisplayId(prefix) {
@@ -15,7 +13,6 @@ function toTitleCase(str) {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 }
 
-// GLOBAL ASSIGNMENTS & MODAL INTERACTIONS
 window.openAddModal = async () => {
     const modal = document.getElementById('addCollectionModal');
     if (!modal) return;
@@ -26,7 +23,6 @@ window.openAddModal = async () => {
     editingIndex = -1;
     resetForm();
 
-    // Dynamically fetch and fill up material prices matching your Price List dashboard
     await loadActivePrices();
 
     document.getElementById('inDate').value = new Date().toISOString().split('T')[0];
@@ -34,10 +30,6 @@ window.openAddModal = async () => {
     if (typeof refreshIcons === 'function') setTimeout(refreshIcons, 100);
 };
 
-/**
- * FIXED ENGINE FUNCTION: Called from your main dashboard controller to safely open edit mode.
- * Resolves missing foreign key mappings and prevents "Unknown" data rewrites.
- */
 window.openEditModal = async (index, collectionHeader, detailedItems) => {
     const modal = document.getElementById('addCollectionModal');
     if (!modal) return;
@@ -48,10 +40,9 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     editingIndex = index;
     clearAllErrors();
 
-    // 1. Force reload live prices into dropdown select and completely AWAIT network delivery before mapping items
+    // 1. CRITICAL: Await and completely load prices first so loadedPricesCache is ready!
     await loadActivePrices();
 
-    // 2. Populate Header Fields
     currentCategory = collectionHeader.type || 'School';
     document.querySelectorAll('.m-tab').forEach(tab => {
         const tabCategory = tab.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
@@ -63,9 +54,9 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     if (document.getElementById('inAddress')) document.getElementById('inAddress').value = collectionHeader.address || '';
     if (document.getElementById('inContact')) document.getElementById('inContact').value = collectionHeader.contact_number || '';
 
-    // 3. DEFENSIVE MATCHING ENGINE: Map incoming detailed items accurately to cached price list IDs
+    // 2. Map structural values carefully avoiding the "Unknown" mutation loop
     window.currentItems = (detailedItems || []).map(item => {
-        // Fallback checks for various naming properties coming from join queries (material_id, materialId, id)
+        // Fallback checks for various naming properties coming from database joins
         const rawId = item.material_id || item.materialId || item.id;
         const targetMaterialId = rawId ? parseInt(rawId, 10) : NaN;
         
@@ -75,14 +66,17 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
             cachedItem = loadedPricesCache.find(p => parseInt(p.id, 10) === targetMaterialId);
         }
         
-        // Secondary fuzzy matching using strings if structural IDs are missing from the join dashboard dataset
+        // Secondary fuzzy matching using strings if structural IDs are missing
         if (!cachedItem && (item.material_name || item.material || item.description)) {
             const lookUpName = (item.material_name || item.material || item.description || '').trim().toLowerCase();
             cachedItem = loadedPricesCache.find(p => (p.material_name || '').trim().toLowerCase() === lookUpName);
         }
 
         // Final naming resolution falling back to clean display targets
-        const finalName = cachedItem ? cachedItem.material_name : (item.material_name || item.material || item.description || 'Unknown Material');
+        // CHANGED HERE: Make sure to check price_list (via price_list relational metadata joins)
+        const databaseFallbackName = item.price_list?.material_name || item.material_name || item.material || item.description;
+        const finalName = cachedItem ? cachedItem.material_name : (databaseFallbackName || 'Unknown Material');
+        
         const resolvedId = cachedItem ? parseInt(cachedItem.id, 10) : targetMaterialId;
         const resolvedRate = Number(item.rate || item.price || (cachedItem ? cachedItem.price : 0));
         const resolvedWeight = Number(item.weight || item.qty || 0);
@@ -97,7 +91,7 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
         };
     });
 
-    // 4. Transform Action Button to Update context safely
+    // 3. Transform Action Button to Update context safely
     const submitBtn = document.querySelector('.btn-submit-green') || document.querySelector('.modal-footer .btn-submit') || document.getElementById('btnSubmitCollection');
     if (submitBtn) {
         submitBtn.onclick = (e) => {
@@ -129,16 +123,16 @@ async function loadActivePrices() {
             loadedPricesCache = prices; 
             selMaterial.innerHTML = prices.map((item, idx) => {
                 const rate = Math.round(item.price); 
-                return `<option value="${item.id}" data-name="${item.material_name}" data-rate="${rate}" ${idx === 0 ? 'selected' : ''}>
+                return `<option value="${item.id}" data-name="${item.material_name}" data-rate="${rate}">
                     ${item.material_name} - ₱${rate}/kg
                 </option>`;
-            }).join('');
+            ).join('');
         } else {
             selMaterial.innerHTML = '<option value="" disabled selected>No active materials found</option>';
         }
     } catch (err) {
         console.error("Error fetching live price rates from database:", err.message);
-        // Clean fallback defaults in case of connection dropouts
+        // Clean fallback defaults in case of connection drops
         loadedPricesCache = [
             { id: 1, material_name: "Plastic", price: 4 },
             { id: 2, material_name: "Bakal", price: 15 },
@@ -147,7 +141,7 @@ async function loadActivePrices() {
             { id: 5, material_name: "Yero", price: 8 }
         ];
         selMaterial.innerHTML = `
-            <option value="1" data-name="Plastic" data-rate="4" selected>Plastic - ₱4/kg</option>
+            <option value="1" data-name="Plastic" data-rate="4">Plastic - ₱4/kg</option>
             <option value="2" data-name="Bakal" data-rate="15">Bakal - ₱15/kg</option>
             <option value="3" data-name="PET-Assorted" data-rate="5">PET-Assorted - ₱5/kg</option>
             <option value="4" data-name="Paper Assorted" data-rate="8">Paper Assorted - ₱8/kg</option>
