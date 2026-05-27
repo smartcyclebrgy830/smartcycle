@@ -3,7 +3,7 @@ const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
 window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 🟩 FIXED GLOBAL APP STATE (Explicitly shared with the window context)
+// 🟩 FIXED GLOBAL APP STATE Explicitly shared with the window context
 window.collections = [];
 window.currentItems = [];       // Changed from let to window.
 window.currentCategory = 'School'; // Changed from let to window.
