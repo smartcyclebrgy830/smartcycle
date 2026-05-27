@@ -7,7 +7,7 @@ function generateDisplayId(prefix) {
     return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
 
-function toTitleCase(str) {
+function toTitleCase(str) {F
     if (!str) return '';
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 }
@@ -54,17 +54,18 @@ async function loadActivePrices() {
         } else {
             selMaterial.innerHTML = '<option value="" disabled>No active materials found</option>';
         }
-    } catch (err) {
-        console.error("Error fetching live price rates from database:", err.message);
-        // Resilient fallback defaults using mock integer string IDs instead of names
-        selMaterial.innerHTML = `
-            <option value="1" data-name="Plastic" data-rate="3" selected>Plastic - ₱3/kg</option>
-            <option value="2" data-name="Bakal" data-rate="15">Bakal - ₱15/kg</option>
-            <option value="3" data-name="PET-Assorted" data-rate="5">PET-Assorted - ₱5/kg</option>
-            <option value="4" data-name="Paper Assorted" data-rate="8">Paper Assorted - ₱8/kg</option>
-            <option value="5" data-name="Yero" data-rate="8">Yero - ₱8/kg</option>
-        `;
-    }
+        // Change this specific block inside loadActivePrices()
+        } catch (err) {
+            console.error("Error fetching live price rates from database:", err.message);
+            // FIXED: Removed the quotes around values so they pass integer values cleanly
+            selMaterial.innerHTML = `
+                <option value=1 data-name="Plastic" data-rate="3" selected>Plastic - ₱3/kg</option>
+                <option value=2 data-name="Bakal" data-rate="15">Bakal - ₱15/kg</option>
+                <option value=3 data-name="PET-Assorted" data-rate="5">PET-Assorted - ₱5/kg</option>
+                <option value=4 data-name="Paper Assorted" data-rate="8">Paper Assorted - ₱8/kg</option>
+                <option value=5 data-name="Yero" data-rate="8">Yero - ₱8/kg</option>
+            `;
+        }
 }
 
 window.closeAddModal = () => {
@@ -196,8 +197,15 @@ window.addItem = function() {
     const selectedOption = sel.selectedOptions[0];
     const rate = Number(selectedOption?.dataset.rate || 0);
     
-    const materialId = Number(sel.value); 
+    // FIXED: Explicitly parse the value to a clear integer base 10
+    const materialId = parseInt(sel.value, 10); 
     const material = selectedOption?.dataset.name || '';
+
+    // Guard rail: Verify it parsed successfully before tracking it
+    if (isNaN(materialId)) {
+        alert("Please select a valid material collection type.");
+        return;
+    }
 
     if (!weight || weight <= 0 || weight > 10000) {
         showError('inWeight', weight > 10000 ? 'Invalid weight. Enter a value between 1 and 10,000.' : 'Please enter a valid weight');
@@ -210,7 +218,7 @@ window.addItem = function() {
     if (itemsErr) itemsErr.textContent = '';
 
     window.currentItems.push({ 
-        materialId, 
+        materialId, // Now safely guaranteed to be a solid integer
         material, 
         rate, 
         weight, 
