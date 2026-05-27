@@ -116,7 +116,7 @@ async function loadDashboardData() {
         // 3. TOTAL COLLECTION & TREND
         // ----------------------------------------
         // Fetch raw weights accumulated from collection_items
-        const { data: collectionItems, error: ciError } = await supabase
+        const { data: collectionItems, error: ciError } = await supabaseClient
             .from('collection_items')
             .select('weight, collections(date_collected), price_list(material_name)');
 
