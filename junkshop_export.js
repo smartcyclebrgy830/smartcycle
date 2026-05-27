@@ -1,11 +1,4 @@
-// Remove the restrictive window parameter binding and look up the client directly at runtime
 const JunkshopExport = (() => {
-
-    const DEFAULT_MATERIALS = [
-        'Old Newspaper', 'White Paper', 'Assorted', 'Paper/Magazines',
-        'Cartons', 'PET Bottles', 'Plastics Containers', 'Bottles (Glass)',
-        'Aluminum', 'Copper', 'Tin', 'Steel', 'Others'
-    ];
 
     function parseCollectionDate(raw) {
         if (!raw) return null;
@@ -14,23 +7,22 @@ const JunkshopExport = (() => {
     }
 
     /**
-     * Fetches materials dynamically from the price_list table at call time.
+     * Aggregates collection weights dynamically map-linked to your live database price_list
      */
     async function aggregateSupabaseData(month, year) {
-        // Look up the active client dynamically inside the function context execution path
-        const db = window.supabase || (window.supabaseClient) || null;
+        const db = window.supabase || window.supabaseClient || null;
         
-        let materialsList = [...DEFAULT_MATERIALS];
+        let materialsList = [];
         const result = {};
 
-        // Fallback gracefully if database initialization hasn't exposed a global variable yet
+        // Fallback gracefully to reading dynamic local storage schema structures if DB is offline
         if (!db || typeof db.from !== 'function') {
-            console.warn("Supabase context missing at call time. Diverting to local storage fallback handler matrix.");
-            return aggregateFallbackLocalData(month, year, materialsList);
+            console.warn("Supabase context missing. Diverting to local storage dynamic fallback schema mapping.");
+            return aggregateFallbackLocalData(month, year);
         }
 
         try {
-            // 1. Fetch live active materials dynamically from your price_list table
+            // 1. Fetch live active records directly from your price_list table
             const { data: priceList, error: priceError } = await db
                 .from('price_list')
                 .select('id, material_name')
@@ -38,19 +30,25 @@ const JunkshopExport = (() => {
 
             if (priceError) throw priceError;
 
-            const materialMap = {};
-            if (priceList && priceList.length > 0) {
-                materialsList = priceList.map(p => p.material_name);
-                if (!materialsList.includes('Others')) {
-                    materialsList.push('Others');
-                }
-                
-                priceList.forEach(p => {
-                    materialMap[p.id] = p.material_name;
-                });
+            if (!priceList || priceList.length === 0) {
+                throw new Error("The price_list table returned no active materials.");
             }
 
-            // Initialize results grid based strictly on your database items
+            // Map out names and IDs cleanly 
+            const materialMap = {};
+            priceList.forEach(p => {
+                materialMap[p.id] = p.material_name;
+                if (!materialsList.includes(p.material_name)) {
+                    materialsList.push(p.material_name);
+                }
+            });
+
+            // Ensure "Others" is consistently grouped at the bottom row boundary
+            if (!materialsList.includes('Others')) {
+                materialsList.push('Others');
+            }
+
+            // Build structural cells dynamically based on the database materials list
             materialsList.forEach(m => {
                 result[m] = {
                     dailyWeights: Array(32).fill(0),
@@ -58,12 +56,12 @@ const JunkshopExport = (() => {
                 };
             });
 
-            // 2. Setup date boundaries
+            // 2. Set up month parameters
             const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
             const lastDay = new Date(year, month + 1, 0).getDate();
             const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-            // 3. Fetch collections bounded within the month range
+            // 3. Query historical records across your related collection sub-tables
             const { data: collections, error } = await db
                 .from('collections')
                 .select(`
@@ -79,7 +77,7 @@ const JunkshopExport = (() => {
 
             if (error) throw error;
 
-            // 4. Populate matrix grid
+            // 4. Matrix distribution processing
             if (collections) {
                 collections.forEach(col => {
                     const d = parseCollectionDate(col.date_collected);
@@ -104,10 +102,10 @@ const JunkshopExport = (() => {
             }
         } catch (err) {
             console.error("Database tracking fault occurred. Diverting parsing workflow down to local browser fallback:", err);
-            return aggregateFallbackLocalData(month, year, DEFAULT_MATERIALS);
+            return aggregateFallbackLocalData(month, year);
         }
 
-        // Clean rounding parameters
+        // Clean values to neat decimal limits
         Object.values(result).forEach(r => {
             r.total = Math.round(r.total * 100) / 100;
             r.dailyWeights = r.dailyWeights.map(w => Math.round(w * 100) / 100);
@@ -116,29 +114,45 @@ const JunkshopExport = (() => {
         return { dataGrid: result, materialsList };
     }
 
-    function aggregateFallbackLocalData(month, year, materialsList) {
+    /**
+     * Fallback processor that extracts layout configuration dynamically from existing local items
+     */
+    function aggregateFallbackLocalData(month, year) {
         const raw = JSON.parse(localStorage.getItem('smartCycleCollections') || '[]');
+        const materialsSet = new Set();
         const result = {};
-        
+
+        // Discover materials implicitly through active data array structures
+        raw.forEach(col => {
+            (col.items || col.collection_items || []).forEach(item => {
+                if (item.material) materialsSet.add(item.material);
+            });
+        });
+
+        const materialsList = Array.from(materialsSet);
+        if (!materialsList.includes('Others')) {
+            materialsList.push('Others');
+        }
+
         materialsList.forEach(m => {
             result[m] = { dailyWeights: Array(32).fill(0), total: 0 };
         });
-        
+
         raw.forEach(col => {
             const d = parseCollectionDate(col.date || col.date_collected);
             if (!d || d.getMonth() !== month || d.getFullYear() !== year) return;
             const dayIdx = d.getDate() - 1;
-            
+
             (col.items || col.collection_items || []).forEach(item => {
                 const mat = item.material || 'Others';
                 const known = materialsList.find(m => m.toLowerCase() === mat.toLowerCase()) || 'Others';
                 const wt = Number(item.weight) || 0;
-                
+
                 result[known].dailyWeights[dayIdx] += wt;
                 result[known].total += wt;
             });
         });
-        
+
         return { dataGrid: result, materialsList };
     }
 
@@ -154,19 +168,19 @@ const JunkshopExport = (() => {
             return;
         }
 
-        const now        = new Date();
-        const month      = opts.month ?? now.getMonth();
-        const year       = opts.year  ?? now.getFullYear();
-        
-        // Load the dataset dynamically
+        const now = new Date();
+        const month = opts.month ?? now.getMonth();
+        const year = opts.year ?? now.getFullYear();
+
+        // Dynamically fetch matrix mapping parameters
         const { dataGrid, materialsList } = await aggregateSupabaseData(month, year);
         const monthLabel = `${MONTHS[month]} ${year}`;
 
         const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-        const W   = doc.internal.pageSize.getWidth();   
-        const H   = doc.internal.pageSize.getHeight();  
-        const ML  = 30, MR = 30;
-        const usableW = W - ML - MR;  
+        const W = doc.internal.pageSize.getWidth();
+        const H = doc.internal.pageSize.getHeight();
+        const ML = 30, MR = 30;
+        const usableW = W - ML - MR;
 
         let y = 18;
 
@@ -195,7 +209,7 @@ const JunkshopExport = (() => {
                 const blob = await resp.blob();
                 return await new Promise((res, rej) => {
                     const r = new FileReader();
-                    r.onload  = () => res(r.result);
+                    r.onload = () => res(r.result);
                     r.onerror = rej;
                     r.readAsDataURL(blob);
                 });
@@ -206,18 +220,18 @@ const JunkshopExport = (() => {
         const logoY = y + 10;
         const centerX = W / 2;
 
-        const leftLogoData  = await loadImage('photo/left_logo.jpg');
+        const leftLogoData = await loadImage('photo/left_logo.jpg');
         const rightLogoData = await loadImage('photo/right_logo.png');
-        if (leftLogoData)  doc.addImage(leftLogoData,  'JPEG', centerX - 200 - logoW, logoY, logoW, logoH);
-        if (rightLogoData) doc.addImage(rightLogoData, 'PNG',   centerX + 200,         logoY, logoW, logoH);
+        if (leftLogoData) doc.addImage(leftLogoData, 'JPEG', centerX - 200 - logoW, logoY, logoW, logoH);
+        if (rightLogoData) doc.addImage(rightLogoData, 'PNG', centerX + 200, logoY, logoW, logoH);
 
-        ctext('Republic of the Philippines',    y + 13, 9.5, 'normal');
-        ctext('City of Manila',                y + 25,  9.5, 'normal');
-        ctext('DEPARTMENT OF PUBLIC SERVICES', y + 42, 17,  'bold', [0, 70, 150]);
-        ctext('Manila, Philippines',           y + 57, 9.5, 'normal');
+        ctext('Republic of the Philippines', y + 13, 9.5, 'normal');
+        ctext('City of Manila', y + 25, 9.5, 'normal');
+        ctext('DEPARTMENT OF PUBLIC SERVICES', y + 42, 17, 'bold', [0, 70, 150]);
+        ctext('Manila, Philippines', y + 57, 9.5, 'normal');
 
         y += 70;
-        hline(ML, W - MR, y,     2.5);
+        hline(ML, W - MR, y, 2.5);
         hline(ML, W - MR, y + 4, 0.8);
         y += 14;
 
@@ -239,35 +253,35 @@ const JunkshopExport = (() => {
             hline(x + lw + 1, x + lw + 1 + ulLen, yy + 1.5, 0.5);
         };
 
-        field('Junkshop Name: ', opts.junkshopName || '', ML,       y, 130);
-        field('Address: ',       opts.address      || '', ML + 240, y, 170);
-        field('Brgy: ',    opts.barangay || '', ML + 490, y, 55);
-        field('Zone: ',    opts.zone     || '', ML + 583, y, 35);
+        field('Junkshop Name: ', opts.junkshopName || '', ML, y, 130);
+        field('Address: ', opts.address || '', ML + 240, y, 170);
+        field('Brgy: ', opts.barangay || '', ML + 490, y, 55);
+        field('Zone: ', opts.zone || '', ML + 583, y, 35);
         field('District: ', opts.district || '', ML + 648, y, 60);
         y += 14;
 
-        field('Owner: ',            opts.owner          || '', ML,       y, 110);
-        field('Mobile No. : ',      opts.mobile         || '', ML + 207, y, 80);
-        field('Landline: ',         opts.landline        || '', ML + 350, y, 75);
+        field('Owner: ', opts.owner || '', ML, y, 110);
+        field('Mobile No. : ', opts.mobile || '', ML + 207, y, 80);
+        field('Landline: ', opts.landline || '', ML + 350, y, 75);
         field('Date Established: ', opts.dateEstablished || '', ML + 480, y, 60);
-        field('Floor Area: ',       opts.floorArea       || '', ML + 612, y, 45);
-        field('No. of Aide: ',      opts.noOfAide        || '', ML + 694, y, 40);
+        field('Floor Area: ', opts.floorArea || '', ML + 612, y, 45);
+        field('No. of Aide: ', opts.noOfAide || '', ML + 694, y, 40);
         y += 12;
 
-        hline(ML, W - MR, y,     2);
+        hline(ML, W - MR, y, 2);
         hline(ML, W - MR, y + 4, 0.6);
         y += 12;
 
-        const colMat   = 88;
+        const colMat = 88;
         const colTotal = 44;
         const colWeeks = usableW - colMat - colTotal;
-        const colWeek  = colWeeks / 4;
+        const colWeek = colWeeks / 4;
         const dayCount = 7;
-        const dayW     = colWeek / dayCount;
+        const dayW = colWeek / dayCount;
 
-        const rh0 = 16, rh1 = 14, rh2 = 11, rh3 = 13;  
+        const rh0 = 16, rh1 = 14, rh2 = 11, rh3 = 13;
         const nMat = materialsList.length;
-        const tableH = rh0 + rh1 + rh2 + (nMat + 2) * rh3;  
+        const tableH = rh0 + rh1 + rh2 + (nMat + 2) * rh3;
         const tableTop = y;
 
         doc.setDrawColor(0,0,0);
@@ -297,7 +311,7 @@ const JunkshopExport = (() => {
 
         doc.setFontSize(7.5);
         doc.text('Monthly', totX + colTotal / 2, ry + (rh1 + rh2) / 2 - 1, { align: 'center' });
-        doc.text('Total',   totX + colTotal / 2, ry + (rh1 + rh2) / 2 + 9, { align: 'center' });
+        doc.text('Total', totX + colTotal / 2, ry + (rh1 + rh2) / 2 + 9, { align: 'center' });
 
         ry += rh1;
 
@@ -322,12 +336,10 @@ const JunkshopExport = (() => {
             wx = ML + colMat;
             doc.setFont('times', 'normal'); doc.setFontSize(6.5);
             
-            // Constrain grid painting loop to exactly 28 physical template columns
             for (let i = 0; i < 28; i++) {
                 box(wx, ry, dayW, rh3);
                 let dayWeight = item.dailyWeights[i] || 0;
 
-                // Fold late calendar days (29, 30, 31) visually into the final box index gracefully
                 if (i === 27) {
                     dayWeight += (item.dailyWeights[28] || 0) + 
                                  (item.dailyWeights[29] || 0) + 
@@ -354,7 +366,7 @@ const JunkshopExport = (() => {
             ry += rh3;
         });
 
-        // Bottom monitoring rows stay safe from column blowouts
+        // Bottom manual observation buffer rows
         for (let i = 0; i < 2; i++) {
             box(ML, ry, colMat, rh3);
             wx = ML + colMat;
@@ -373,23 +385,23 @@ const JunkshopExport = (() => {
         y += 28;
 
         const sigL = 175, dateL = 75;
-        hline(ML,          ML + sigL,                  y, 0.8);
+        hline(ML, ML + sigL, y, 0.8);
         hline(ML + sigL + 14, ML + sigL + 14 + dateL, y, 0.8);
-        hline(W / 2 + 8,              W / 2 + 8 + sigL,                  y, 0.8);
-        hline(W / 2 + 8 + sigL + 14,  W / 2 + 8 + sigL + 14 + dateL,    y, 0.8);
+        hline(W / 2 + 8, W / 2 + 8 + sigL, y, 0.8);
+        hline(W / 2 + 8 + sigL + 14, W / 2 + 8 + sigL + 14 + dateL, y, 0.8);
 
         y += 9;
-        ltext('Junkshop Owner/In-Charge', ML,                    y, 9,   'bold');
-        ltext('Date',                     ML + sigL + 20,        y, 9,   'normal');
-        ltext('DPS - Monitoring',         W / 2 + 8,             y, 9,   'bold');
-        ltext('Date',                     W / 2 + 8 + sigL + 20, y, 9,   'normal');
+        ltext('Junkshop Owner/In-Charge', ML, y, 9, 'bold');
+        ltext('Date', ML + sigL + 20, y, 9, 'normal');
+        ltext('DPS - Monitoring', W / 2 + 8, y, 9, 'bold');
+        ltext('Date', W / 2 + 8 + sigL + 20, y, 9, 'normal');
 
         y += 12;
-        ltext('(Signature over printed name)', ML,        y, 7.5, 'normal');
+        ltext('(Signature over printed name)', ML, y, 7.5, 'normal');
         ltext('(Signature over printed name)', W / 2 + 8, y, 7.5, 'normal');
 
         y += 22;
-        hline(ML, W - MR, y,     2.5);
+        hline(ML, W - MR, y, 2.5);
         hline(ML, W - MR, y + 4, 0.8);
         y += 18;
 
