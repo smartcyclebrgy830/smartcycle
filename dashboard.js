@@ -342,13 +342,25 @@ function updateStats(stats) {
 function updateTrendIndicator(elementId, isPositive) {
     const trendElement = document.getElementById(elementId);
     if (trendElement) {
+        // 1. Update the colors
         trendElement.classList.remove('positive', 'negative');
         trendElement.classList.add(isPositive ? 'positive' : 'negative');
         
-        const icon = trendElement.querySelector('i');
-        if (icon) {
-            icon.setAttribute('data-lucide', isPositive ? 'trending-up' : 'trending-down');
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+        // 2. Find the existing icon (it might be an <i> if it hasn't rendered, or an <svg> if it has)
+        const existingIcon = trendElement.querySelector('i, svg');
+        
+        if (existingIcon) {
+            // 3. Create a brand new <i> element with the correct up/down attribute
+            const newIcon = document.createElement('i');
+            newIcon.setAttribute('data-lucide', isPositive ? 'trending-up' : 'trending-down');
+            
+            // 4. Replace the old icon in the DOM
+            existingIcon.replaceWith(newIcon);
+            
+            // 5. Tell Lucide to turn this new <i> tag into an SVG
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         }
     }
 }
