@@ -211,6 +211,7 @@ function wireModal() {
     contactInput?.addEventListener('input', () => { if (contactErr) contactErr.textContent = ''; });
 
     // Submit / Update Operations
+// Submit / Update Operations
     submitSaleBtn?.addEventListener('click', async () => {
         if (isSubmitting) return; 
         isSubmitting = true;
@@ -237,6 +238,13 @@ function wireModal() {
         const activeTab = saleModal.querySelector('.m-tab.active');
         const type = activeTab?.getAttribute('data-type') || 'organization';
 
+        // NEW LOGIC: Determine Profile Type for Sales (Organization/Junkshop = Partner)
+        let determinedProfileType = 'customer';
+        const typeLower = type.toLowerCase();
+        if (typeLower === 'organization' || typeLower === 'junkshop') {
+            determinedProfileType = 'partner';
+        }
+
         // Format Date (YYYY-MM-DD) for database compatibility since sales.date is a Date field type
         const saleDateFormatted = dateVal; 
 
@@ -246,9 +254,6 @@ function wireModal() {
 
         let receiptImage = (receiptPreviewImg?.src && receiptPreviewImg.src !== window.location.href) ? receiptPreviewImg.src : null;
 
-        // 🔹 CRITICAL SECURITY / CACHE FIX: Filter base object properties matching sales columns exactly
-// 🔹 FIXED: Removed the invalid 'partner' field from saleData payload
-        // Also removed 'raw_date' if it is not a structural column in your sales schema
         const saleData = {
             date: saleDateFormatted,
             type: type,
@@ -280,7 +285,8 @@ function wireModal() {
                             name: partnerVal,
                             category: type,
                             address: addressVal || 'N/A',
-                            contact_num: contactVal || 'N/A'
+                            contact_num: contactVal || 'N/A',
+                            type: determinedProfileType // Sync type based on category
                         })
                         .eq('id', currentSale.partner_id);
                 }
@@ -318,14 +324,14 @@ function wireModal() {
                 
                 if (existingProfile) {
                     profileId = existingProfile.id;
-                    // 🔹 UPDATED: Syncs name and category alongside address and contact fields
                     await window._supabase
                         .from('profiles')
                         .update({ 
                             name: partnerVal,
                             category: type,
                             address: addressVal || 'N/A', 
-                            contact_num: contactVal || 'N/A' 
+                            contact_num: contactVal || 'N/A',
+                            type: determinedProfileType // Sync type based on category
                         })
                         .eq('id', profileId);
                 } else {
@@ -336,7 +342,8 @@ function wireModal() {
                             category: type,
                             address: addressVal || 'N/A',
                             contact_num: contactVal || 'N/A',
-                            display_id: displayId
+                            display_id: displayId,
+                            type: determinedProfileType // Set new profile type
                         }])
                         .select()
                         .single();
@@ -367,7 +374,7 @@ function wireModal() {
                 }));
         
                 const { error: insertItemsError } = await window._supabase
-                    .from('sale_items') // 🔹 Directly query your exact schema name string safely
+                    .from('sale_items')
                     .insert(itemsToInsert);
         
                 if (insertItemsError) throw new Error("Failed to insert sale items: " + insertItemsError.message);
