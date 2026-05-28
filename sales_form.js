@@ -267,8 +267,6 @@ function wireModal() {
                 // ==========================================
                 // UPDATE FLOW 
                 // ==========================================
-                
-                // 1. First, find the partner_id associated with this existing sale
                 const { data: currentSale, error: fetchSaleError } = await window._supabase
                     .from('sales')
                     .select('partner_id')
@@ -277,9 +275,8 @@ function wireModal() {
 
                 if (fetchSaleError) throw new Error("Failed to fetch sale context: " + fetchSaleError.message);
 
-                // 2. Update the profile record with the updated inputs
                 if (currentSale && currentSale.partner_id) {
-                    await window._supabase
+                    const { error: profileUpdateError } = await window._supabase
                         .from('profiles')
                         .update({
                             name: partnerVal,
@@ -289,9 +286,11 @@ function wireModal() {
                             type: determinedProfileType // Sync type based on category
                         })
                         .eq('id', currentSale.partner_id);
+                        
+                    // Catch the error here if the update fails
+                    if (profileUpdateError) throw new Error("Failed to update profile: " + profileUpdateError.message);
                 }
 
-                // 3. Complete updating the sales table record
                 const { error: updateError } = await window._supabase.from('sales').update(saleData).eq('id', editingId);
                 if (updateError) throw new Error("Update failed: " + updateError.message);
             
@@ -316,15 +315,20 @@ function wireModal() {
                 const displayId = generateDisplayId('S');
                 let profileId = null;
                 
-                const { data: existingProfile } = await window._supabase
+                const { data: existingProfile, error: fetchError } = await window._supabase
                     .from('profiles')
                     .select('id')
                     .ilike('name', partnerVal)
                     .maybeSingle();
                 
+                // Allow non-existent rows, but catch actual DB errors
+                if (fetchError && fetchError.code !== 'PGRST116') {
+                    throw new Error("Error checking for existing profile: " + fetchError.message);
+                }
+                
                 if (existingProfile) {
                     profileId = existingProfile.id;
-                    await window._supabase
+                    const { error: profileUpdateError } = await window._supabase
                         .from('profiles')
                         .update({ 
                             name: partnerVal,
@@ -334,6 +338,9 @@ function wireModal() {
                             type: determinedProfileType // Sync type based on category
                         })
                         .eq('id', profileId);
+                        
+                    // Catch the error here so old NULL values don't quietly remain
+                    if (profileUpdateError) throw new Error("Failed to update existing profile: " + profileUpdateError.message);
                 } else {
                     const { data: newProfile, error: profileError } = await window._supabase
                         .from('profiles')
@@ -343,16 +350,15 @@ function wireModal() {
                             address: addressVal || 'N/A',
                             contact_num: contactVal || 'N/A',
                             display_id: displayId,
-                            type: determinedProfileType // Set new profile type
+                            type: determinedProfileType 
                         }])
                         .select()
                         .single();
                 
-                    if (profileError) throw profileError;
+                    if (profileError) throw new Error("Failed to create new profile: " + profileError.message);
                     profileId = newProfile.id;
                 }
                 
-                // 1. Insert the parent Sale record with the verified relational key link
                 const { data: insertedSale, error: insertError } = await window._supabase
                     .from('sales')
                     .insert([{
@@ -362,9 +368,8 @@ function wireModal() {
                     .select()
                     .single();
                 
-                if (insertError) throw insertError;
+                if (insertError) throw new Error("Failed to insert sale: " + insertError.message);
         
-                // 2. Map and insert child items using structural material IDs
                 const itemsToInsert = saleMaterials.map(m => ({
                     sale_id: insertedSale.id, 
                     material_id: m.materialId, 
@@ -383,12 +388,11 @@ function wireModal() {
             closeModal();
             if (typeof window.renderTable === 'function') await window.renderTable();
         } catch (dbError) {
-            alert(dbError.message);
+            alert(dbError.message); // This will surface exactly why 'type' isn't writing
         } finally {
             isSubmitting = false; 
         }
     });
-
     // Reset Modal Elements Window
     function resetModal() {
         saleMaterials = [];
