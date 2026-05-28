@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="navbar.css">
+    <link rel="stylesheet" href="profile_transaction.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <nav id="navbar-container"></nav>
+
+    <main class="main-content">
+
+        <!-- Page Header -->
+        <header class="page-header">
+            <h1>Profile</h1>
+        </header>
+
+        <!-- Profile Info Card -->
+        <article class="profile-card" id="profileCard" aria-label="Profile information">
+            <div class="profile-card-inner">
+                <div class="profile-avatar" id="profileAvatar" aria-hidden="true">
+                    <i data-lucide="user"></i>
+                </div>
+                <div class="profile-info">
+                    <h2 class="profile-name" id="profileName">—</h2>
+                    <p class="profile-email" id="profileEmail">—</p>
+                    <p class="profile-contact" id="profileContact">—</p>
+                </div>
+            </div>
+            <button class="edit-profile-btn" id="editProfileBtn" aria-label="Edit profile">
+                <i data-lucide="pencil" aria-hidden="true"></i>
+            </button>
+        </article>
+
+        <!-- Transactions Section -->
+        <section class="transactions-section" aria-labelledby="transactionsTitle">
+
+            <header class="transactions-header">
+                <h2 class="transactions-title" id="transactionsTitle">Transactions</h2>
+                <div class="date-filter">
+                    <button class="date-range-btn" id="dateRangeBtn" aria-expanded="false" aria-haspopup="dialog">
+                        <i data-lucide="calendar" aria-hidden="true"></i>
+                        Search Date Range
+                    </button>
+                    <div id="datePopover" class="popover date-popover" aria-hidden="true" role="dialog" aria-label="Date range filter">
+                        <div class="date-popover-inner">
+                            <ul class="quick-dates" aria-label="Quick date ranges">
+                                <li><button type="button" data-range="yesterday">Yesterday</button></li>
+                                <li><button type="button" data-range="last-week">Last week</button></li>
+                                <li><button type="button" data-range="last-month">Last month</button></li>
+                                <li><button type="button" data-range="last-quarter">Last quarter</button></li>
+                            </ul>
+                            <div class="calendar-panel">
+                                <div class="calendar-nav">
+                                    <button type="button" id="calPrev" aria-label="Previous month">
+                                        <i data-lucide="chevron-left" aria-hidden="true"></i>
+                                    </button>
+                                    <span id="calMonthLabel" class="cal-month-label"></span>
+                                    <button type="button" id="calNext" aria-label="Next month">
+                                        <i data-lucide="chevron-right" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                                <table class="calendar-grid" role="grid" aria-label="Calendar">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" abbr="Monday">Mo</th>
+                                            <th scope="col" abbr="Tuesday">Tu</th>
+                                            <th scope="col" abbr="Wednesday">We</th>
+                                            <th scope="col" abbr="Thursday">Th</th>
+                                            <th scope="col" abbr="Friday">Fr</th>
+                                            <th scope="col" abbr="Saturday">Sa</th>
+                                            <th scope="col" abbr="Sunday">Su</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="calBody"></tbody>
+                                </table>
+                                <div class="calendar-footer">
+                                    <button type="button" id="clearDateBtn" class="clear-date-btn">Clear</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="transactions-card">
+                <div class="table-wrapper">
+                    <table class="tx-table" aria-label="Transaction history">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="col-expand" aria-label="Expand row"></th>
+                                <th scope="col">Date</th>
+                                <th scope="col">Material</th>
+                                <th scope="col">Weight</th>
+                                <th scope="col">Total</th>
+                                <th scope="col" class="col-actions" aria-label="Actions"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="txTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <nav class="pagination" id="txPagination" aria-label="Transaction pagination"></nav>
+            </div>
+
+        </section>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="navbar.js"></script>
+    <script src="profile_transaction.js"></script>
+    
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="user-modal-overlay" role="dialog" aria-labelledby="editModalTitle" aria-modal="true">
+        <div class="user-modal-container">
+            <div class="user-modal-inner">
+                <header class="modal-header">
+                    <h3 id="editModalTitle">Edit Profile</h3>
+                </header>
+                <form id="editProfileForm" novalidate>
+                    <div class="form-group">
+                        <label for="editName">Full Name</label>
+                        <input type="text" id="editName" class="form-input" placeholder="Enter full name" autocomplete="name">
+                        <span class="field-error" id="editNameError" role="alert"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAddress">Address</label>
+                        <input type="text" id="editAddress" class="form-input" placeholder="Enter address" autocomplete="street-address">
+                        <span class="edit-field-error" id="editAddressError" role="alert"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="editContact">Contact Number</label>
+                        <input type="tel" id="editContact" class="form-input" placeholder="09XX-XXX-XXXX" maxlength="13" autocomplete="tel">
+                        <span class="field-error" id="editContactError" role="alert"></span>
+                    </div>
+                    <span class="field-error" id="editModalError" role="alert"></span>
+                    <footer class="modal-actions-row">
+                        <button class="btn-cancel" id="editCancelBtn" type="button">
+                            <i data-lucide="x" aria-hidden="true"></i>
+                            Cancel
+                        </button>
+                        <button class="btn-submit-green" id="editSaveBtn" type="submit">
+                            <i data-lucide="check" aria-hidden="true"></i>
+                            Save Changes
+                        </button>
+                    </footer>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+</body>
+</html>
