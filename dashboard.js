@@ -53,6 +53,9 @@ document.addEventListener('DOMContentLoaded', function() {
 /**
  * Main function to load all dashboard data from Supabase database
  */
+/**
+ * Main function to load all dashboard data from Supabase database
+ */
 async function loadDashboardData() {
     try {
         const now = new Date();
@@ -62,23 +65,19 @@ async function loadDashboardData() {
         // ----------------------------------------
         // 1. TOTAL DISTRIBUTORS & TREND
         // ----------------------------------------
-        // Category 'Distributor' corresponds to profile entries count
         const { data: profiles, error: pError } = await supabaseClient
             .from('profiles')
             .select('created_at, type');
 
         if (pError) throw pError;
 
-        // Assuming distributors are records where type is 'distributor' or similar, 
-        // if profiles are purely distributors, we count all.
-        const totalDistributors = profiles.length;
-
-        // Calculate Distributor MoM trend
+        // Calculate Current Month Distributors (This is now your main metric!)
         const currentMonthDistributors = profiles.filter(p => {
             const d = new Date(p.created_at);
             return d.getMonth() === currentMonthNum && d.getFullYear() === currentYear;
         }).length;
 
+        // Calculate Previous Month Distributors for Trend
         const prevMonthDistributors = profiles.filter(p => {
             const d = new Date(p.created_at);
             return d.getMonth() === (currentMonthNum - 1 === -1 ? 11 : currentMonthNum - 1) && 
@@ -96,14 +95,13 @@ async function loadDashboardData() {
 
         if (sError) throw sError;
 
-        const totalSales = sales.reduce((acc, curr) => acc + Number(curr.total_amount || 0), 0);
-
-        // Calculate Sales MoM trend
+        // Calculate Current Month Sales (This is now your main metric!)
         const currentMonthSales = sales.filter(s => {
             const d = new Date(s.date);
             return d.getMonth() === currentMonthNum && d.getFullYear() === currentYear;
         }).reduce((acc, curr) => acc + Number(curr.total_amount || 0), 0);
 
+        // Calculate Previous Month Sales for Trend
         const prevMonthSales = sales.filter(s => {
             const d = new Date(s.date);
             return d.getMonth() === (currentMonthNum - 1 === -1 ? 11 : currentMonthNum - 1) && 
@@ -115,19 +113,15 @@ async function loadDashboardData() {
         // ----------------------------------------
         // 3. TOTAL COLLECTION & TREND
         // ----------------------------------------
-        // Fetch raw weights accumulated from collection_items
         const { data: collectionItems, error: ciError } = await supabaseClient
             .from('collection_items')
             .select('weight, collections(date_collected), price_list(material_name)');
 
         if (ciError) throw ciError;
 
-        const totalCollection = collectionItems.reduce((acc, curr) => acc + Number(curr.weight || 0), 0);
-
-        // Calculate Collection MoM trend
+        // Calculate Current Month Collection (This is now your main metric!)
         const currentMonthColl = collectionItems.filter(item => {
             if (!item.collections) return false;
-            // Handle both single object or array response formats
             const collectionData = Array.isArray(item.collections) ? item.collections[0] : item.collections;
             if (!collectionData || !collectionData.date_collected) return false;
             
@@ -135,6 +129,7 @@ async function loadDashboardData() {
             return d.getMonth() === currentMonthNum && d.getFullYear() === currentYear;
         }).reduce((acc, curr) => acc + Number(curr.weight || 0), 0);
         
+        // Calculate Previous Month Collection for Trend
         const prevMonthColl = collectionItems.filter(item => {
             if (!item.collections) return false;
             const collectionData = Array.isArray(item.collections) ? item.collections[0] : item.collections;
@@ -148,7 +143,7 @@ async function loadDashboardData() {
         const collectionTrend = calculateTrend(currentMonthColl, prevMonthColl);
 
         // ----------------------------------------
-        // 4. SPARKLINE CHRONOLOGY (Last 6 Months Data Array)
+        // 4. SPARKLINE CHRONOLOGY 
         // ----------------------------------------
         const sparklineData = {
             collection: getMonthlyChronology(collectionItems, 'weight', 'collections', 'date_collected'),
@@ -157,21 +152,19 @@ async function loadDashboardData() {
         };
 
         // ----------------------------------------
-        // 5. CHART: MOST COLLECTED MATERIALS (Bar Chart)
+        // 5. CHART: MOST COLLECTED MATERIALS 
         // ----------------------------------------
         const monthLabels = ['Jan', 'Feb', 'March', 'April', 'May'];
         const materialDatasets = processMaterialData(collectionItems, monthLabels, currentYear);
 
         // ----------------------------------------
-        // 6. CHART: TOP CONTRIBUTION BY CATEGORY (Donut Chart)
+        // 6. CHART: TOP CONTRIBUTION BY CATEGORY 
         // ----------------------------------------
-        // Grouping users by profiles categories (Barangay, School, Walk-in)
         const categoriesCount = { 'Barangay': 0, 'School': 0, 'Walk-in': 0 };
         profiles.forEach(p => {
             if (p.type && categoriesCount[p.type] !== undefined) {
                 categoriesCount[p.type]++;
             } else if (p.category && categoriesCount[p.category] !== undefined) {
-                // matching fallback column name in your schema description
                 categoriesCount[p.category]++;
             }
         });
@@ -183,17 +176,22 @@ async function loadDashboardData() {
             Math.round((categoriesCount['Walk-in'] / totalCatSum) * 100)
         ];
 
-        // Combine everything into the dashboard structural format
+        // ----------------------------------------
+        // BUILD FINAL DATA STRUCTURE
+        // ----------------------------------------
         const finalDashboardData = {
             userName: sessionStorage.getItem('userName') || 'Admin',
             stats: {
-                totalCollection: Math.round(totalCollection),
+                // Notice these now use the currentMonth variables!
+                totalCollection: Math.round(currentMonthColl), 
                 collectionTrend: Math.abs(collectionTrend),
                 collectionTrendPositive: collectionTrend >= 0,
-                totalSales: Math.round(totalSales),
+                
+                totalSales: Math.round(currentMonthSales), 
                 salesTrend: Math.abs(salesTrend),
                 salesTrendPositive: salesTrend >= 0,
-                totalDistributors: totalDistributors,
+                
+                totalDistributors: currentMonthDistributors, 
                 distributorTrend: Math.abs(distributorTrend),
                 distributorTrendPositive: distributorTrend >= 0
             },
