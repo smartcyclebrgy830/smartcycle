@@ -1,6 +1,7 @@
 const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
 window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 window.collections = [];
 window.currentItems = [];
 window.currentCategory = 'School';
@@ -20,7 +21,6 @@ function refreshIcons() {
         lucide.createIcons();
     }
 }
-
 // YYYY-MM-DD string to MM-DD-YYYY
 function formatDateToMDY(dateString) {
     if (!dateString) return 'N/A';
