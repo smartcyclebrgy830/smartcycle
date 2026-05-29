@@ -1,35 +1,162 @@
-/**
- * SmartCycle - Collection Management Engine
- * Handles modal workflows, validation, receipt preview, and Supabase integration.
- */
-
-// Global tracking variables securely bound to module scope
+// Ensure strict tracking context variables exist safely at module/global scale
 let editingIndex = -1;
 let currentCategory = 'School';
+window.currentItems = []; // Initializing to prevent undefined array pushes
+
+// Local cache to resolve names during edit mode if needed
 let loadedPricesCache = [];
-window.currentItems = []; 
 
-// UTILITY FUNCTIONS
-const generateDisplayId = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+function generateDisplayId(prefix) {
+    return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+}
 
-const toTitleCase = (str) => {
+function toTitleCase(str) {
     if (!str) return '';
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+}
+
+// GLOBAL ASSIGNMENTS & MODAL INTERACTIONS
+window.openAddModal = async () => {
+    const modal = document.getElementById('addCollectionModal');
+    if (!modal) return;
+
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    editingIndex = -1;
+    resetForm();
+
+    // Dynamically fetch and fill up material prices matching your Price List dashboard
+    await loadActivePrices();
+
+    document.getElementById('inDate').value = new Date().toISOString().split('T')[0];
+    updatePreview();
+    setTimeout(refreshIcons, 100);
 };
 
-const formatContact = (value) => {
-    const cleaned = value.replace(/\D/g, '');
-    if (cleaned.length <= 4) return cleaned;
-    if (cleaned.length <= 7) return `${cleaned.slice(0, 4)}-${cleaned.slice(4)}`;
-    return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 7)}-${cleaned.slice(7, 11)}`;
+/**
+ * NEW FIXED ENGINE FUNCTION: Called from your main dashboard controller to safely open edit mode.
+ * Resolves the missing 'material' name mapping bug from 'collection_items' structural relations.
+ */
+window.openEditModal = async (index, collectionHeader, detailedItems) => {
+    const modal = document.getElementById('addCollectionModal');
+    if (!modal) return;
+
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    editingIndex = index;
+    clearAllErrors();
+
+    // 1. Force reload live prices into dropdown select and wait for cache population
+    await loadActivePrices();
+
+    // 2. Populate Header Fields
+    currentCategory = collectionHeader.type || 'School';
+    document.querySelectorAll('.m-tab').forEach(tab => {
+        const tabCategory = tab.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+        tab.classList.toggle('active', tabCategory === currentCategory);
+    });
+
+    if (document.getElementById('inCustomer')) document.getElementById('inCustomer').value = collectionHeader.customer_name || '';
+    if (document.getElementById('inDate')) document.getElementById('inDate').value = collectionHeader.date_collected || '';
+    if (document.getElementById('inAddress')) document.getElementById('inAddress').value = collectionHeader.address || '';
+    if (document.getElementById('inContact')) document.getElementById('inContact').value = collectionHeader.contact_number || '';
+
+    // 3. SECURE FIX: Safely parse names using the robust local cache array directly
+    window.currentItems = (detailedItems || []).map(item => {
+        const targetMaterialId = parseInt(item.material_id, 10);
+        
+        // Find the matched object directly in the array data fetched from Supabase
+        const cachedItem = loadedPricesCache.find(p => parseInt(p.id, 10) === targetMaterialId);
+        
+        // Match standard naming fallbacks across both frontend layouts and backend joined fields
+        const finalName = item.material_name || item.material || (cachedItem ? cachedItem.material_name : 'Unknown Material');
+
+        return {
+            materialId: targetMaterialId,
+            material: finalName,        // Resolves your modal preview layout
+            material_name: finalName,   // Resolves your main dashboard loop template
+            rate: Number(item.rate || (cachedItem ? cachedItem.price : 0)),
+            weight: Number(item.weight || 0),
+            subtotal: Number(item.subtotal || (item.rate * item.weight) || 0)
+        };
+    });
+
+    // 4. Transform Action Button to Update context
+    const submitBtn = document.querySelector('.btn-submit-green');
+    if (submitBtn) {
+        submitBtn.onclick = () => submitCollection();
+        submitBtn.innerHTML = '<i data-lucide="check"></i> Update Entry';
+    }
+
+    updatePreview();
+    renderItems();
+    setTimeout(refreshIcons, 100);
 };
 
-const validateContact = (value) => {
-    if (!value) return true;
-    return /^09\d{9}$/.test(value.replace(/[-\s]/g, ''));
+// FIXED ENGINE: Added 'id' to the select string so item.id isn't undefined
+async function loadActivePrices() {
+    const selMaterial = document.getElementById('selMaterial');
+    if (!selMaterial) return;
+
+    try {
+        const { data: prices, error } = await _supabase
+            .from('price_list')
+            .select('id, material_name, price')
+            .eq('status', 'Active'); 
+
+        if (error) throw error;
+
+        if (prices && prices.length > 0) {
+            loadedPricesCache = prices; // Store references globally to parse safely on edit tasks
+            selMaterial.innerHTML = prices.map((item, idx) => {
+                const rate = Math.round(item.price); 
+                return `<option value="${item.id}" data-name="${item.material_name}" data-rate="${rate}" ${idx === 0 ? 'selected' : ''}>
+                    ${item.material_name} - ₱${rate}/kg
+                </option>`;
+            }).join('');
+        } else {
+            selMaterial.innerHTML = '<option value="" disabled>No active materials found</option>';
+        }
+    } catch (err) {
+        console.error("Error fetching live price rates from database:", err.message);
+        // Fallback structures initialized cleanly to maintain operational tracking integrity
+        loadedPricesCache = [
+            { id: 1, material_name: "Plastic", price: 3 },
+            { id: 2, material_name: "Bakal", price: 15 },
+            { id: 3, material_name: "PET-Assorted", price: 5 },
+            { id: 4, material_name: "Paper Assorted", price: 8 },
+            { id: 5, material_name: "Yero", price: 8 }
+        ];
+        selMaterial.innerHTML = `
+            <option value=1 data-name="Plastic" data-rate="3" selected>Plastic - ₱3/kg</option>
+            <option value=2 data-name="Bakal" data-rate="15">Bakal - ₱15/kg</option>
+            <option value=3 data-name="PET-Assorted" data-rate="5">PET-Assorted - ₱5/kg</option>
+            <option value=4 data-name="Paper Assorted" data-rate="8">Paper Assorted - ₱8/kg</option>
+            <option value=5 data-name="Yero" data-rate="8">Yero - ₱8/kg</option>
+        `;
+    }
+}
+
+window.closeAddModal = () => {
+    const modal = document.getElementById('addCollectionModal');
+    if (!modal) return;
+
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+    resetForm();
 };
 
-// FORM VALIDATION ENGINE
+// Outside click modal dismiss handler
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('addCollectionModal');
+    if (modal && e.target === modal) {
+        closeAddModal();
+    }
+});
+
+// FORM SYSTEM UTILITIES & VALIDATION HELPERS
 function showError(fieldId, message) {
     const field = document.getElementById(fieldId);
     if (!field) return;
@@ -59,135 +186,49 @@ function clearAllErrors() {
     if (itemsErr) itemsErr.textContent = '';
 }
 
-// MODAL CONTROLLERS
-window.openAddModal = async () => {
-    const modal = document.getElementById('addCollectionModal');
-    if (!modal) return;
+function validateContact(value) {
+    if (!value) return true;
+    return /^09\d{9}$/.test(value.replace(/[-\s]/g, ''));
+}
 
-    modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
+function formatContact(value) {
+    const cleaned = value.replace(/\D/g, '');
+    if (cleaned.length <= 4) return cleaned;
+    if (cleaned.length <= 7) return `${cleaned.slice(0, 4)}-${cleaned.slice(4)}`;
+    return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 7)}-${cleaned.slice(7, 11)}`;
+}
 
-    editingIndex = -1;
-    resetForm();
+// RESET STATE ACTIONS
+function resetForm() {
+    ['inCustomer', 'inDate', 'inAddress', 'inContact', 'inWeight'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
 
-    await loadActivePrices();
-
-    const dateField = document.getElementById('inDate');
-    if (dateField) dateField.value = new Date().toISOString().split('T')[0];
-    
-    updatePreview();
-    setTimeout(refreshIcons, 100);
-};
-
-window.openEditModal = async (index, collectionHeader, detailedItems) => {
-    const modal = document.getElementById('addCollectionModal');
-    if (!modal) return;
-
-    modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-
-    editingIndex = index;
     clearAllErrors();
+    window.currentItems = []; 
+    renderItems();
 
-    await loadActivePrices();
-
-    // Sync Category Tab state
-    currentCategory = collectionHeader.type || 'School';
-    document.querySelectorAll('.m-tab').forEach(tab => {
-        const tabCategory = tab.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
-        tab.classList.toggle('active', tabCategory === currentCategory);
+    currentCategory = 'School';
+    document.querySelectorAll('.m-tab').forEach((tab, idx) => {
+        tab.classList.toggle('active', idx === 0);
     });
 
-    // Populate Fields safely
-    if (document.getElementById('inCustomer')) document.getElementById('inCustomer').value = collectionHeader.customer_name || '';
-    if (document.getElementById('inDate')) document.getElementById('inDate').value = collectionHeader.date_collected || '';
-    if (document.getElementById('inAddress')) document.getElementById('inAddress').value = collectionHeader.address || '';
-    if (document.getElementById('inContact')) document.getElementById('inContact').value = collectionHeader.contact_number || '';
-
-    // Parse array with structural name mapping corrections
-    window.currentItems = (detailedItems || []).map(item => {
-        const targetMaterialId = parseInt(item.material_id, 10);
-        const cachedItem = loadedPricesCache.find(p => parseInt(p.id, 10) === targetMaterialId);
-        const finalName = item.material_name || item.material || (cachedItem ? cachedItem.material_name : 'Unknown Material');
-
-        return {
-            materialId: targetMaterialId,
-            material_name: finalName, 
-            rate: Number(item.rate || (cachedItem ? cachedItem.price : 0)),
-            weight: Number(item.weight || 0),
-            subtotal: Number(item.subtotal || (item.rate * item.weight) || 0)
-        };
-    });
-
-    // Mutate action button UI text to edit layout style context
     const submitBtn = document.querySelector('.btn-submit-green');
     if (submitBtn) {
         submitBtn.onclick = () => submitCollection();
-        submitBtn.innerHTML = '<i data-lucide="check"></i> Update Entry';
+        submitBtn.innerHTML = '<i data-lucide="check"></i> Submit';
     }
 
-    updatePreview();
-    renderItems();
-    setTimeout(refreshIcons, 100);
-};
+    const previewFields = { preCustomer: '---', preDate: '---', preAddress: '---', preContact: '---', preTotal: '₱0' };
+    Object.entries(previewFields).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = value;
+    });
 
-window.closeAddModal = () => {
-    const modal = document.getElementById('addCollectionModal');
-    if (!modal) return;
-
-    modal.classList.remove('remove');
-    modal.classList.remove('show');
-    document.body.style.overflow = '';
-    resetForm();
-};
-
-document.addEventListener('click', (e) => {
-    const modal = document.getElementById('addCollectionModal');
-    if (modal && e.target === modal) closeAddModal();
-});
-
-// BASE DATA INGESTION ENGINE
-async function loadActivePrices() {
-    const selMaterial = document.getElementById('selMaterial');
-    if (!selMaterial) return;
-
-    try {
-        const { data: prices, error } = await _supabase
-            .from('price_list')
-            .select('id, material_name, price')
-            .eq('status', 'Active'); 
-
-        if (error) throw error;
-
-        if (prices && prices.length > 0) {
-            loadedPricesCache = prices;
-            selMaterial.innerHTML = prices.map((item, idx) => {
-                const rate = Math.round(item.price); 
-                return `<option value="${item.id}" data-name="${item.material_name}" data-rate="${rate}" ${idx === 0 ? 'selected' : ''}>
-                    ${item.material_name} - ₱${rate}/kg
-                </option>`;
-            }).join('');
-            return;
-        }
-        throw new Error("No active database records found");
-    } catch (err) {
-        console.warn("Falling back to local default price lists:", err.message);
-        loadedPricesCache = [
-            { id: 1, material_name: "Plastic", price: 3 },
-            { id: 2, material_name: "Bakal", price: 15 },
-            { id: 3, material_name: "PET-Assorted", price: 5 },
-            { id: 4, material_name: "Paper Assorted", price: 8 },
-            { id: 5, material_name: "Yero", price: 8 }
-        ];
-        selMaterial.innerHTML = loadedPricesCache.map((item, idx) => `
-            <option value="${item.id}" data-name="${item.material_name}" data-rate="${item.price}" ${idx === 0 ? 'selected' : ''}>
-                ${item.material_name} - ₱${item.price}/kg
-            </option>
-        `).join('');
-    }
+    refreshIcons();
 }
 
-// FORM PRESENTATION CONTROLLER
 window.setCategory = (category, btn) => {
     currentCategory = category;
     document.querySelectorAll('.m-tab').forEach(tab => tab.classList.remove('active'));
@@ -204,7 +245,9 @@ window.updatePreview = function() {
     let formattedDate = date;
     if (date !== '---') {
         formattedDate = new Date(date).toLocaleDateString('en-US', {
-            year: 'numeric', month: 'short', day: 'numeric'
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
         });
     }
 
@@ -215,35 +258,8 @@ window.updatePreview = function() {
     });
 };
 
-function resetForm() {
-    ['inCustomer', 'inDate', 'inAddress', 'inContact', 'inWeight'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-
-    clearAllErrors();
-    window.currentItems = []; 
-    renderItems();
-
-    currentCategory = 'School';
-    document.querySelectorAll('.m-tab').forEach((tab, idx) => tab.classList.toggle('active', idx === 0));
-
-    const submitBtn = document.querySelector('.btn-submit-green');
-    if (submitBtn) {
-        submitBtn.onclick = () => submitCollection();
-        submitBtn.innerHTML = '<i data-lucide="check"></i> Submit';
-    }
-
-    const previewFields = { preCustomer: '---', preDate: '---', preAddress: '---', preContact: '---', preTotal: '₱0.00' };
-    Object.entries(previewFields).forEach(([id, value]) => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = value;
-    });
-
-    refreshIcons();
-}
-
 // RECEIPT LINE ITEMS CONTROLLER
+// Replace your existing window.addItem function with this:
 window.addItem = function() {
     const sel = document.getElementById('selMaterial');
     const weightInput = document.getElementById('inWeight');
@@ -252,6 +268,7 @@ window.addItem = function() {
     const weight = Number(weightInput.value);
     const selectedOption = sel.selectedOptions[0];
     const rate = Number(selectedOption?.dataset.rate || 0);
+    
     const materialId = parseInt(sel.value, 10); 
     const materialName = selectedOption?.dataset.name || '';
 
@@ -272,7 +289,8 @@ window.addItem = function() {
 
     window.currentItems.push({ 
         materialId,
-        material_name: materialName,
+        material: materialName,     // Matches layout expectation
+        material_name: materialName, // Matches database expectation
         rate, 
         weight, 
         subtotal: rate * weight 
@@ -280,11 +298,7 @@ window.addItem = function() {
     
     weightInput.value = '';
     weightInput.focus();
-    renderItems();
-};
 
-window.removeItem = (index) => {
-    window.currentItems.splice(index, 1);
     renderItems();
 };
 
@@ -307,7 +321,7 @@ function renderItems() {
             total += item.subtotal;
             mainRowsHtml += `
                 <tr>
-                  <td>${item.material_name}</td>
+                  <td>${item.material || 'Unknown'}</td>
                   <td>₱${item.rate}</td>
                   <td>${item.weight} kg</td>
                   <td><strong>₱${item.subtotal.toFixed(2)}</strong></td>
@@ -322,7 +336,7 @@ function renderItems() {
                 <tr>
                   <td style="text-align:center;">${item.weight}</td>
                   <td style="text-align:center;">kg</td>
-                  <td style="text-align:left;">${item.material_name}</td>
+                  <td style="text-align:left;">${item.material || 'Unknown'}</td>
                   <td style="text-align:center;">₱${item.rate}</td>
                   <td style="text-align:center;">₱${item.subtotal.toFixed(2)}</td>
                 </tr>`;
@@ -349,7 +363,13 @@ function renderItems() {
     refreshIcons();
 }
 
-// PERSISTENCE SYNC ENGINE
+window.removeItem = (index) => {
+    window.currentItems.splice(index, 1);
+    renderItems();
+};
+
+// PERSISTENCE (SUPABASE SYNC ENGINE)
+// PERSISTENCE (SUPABASE SYNC ENGINE)
 window.submitCollection = async function() {
     const customer = document.getElementById('inCustomer')?.value.trim();
     const date = document.getElementById('inDate')?.value;
@@ -380,24 +400,34 @@ window.submitCollection = async function() {
         const collectionPayload = { 
             customer_name: customer, 
             date_collected: date, 
-            address: address || 'N/A', 
-            contact_number: contact || 'N/A', 
+            address: address, 
+            contact_number: contact, 
             type: currentCategory 
         };
 
         if (editingIndex !== -1) {
-            // --- UPDATE EXISTING RECORD ---
             const targetedCollection = (typeof getFilteredCollections === 'function') 
                 ? getFilteredCollections()[editingIndex] 
                 : window.collections[editingIndex];
 
-            if (!targetedCollection?.id) throw new Error("Unable to identify targeted collection ID context.");
+            if (!targetedCollection || !targetedCollection.id) {
+                throw new Error("Unable to identify targeted collection ID context.");
+            }
+
             const targetId = targetedCollection.id;
 
-            const { error: headerUpdateError } = await _supabase.from('collections').update(collectionPayload).eq('id', targetId);
+            const { error: headerUpdateError } = await _supabase
+                .from('collections')
+                .update(collectionPayload)
+                .eq('id', targetId);
+
             if (headerUpdateError) throw headerUpdateError;
 
-            const { error: itemsClearError } = await _supabase.from('collection_items').delete().eq('collection_id', targetId);
+            const { error: itemsClearError } = await _supabase
+                .from('collection_items')
+                .delete()
+                .eq('collection_id', targetId);
+            
             if (itemsClearError) throw itemsClearError;
             
             const itemsToInsert = window.currentItems.map(item => ({
@@ -408,48 +438,72 @@ window.submitCollection = async function() {
                 subtotal: item.subtotal
             }));
         
-            const { error: itemsInsertError } = await _supabase.from('collection_items').insert(itemsToInsert);
+            const { error: itemsInsertError } = await _supabase
+                .from('collection_items')
+                .insert(itemsToInsert);
+        
             if (itemsInsertError) throw itemsInsertError;
             
             alert("Collection entry updated successfully!");
+
         } else {
-            // --- INSERT NEW RECORD ---
+            // --- INSERT MODE ---
             const displayId = generateDisplayId('C');
-            const formattedCustomer = toTitleCase(customer); 
+            const formattedCustomer = toTitleCase(customer.trim()); 
             collectionPayload.customer_name = formattedCustomer; 
 
-            // Standard core profiles matching structural classifications
-            const matchedOrgTypes = ['school', 'organization', 'junkshop', 'barangay'];
-            const determinedType = matchedOrgTypes.includes(currentCategory.toLowerCase()) ? 'customer' : 'walk-in';
-
             let profileId = null;
+            
             const { data: existingProfile } = await _supabase
                 .from('profiles')
                 .select('id, name, address, contact_num')
                 .ilike('name', formattedCustomer)
                 .maybeSingle();
+            
+            // NEW LOGIC: Fixed routing per your correction
+            const lowerCat = currentCategory ? currentCategory.toLowerCase() : '';
+            let determinedType = 'customer'; // Default to customer
+            
+            // If you have specific categories that act as partners, enter them here:
+            if (lowerCat === 'partner_category_name' || lowerCat === 'another_partner') {
+                determinedType = 'partner';
+            }
 
             if (existingProfile) {
                 profileId = existingProfile.id;
-                await _supabase.from('profiles').update({
-                    name: formattedCustomer,
-                    category: currentCategory || 'Walk-ins',
-                    address: address || existingProfile.address || 'N/A',
-                    contact_num: contact || existingProfile.contact_num || 'N/A',
-                    type: determinedType
-                }).eq('id', profileId);
+                const updatePayload = {};
+                
+                if (existingProfile.name !== formattedCustomer) {
+                    updatePayload.name = formattedCustomer;
+                }
+                if (existingProfile.address === 'N/A' || !existingProfile.address) {
+                    updatePayload.address = address || 'N/A';
+                }
+                if (existingProfile.contact_num === 'N/A' || !existingProfile.contact_num) {
+                    updatePayload.contact_num = contact || 'N/A';
+                }
+                
+                updatePayload.category = currentCategory || 'Walk-ins';
+                updatePayload.type = determinedType; 
+
+                await _supabase
+                    .from('profiles')
+                    .update(updatePayload)
+                    .eq('id', profileId);
+
             } else {
                 const { data: newProfile, error: profileError } = await _supabase
                     .from('profiles')
                     .insert([{
                         name: formattedCustomer,          
                         category: currentCategory || 'Walk-ins', 
-                        address: address || 'N/A',                
-                        contact_num: contact || 'N/A',            
+                        address: address || 'N/A',               
+                        contact_num: contact || 'N/A',           
                         display_id: displayId,
                         type: determinedType                     
                     }])
-                    .select().single();
+                    .select()
+                    .single();
             
                 if (profileError) throw profileError;
                 profileId = newProfile.id;
@@ -460,7 +514,8 @@ window.submitCollection = async function() {
             const { data: headerData, error: headerError } = await _supabase
                 .from('collections')
                 .insert([collectionPayload])
-                .select().single();
+                .select()
+                .single();
             
             if (headerError) throw headerError;
             
@@ -472,10 +527,11 @@ window.submitCollection = async function() {
                 subtotal: item.subtotal
             }));
             
-            const { error: itemsError } = await _supabase.from('collection_items').insert(itemsToInsert);
+            const { error: itemsError } = await _supabase
+                .from('collection_items')
+                .insert(itemsToInsert);
+            
             if (itemsError) throw itemsError;
-
-            alert("Collection entry created successfully!");
         }
 
         closeAddModal();
@@ -493,34 +549,27 @@ window.submitCollection = async function() {
     }
 };
 
-// ACTIONS & STRUCTURAL LAYOUT LISTENERS
 window.setupFieldListeners = function() {
     const inCustomer = document.getElementById('inCustomer');
     if (inCustomer) {
-        inCustomer.addEventListener('input', () => { 
-            updatePreview();
-            if (inCustomer.value.trim()) clearError('inCustomer'); 
-        });
+        inCustomer.addEventListener('input', () => { if (inCustomer.value.trim()) clearError('inCustomer'); });
         inCustomer.addEventListener('blur', () => {
             const val = inCustomer.value.trim();
             if (!val) showError('inCustomer', 'Customer name is required');
             else if (val.length > 100) showError('inCustomer', 'Max 100 characters');
+            else clearError('inCustomer');
         });
     }
 
     const inDate = document.getElementById('inDate');
     if (inDate) {
-        inDate.addEventListener('change', () => { 
-            updatePreview();
-            if (inDate.value) clearError('inDate'); else showError('inDate', 'Date is required'); 
-        });
+        inDate.addEventListener('change', () => { if (inDate.value) clearError('inDate'); else showError('inDate', 'Date is required'); });
     }
 
     const inContact = document.getElementById('inContact');
     if (inContact) {
         inContact.addEventListener('input', () => {
             inContact.value = formatContact(inContact.value.replace(/[^\d]/g, '').slice(0, 11));
-            updatePreview();
             clearError('inContact');
         });
     }
@@ -531,7 +580,7 @@ window.setupFieldListeners = function() {
     }
 };
 
-window.togglePreview = function() {
+function togglePreview() {
     const left = document.querySelector('.modal-left');
     const right = document.querySelector('.modal-right');
     if (!left || !right) return;
@@ -539,9 +588,9 @@ window.togglePreview = function() {
     right.classList.add('show-preview');
     left.style.display = 'none';
     refreshIcons();
-};
+}
 
-window.closePreview = function() {
+function closePreview() {
     const left = document.querySelector('.modal-left');
     const right = document.querySelector('.modal-right');
     if (!left || !right) return;
@@ -549,4 +598,4 @@ window.closePreview = function() {
     right.classList.remove('show-preview');
     left.style.display = 'block';
     refreshIcons();
-};
+}
