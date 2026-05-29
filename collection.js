@@ -1,7 +1,6 @@
 const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
 window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
 window.collections = [];
 window.currentItems = [];
 window.currentCategory = 'School';
@@ -10,6 +9,7 @@ let currentPage = 1;
 let currentFilter = 'all';
 const itemsPerPage = 10;
 
+// 1. INITIALIZATION
 document.addEventListener('DOMContentLoaded', async () => {
     loadModalHTML();
     setupSearch();
@@ -21,6 +21,7 @@ function refreshIcons() {
         lucide.createIcons();
     }
 }
+
 // YYYY-MM-DD string to MM-DD-YYYY
 function formatDateToMDY(dateString) {
     if (!dateString) return 'N/A';
@@ -235,7 +236,7 @@ function renderTable() {
             <td onclick="event.stopPropagation()">
               <div class="action-btns">
                 <button class="icon-btn receipt-btn" onclick="viewReceipt(${actualIndex})"><i data-lucide="image"></i></button>
-                <button class="icon-btn" onclick="(${actualIndex})"><i data-lucide="edit-2"></i></button>
+                <button class="icon-btn" onclick="editEntry(${actualIndex})"><i data-lucide="edit-2"></i></button>
                 <button class="icon-btn delete" onclick="deleteEntry(${actualIndex})"><i data-lucide="trash-2"></i></button>
               </div>
             </td>
@@ -369,77 +370,46 @@ function setupSearch() {
     });
 }
 
-
-// Ensure the global tracker is safely initialized ONLY if it doesn't exist yet
-if (typeof window.editingIndex === 'undefined') {
-    window.editingIndex = -1;
-}
-
-/**
- * 1. OPEN MODAL FOR EDITING
- */
+// 5. DATA MODIFICATION MATCHES (EDIT / SAVE / DELETE)
 window.editEntry = function(index) {
-    // 1. Explicitly force a base-10 integer to prevent type comparison issues
-    const parsedIndex = parseInt(index, 10);
-    window.editingIndex = parsedIndex;
-    
-    console.log(`[SmartCycle] Edit mode triggered! window.editingIndex is now:`, window.editingIndex);
-
-    // 2. Fetch data using your existing filtered list logic
-    const filteredList = getFilteredCollections(); // Make sure this matches your data retriever
-    const data = filteredList[parsedIndex]; 
-    
+    window.editingIndex = index;
+    const data = getFilteredCollections()[index]; // Source data accurately from filtered collections context
     const modal = document.getElementById('addCollectionModal');
-    if (!modal) {
-        console.error("Could not find #addCollectionModal in the DOM.");
-        return;
-    }
+    if (!modal || !data) return;
 
-    if (!data) {
-        console.error(`No collection data found at index: ${parsedIndex}`);
-        return;
-    }
-
-    // 3. Populate your form inputs safely
-    if (document.getElementById('inCustomer')) document.getElementById('inCustomer').value = data.customer_name || data.customer || '';
-    if (document.getElementById('inAddress')) document.getElementById('inAddress').value = data.address || '';
-    if (document.getElementById('inContact')) document.getElementById('inContact').value = data.contact_number || data.contact || '';
+    document.getElementById('inCustomer').value = data.customer;
+    document.getElementById('inAddress').value = data.address || '';
+    document.getElementById('inContact').value = data.contact || '';
     
-    // Date conversion (Handles both native YYYY-MM-DD and displayed formats)
-    if (document.getElementById('inDate') && data.date_collected) {
-        let dateVal = data.date_collected;
-        if (dateVal.includes('-') && dateVal.split('-')[0].length !== 4) {
-            // Converts MM-DD-YYYY back to YYYY-MM-DD for native input layout
-            const [m, d, y] = dateVal.split('-');
-            dateVal = `${y}-${m}-${d}`;
+    // Convert 'MM-DD-YYYY' back to 'YYYY-MM-DD' for the native HTML date input field
+    if (data.date && data.date.includes('-')) {
+        const parts = data.date.split('-');
+        if (parts.length === 3) {
+            const [month, day, year] = parts;
+            document.getElementById('inDate').value = `${year}-${month}-${day}`;
+        } else {
+            document.getElementById('inDate').value = data.date;
         }
-        document.getElementById('inDate').value = dateVal;
+    } else {
+        document.getElementById('inDate').value = data.date;
     }
 
-    // 4. Update the category tabs matching your HTML buttons
-    window.currentCategory = data.type || 'School';
+    window.currentCategory = data.category;
     document.querySelectorAll('.m-tab').forEach(tab => {
-        const isMatch = tab.innerText.trim().toLowerCase() === window.currentCategory.toLowerCase();
-        tab.classList.toggle('active', isMatch);
+        tab.classList.toggle('active', tab.innerText.trim() === data.category);
     });
 
-    // 5. Load existing items array
     window.currentItems = [...(data.items || [])];
     if (typeof renderItems === 'function') renderItems();
 
-    // 6. Change the green submit button's appearance to "Update"
     const submitBtn = document.querySelector('.btn-submit-green');
-    if (submitBtn) {
-        submitBtn.innerHTML = '<i data-lucide="check"></i> Update';
-    }
+    if (submitBtn) submitBtn.innerHTML = '<i data-lucide="check"></i> Update';
 
-    // 7. Show modal
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    // 8. Refresh visual components
     if (typeof updatePreview === 'function') updatePreview();
-    if (typeof refreshIcons === 'function') setTimeout(refreshIcons, 50);
+    setTimeout(refreshIcons, 100);
 };
 
 // Inside collection.js
