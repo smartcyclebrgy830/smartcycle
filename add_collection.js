@@ -486,7 +486,7 @@ window.submitCollection = async function() {
                                 contact_num: contact || 'N/A',
                                 category: currentCategory || 'Walk-ins',
                                 type: determinedType
- Harlow     })
+                         })
                             .eq('id', profileId);
                             
                         if (renameErr) throw renameErr;
