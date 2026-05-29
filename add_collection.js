@@ -1,7 +1,7 @@
-// Ensure strict tracking context variables exist safely at module level
-let editingIndex = -1;
-let currentCategory = 'School';
-window.currentItems = []; // Initializing to prevent undefined array
+// Ensure strict tracking context variables exist safely on the global window scope
+window.editingIndex = typeof window.editingIndex !== 'undefined' ? window.editingIndex : -1;
+window.currentCategory = typeof window.currentCategory !== 'undefined' ? window.currentCategory : 'School';
+window.currentItems = window.currentItems || []; // Initializing to prevent undefined array
 
 // Local cache to resolve names during edit mode if needed
 let loadedPricesCache = [];
@@ -23,7 +23,7 @@ window.openAddModal = async () => {
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    editingIndex = -1; // Reset local tracker
+    window.editingIndex = -1; // Reset global tracker
     resetForm();
 
     // Dynamically fetch and fill up material prices matching your Price List dashboard
@@ -41,15 +41,16 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    editingIndex = index; // Fix: Ensure global context tracking is exactly bound locally
+    // Fix: Force integer type parsing to guarantee type consistency during comparison evaluations
+    window.editingIndex = parseInt(index, 10); 
     clearAllErrors();
 
     await loadActivePrices();
 
-    currentCategory = collectionHeader.type || 'School';
+    window.currentCategory = collectionHeader.type || 'School';
     document.querySelectorAll('.m-tab').forEach(tab => {
         const tabCategory = tab.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
-        tab.classList.toggle('active', tabCategory === currentCategory);
+        tab.classList.toggle('active', tabCategory === window.currentCategory);
     });
 
     if (document.getElementById('inCustomer')) document.getElementById('inCustomer').value = collectionHeader.customer_name || '';
@@ -94,9 +95,8 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
 
     const submitBtn = document.querySelector('.btn-submit-green');
     if (submitBtn) {
-        // Clear previous event references explicitly to block multiple execution pathways
         submitBtn.onclick = null;
-        submitBtn.onclick = () => window.submitCollection();
+        submitBtn.onclick = (e) => window.submitCollection(e);
         submitBtn.innerHTML = '<i data-lucide="check"></i> Update Entry';
     }
 
@@ -159,7 +159,7 @@ window.closeAddModal = () => {
 document.addEventListener('click', (e) => {
     const modal = document.getElementById('addCollectionModal');
     if (modal && e.target === modal) {
-        closeAddModal();
+        window.closeAddModal();
     }
 });
 
@@ -212,16 +212,16 @@ function resetForm() {
 
     clearAllErrors();
     window.currentItems = []; 
-    editingIndex = -1; 
+    window.editingIndex = -1; // Reset unified global tracking reference
 
-    currentCategory = 'School';
+    window.currentCategory = 'School';
     document.querySelectorAll('.m-tab').forEach((tab, idx) => {
         tab.classList.toggle('active', idx === 0);
     });
 
     const submitBtn = document.querySelector('.btn-submit-green');
     if (submitBtn) {
-        submitBtn.onclick = () => window.submitCollection();
+        submitBtn.onclick = (e) => window.submitCollection(e);
         submitBtn.innerHTML = '<i data-lucide="check"></i> Submit';
     }
 
@@ -235,7 +235,7 @@ function resetForm() {
 }
 
 window.setCategory = (category, btn) => {
-    currentCategory = category;
+    window.currentCategory = category;
     document.querySelectorAll('.m-tab').forEach(tab => tab.classList.remove('active'));
     btn.classList.add('active');
     updatePreview();
@@ -329,7 +329,7 @@ function renderItems() {
                   <td>${item.weight} kg</td>
                   <td><strong>₱${item.subtotal.toFixed(2)}</strong></td>
                   <td>
-                    <button class="remove-item-btn" onclick="removeItem(${index})" title="Remove item">
+                    <button type="button" class="remove-item-btn" onclick="removeItem(${index})" title="Remove item">
                       <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
                     </button>
                   </td>
@@ -344,7 +344,6 @@ function renderItems() {
                   <td style="text-align:center;">₱${item.subtotal.toFixed(2)}</td>
                 </tr>`;
         });
-
     }
 
     itemsBody.innerHTML = mainRowsHtml || '<tr><td colspan="5" style="text-align:center; color: #94a3b8; padding: 20px;">No items added yet</td></tr>';
@@ -373,7 +372,15 @@ window.removeItem = (index) => {
 };
 
 // PERSISTENCE (SUPABASE SYNC ENGINE)
-window.submitCollection = async function() {
+window.submitCollection = async function(e) {
+    // Intercept native browser handling to block structural resets mid-operation
+    if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    } else if (window.event) {
+        window.event.preventDefault();
+    }
+
     const customer = document.getElementById('inCustomer')?.value.trim();
     const date = document.getElementById('inDate')?.value;
     const address = document.getElementById('inAddress')?.value.trim();
@@ -397,7 +404,7 @@ window.submitCollection = async function() {
     try {
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.innerHTML = editingIndex !== -1 ? 'Updating...' : 'Saving...';
+            submitBtn.innerHTML = window.editingIndex !== -1 ? 'Updating...' : 'Saving...';
         }
 
         const formattedCustomer = toTitleCase(customer);
@@ -406,14 +413,14 @@ window.submitCollection = async function() {
             date_collected: date, 
             address: address || 'N/A', 
             contact_number: contact || 'N/A', 
-            type: currentCategory 
+            type: window.currentCategory 
         };
 
-        if (editingIndex !== -1) {
+        if (window.editingIndex !== -1) {
             // --- UPDATE MODE ---
             const targetedCollection = (typeof getFilteredCollections === 'function') 
-                ? getFilteredCollections()[editingIndex] 
-                : window.collections[editingIndex];
+                ? getFilteredCollections()[window.editingIndex] 
+                : window.collections[window.editingIndex];
 
             if (!targetedCollection || !targetedCollection.id) {
                 throw new Error("Unable to identify targeted collection ID context.");
@@ -478,7 +485,7 @@ window.submitCollection = async function() {
                 if (existingProfile.address === 'N/A' || !existingProfile.address) updatePayload.address = address || 'N/A';
                 if (existingProfile.contact_num === 'N/A' || !existingProfile.contact_num) updatePayload.contact_num = contact || 'N/A';
                 
-                updatePayload.category = currentCategory || 'Walk-ins';
+                updatePayload.category = window.currentCategory || 'Walk-ins';
                 updatePayload.type = determinedType; 
 
                 await _supabase
@@ -490,7 +497,7 @@ window.submitCollection = async function() {
                     .from('profiles')
                     .insert([{
                         name: formattedCustomer,          
-                        category: currentCategory || 'Walk-ins', 
+                        category: window.currentCategory || 'Walk-ins', 
                         address: address || 'N/A',               
                         contact_num: contact || 'N/A',           
                         display_id: displayId,
@@ -530,7 +537,7 @@ window.submitCollection = async function() {
             alert("Collection entry added successfully!");
         }
 
-        closeAddModal();
+        window.closeAddModal();
         if (typeof fetchAllCollections === 'function') await fetchAllCollections();
 
     } catch (err) {
@@ -539,7 +546,12 @@ window.submitCollection = async function() {
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i data-lucide="check"></i> Submit';
+            // Reflect the continuous layout state dynamically if submission hits an error path
+            if (window.editingIndex !== -1) {
+                submitBtn.innerHTML = '<i data-lucide="check"></i> Update Entry';
+            } else {
+                submitBtn.innerHTML = '<i data-lucide="check"></i> Submit';
+            }
             refreshIcons();
         }
     }
