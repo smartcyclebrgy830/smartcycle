@@ -452,13 +452,22 @@ window.submitCollection = async function() {
             
             if (itemsClearError) throw itemsClearError;
             
-            const itemsToInsert = window.currentItems.map(item => ({
-                collection_id: targetId,
-                material_id: item.materialId, 
-                rate: item.rate,
-                weight: item.weight,
-                subtotal: item.subtotal
-            }));
+            // Locate this block inside window.submitCollection (around the editingIndex !== -1 section)
+            const itemsToInsert = window.currentItems.map(item => {
+                // 🟩 DEFENSIVE CHECK: Fallback to a valid integer if materialId is somehow NaN
+                const validMaterialId = parseInt(item.materialId, 10);
+                if (isNaN(validMaterialId)) {
+                    console.error("Defensive Halt: Detected NaN materialId for item", item);
+                }
+            
+                return {
+                    collection_id: targetId,
+                    material_id: isNaN(validMaterialId) ? null : validMaterialId, 
+                    rate: item.rate,
+                    weight: item.weight,
+                    subtotal: item.subtotal
+                };
+            });
         
             const { error: itemsInsertError } = await _supabase
                 .from('collection_items')
