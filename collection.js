@@ -130,7 +130,6 @@ window.fetchAllCollections = async function() {
     const mappedItems = rawItems.map(item => {
         let materialName = 'Unknown';
         
-        // Check if the relation object exists and isn't null
         if (item.price_list) {
             if (Array.isArray(item.price_list) && item.price_list.length > 0) {
                 materialName = item.price_list[0].material_name || 'Unknown';
@@ -138,11 +137,11 @@ window.fetchAllCollections = async function() {
                 materialName = item.price_list.material_name;
             }
         } else if (item.material_name) {
-            // Fallback for flat tables or alternative inserts
             materialName = item.material_name;
         }
         
         return {
+            material_id: item.material_id, // 🟩 CRITICAL FIX: Pass the ID to the edit modal context!
             material: materialName,
             rate: parseFloat(item.rate) || 0,
             weight: parseFloat(item.weight) || 0,
