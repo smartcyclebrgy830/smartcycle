@@ -64,13 +64,9 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     if (document.getElementById('inContact')) document.getElementById('inContact').value = collectionHeader.contact_number || '';
 
     // 3. SECURE FIX: Safely parse names using the robust local cache array directly
-    window.currentItems = (detailedItems || []).map(item => {
+        window.currentItems = (detailedItems || []).map(item => {
         const targetMaterialId = parseInt(item.material_id, 10);
-        
-        // Find the matched object directly in the array data fetched from Supabase
         const cachedItem = loadedPricesCache.find(p => parseInt(p.id, 10) === targetMaterialId);
-        
-        // Match standard naming fallbacks across both frontend layouts and backend joined fields
         const finalName = item.material_name || item.material || (cachedItem ? cachedItem.material_name : 'Unknown Material');
 
         return {
@@ -82,6 +78,14 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
             subtotal: Number(item.subtotal || (item.rate * item.weight) || 0)
         };
     });
+
+    // 🟩 ADDED FIX: Match dropdown value to the first existing item in the collection when editing
+    if (window.currentItems.length > 0) {
+        const selMaterial = document.getElementById('selMaterial');
+        if (selMaterial) {
+            selMaterial.value = window.currentItems[0].materialId;
+        }
+    }
 
     // 4. Transform Action Button to Update context
     const submitBtn = document.querySelector('.btn-submit-green');
