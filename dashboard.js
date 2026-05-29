@@ -203,7 +203,7 @@ async function loadDashboardData() {
         const categoryColorMap = {
             'Barangay': '#FFEB8A', // Yellow
             'School': '#71D7D0',   // Teal
-            'Walk-in': '#B9E682'   // Green
+            'Walk-ins': '#B9E682'   // Green
         };
         
         const dynamicCategoryColors = categoryLabels.map(cat => categoryColorMap[cat]);
