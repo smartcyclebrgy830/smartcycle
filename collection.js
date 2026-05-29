@@ -3,11 +3,11 @@ const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
 window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 🟩 FIXED GLOBAL APP STATE
+// 🟩 FIXED GLOBAL APP STATE (Explicitly shared with the window context)
 window.collections = [];
-window.currentItems = [];       
-window.currentCategory = 'School'; 
-window.editingIndex = -1;       
+window.currentItems = [];       // Changed from let to window.
+window.currentCategory = 'School'; // Changed from let to window.
+window.editingIndex = -1;       // Changed from let to window.
 let currentPage = 1;
 let currentFilter = 'all';
 const itemsPerPage = 10;
@@ -29,11 +29,12 @@ function refreshIcons() {
 // Helper utility to convert YYYY-MM-DD string to MM-DD-YYYY
 function formatDateToMDY(dateString) {
     if (!dateString) return 'N/A';
+    // Splits the 'YYYY-MM-DD' format explicitly to prevent timezone shifts
     const parts = dateString.split('-');
     if (parts.length !== 3) return dateString; 
     const [year, month, day] = parts;
     return `${month}-${day}-${year}`;
-}   
+}    
 
 // 2. DATA MANAGEMENT (FETCH)
 window.fetchAllCollections = async function() {
@@ -61,29 +62,34 @@ window.fetchAllCollections = async function() {
     console.log("Raw Data Received:", data);
 
     window.collections = data.map(col => {
+        // Safe extraction of collection items
         const rawItems = col.collection_items || [];
         
-        const mappedItems = rawItems.map(item => {
-            let materialName = 'Unknown';
-            
-            if (item.price_list) {
-                if (Array.isArray(item.price_list) && item.price_list.length > 0) {
-                    materialName = item.price_list[0].material_name || 'Unknown';
-                } else if (item.price_list.material_name) {
-                    materialName = item.price_list.material_name;
-                }
-            } else if (item.material_name) {
-                materialName = item.material_name;
+    // Locate this block inside window.fetchAllCollections inside collection.js
+    const mappedItems = rawItems.map(item => {
+        let materialName = 'Unknown';
+        
+        // Check if the relation object exists and isn't null
+        if (item.price_list) {
+            if (Array.isArray(item.price_list) && item.price_list.length > 0) {
+                materialName = item.price_list[0].material_name || 'Unknown';
+            } else if (item.price_list.material_name) {
+                materialName = item.price_list.material_name;
             }
-            
-            return {
-                material: materialName,
-                rate: parseFloat(item.rate) || 0,
-                weight: parseFloat(item.weight) || 0,
-                subtotal: parseFloat(item.subtotal) || 0
-            };
-        });
+        } else if (item.material_name) {
+            // Fallback for flat tables or alternative inserts
+            materialName = item.material_name;
+        }
+        
+        return {
+            material: materialName,
+            rate: parseFloat(item.rate) || 0,
+            weight: parseFloat(item.weight) || 0,
+            subtotal: parseFloat(item.subtotal) || 0
+        };
+    });
 
+        // Map database fields directly to the keys your renderTable() expects
         return {
             id: col.id,
             date: formatDateToMDY(col.date_collected),
@@ -93,7 +99,7 @@ window.fetchAllCollections = async function() {
             totalWeight: mappedItems.reduce((sum, i) => sum + i.weight, 0),
             address: col.address,
             contact: col.contact_number,
-            items: mappedItems 
+            items: mappedItems // Crucial: This populates the expanded sub-rows
         };
     });
 
@@ -101,6 +107,7 @@ window.fetchAllCollections = async function() {
     renderTable();
 };
 
+// CORE FILTER DATA PROVIDER
 function getFilteredCollections() {
     if (currentFilter === 'all') return window.collections;
     return window.collections.filter(col => 
@@ -120,11 +127,12 @@ function loadModalHTML() {
                 weightInput.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        if (typeof addItem === 'function') addItem();
+                        addItem();
                     }
                 });
             }
 
+            // Intercept form submission or bind update buttons dynamically
             const form = document.querySelector('#modalContainer form') || document.getElementById('collectionForm');
             if (form) {
                 form.addEventListener('submit', async (e) => {
@@ -132,6 +140,7 @@ function loadModalHTML() {
                     await saveCollection();
                 });
             } else {
+                // Fallback direct binding on update action buttons if form wrappers aren't present
                 const submitBtn = document.querySelector('.btn-submit-green') || document.querySelector('.btn-update');
                 if (submitBtn) {
                     submitBtn.addEventListener('click', async (e) => {
@@ -175,7 +184,7 @@ function renderTable() {
         }
 
         tbody.innerHTML += `
-          <tr class="main-row" data-row-idx="${actualIndex}" onclick="window.toggleDetails('${rowId}', this)">
+          <tr class="main-row" data-row-idx="${actualIndex}" onclick="toggleDetails('${rowId}', this)">
             <td class="chevron-cell"><i data-lucide="chevron-down" style="width:18px;"></i></td>
             <td>${collection.date}</td>
             <td><span class="id-badge">${collection.id}</span></td>
@@ -185,9 +194,9 @@ function renderTable() {
             <td style="text-align:right; font-weight:700; color:#10b981;">₱${collection.totalAmount.toFixed(2)}</td>
             <td onclick="event.stopPropagation()">
               <div class="action-btns">
-                <button class="icon-btn receipt-btn" onclick="window.viewReceipt(${actualIndex})"><i data-lucide="image"></i></button>
-                <button class="icon-btn" onclick="window.editEntry(${actualIndex})"><i data-lucide="edit-2"></i></button>
-                <button class="icon-btn delete" onclick="window.deleteEntry(${actualIndex})"><i data-lucide="trash-2"></i></button>
+                <button class="icon-btn receipt-btn" onclick="viewReceipt(${actualIndex})"><i data-lucide="image"></i></button>
+                <button class="icon-btn" onclick="editEntry(${actualIndex})"><i data-lucide="edit-2"></i></button>
+                <button class="icon-btn delete" onclick="deleteEntry(${actualIndex})"><i data-lucide="trash-2"></i></button>
               </div>
             </td>
           </tr>
@@ -232,10 +241,10 @@ function updatePagination(totalPages) {
     pagination.style.display = 'flex';
 
     let paginationHTML = `
-        <button class="page-btn" onclick="window.changePage('prev')" aria-label="Previous page" ${currentPage === 1 ? 'disabled' : ''}>
+        <button class="page-btn" onclick="changePage('prev')" aria-label="Previous page" ${currentPage === 1 ? 'disabled' : ''}>
           <i data-lucide="chevron-left"></i>
         </button>
-        <button class="page-btn ${currentPage === 1 ? 'active' : ''}" onclick="window.goToPage(1)">1</button>
+        <button class="page-btn ${currentPage === 1 ? 'active' : ''}" onclick="goToPage(1)">1</button>
     `;
 
     if (currentPage > 3) {
@@ -243,7 +252,7 @@ function updatePagination(totalPages) {
     }
 
     for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
-        paginationHTML += `<button class="page-btn ${currentPage === i ? 'active' : ''}" onclick="window.goToPage(${i})">${i}</button>`;
+        paginationHTML += `<button class="page-btn ${currentPage === i ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
     }
 
     if (currentPage < totalPages - 2) {
@@ -251,8 +260,8 @@ function updatePagination(totalPages) {
     }
 
     paginationHTML += `
-        <button class="page-btn ${currentPage === totalPages ? 'active' : ''}" onclick="window.goToPage(${totalPages})">${totalPages}</button>
-        <button class="page-btn" onclick="window.changePage('next')" aria-label="Next page" ${currentPage === totalPages ? 'disabled' : ''}>
+        <button class="page-btn ${currentPage === totalPages ? 'active' : ''}" onclick="goToPage(${totalPages})">${totalPages}</button>
+        <button class="page-btn" onclick="changePage('next')" aria-label="Next page" ${currentPage === totalPages ? 'disabled' : ''}>
           <i data-lucide="chevron-right"></i>
         </button>
     `;
@@ -322,8 +331,8 @@ function setupSearch() {
 
 // 5. DATA MODIFICATION MATCHES (EDIT / SAVE / DELETE)
 window.editEntry = function(index) {
-    window.editingIndex = index;
-    const data = getFilteredCollections()[index]; 
+    editingIndex = index;
+    const data = getFilteredCollections()[index]; // Source data accurately from filtered collections context
     const modal = document.getElementById('addCollectionModal');
     if (!modal || !data) return;
 
@@ -331,6 +340,7 @@ window.editEntry = function(index) {
     document.getElementById('inAddress').value = data.address || '';
     document.getElementById('inContact').value = data.contact || '';
     
+    // Convert 'MM-DD-YYYY' back to 'YYYY-MM-DD' for the native HTML date input field
     if (data.date && data.date.includes('-')) {
         const parts = data.date.split('-');
         if (parts.length === 3) {
@@ -343,12 +353,12 @@ window.editEntry = function(index) {
         document.getElementById('inDate').value = data.date;
     }
 
-    window.currentCategory = data.category;
+    currentCategory = data.category;
     document.querySelectorAll('.m-tab').forEach(tab => {
         tab.classList.toggle('active', tab.innerText.trim() === data.category);
     });
 
-    window.currentItems = [...(data.items || [])];
+    currentItems = [...(data.items || [])];
     if (typeof renderItems === 'function') renderItems();
 
     const submitBtn = document.querySelector('.btn-submit-green');
@@ -361,6 +371,7 @@ window.editEntry = function(index) {
     setTimeout(refreshIcons, 100);
 };
 
+// NEW SUBMISSION HANDLER THAT UPDATES BOTH THE COLLECTION ENTRY AND THE ITEMS ARRAY
 async function saveCollection() {
     const customer = document.getElementById('inCustomer').value;
     const address = document.getElementById('inAddress').value;
@@ -377,15 +388,16 @@ async function saveCollection() {
         address: address,
         contact_number: contact,
         date_collected: date,
-        type: window.currentCategory
+        type: currentCategory
     };
 
     try {
-        if (window.editingIndex > -1) {
+        if (editingIndex > -1) {
             // --- EDIT MODE ---
-            const originalCollection = getFilteredCollections()[window.editingIndex];
+            const originalCollection = getFilteredCollections()[editingIndex];
             const collectionId = originalCollection.id;
 
+            // 1. Update Collection Parent Details
             const { error: updateCollectionError } = await _supabase
                 .from('collections')
                 .update(collectionData)
@@ -393,6 +405,7 @@ async function saveCollection() {
 
             if (updateCollectionError) throw updateCollectionError;
 
+            // 2. Clear old items associated with this specific collection id
             const { error: deleteItemsError } = await _supabase
                 .from('collection_items')
                 .delete()
@@ -400,10 +413,12 @@ async function saveCollection() {
 
             if (deleteItemsError) throw deleteItemsError;
 
-            if (window.currentItems.length > 0) {
-                const itemsToInsert = window.currentItems.map(item => ({
+            // 3. Map and Insert updated array back into sub-table
+            if (currentItems.length > 0) {
+                // Map your objects to explicitly match your database column parameters
+                const itemsToInsert = currentItems.map(item => ({
                     collection_id: collectionId,
-                    material_id: item.materialId, 
+                    material_id: item.materialId, // Ensure you store and pass the numeric ID from your selector here!
                     rate: item.rate,
                     weight: item.weight,
                     subtotal: item.subtotal
@@ -426,11 +441,11 @@ async function saveCollection() {
             
             if (insertCollectionError) throw insertCollectionError;
             
-            if (window.currentItems.length > 0 && newCollection && newCollection.length > 0) {
+            if (currentItems.length > 0 && newCollection && newCollection.length > 0) {
                 const collectionId = newCollection[0].id;
-                const itemsToInsert = window.currentItems.map(item => ({
+                const itemsToInsert = currentItems.map(item => ({
                     collection_id: collectionId,
-                    material_id: item.materialId, 
+                    material_id: item.materialId, //  Changed from material_name to match your schema constraint
                     rate: item.rate,
                     weight: item.weight,
                     subtotal: item.subtotal
@@ -445,6 +460,7 @@ async function saveCollection() {
             alert("Collection saved successfully!");
         }
 
+        // Close modal, reset layout tracking variables and sync view state
         closeModal();
         await fetchAllCollections();
 
@@ -454,13 +470,15 @@ async function saveCollection() {
     }
 }
 
+// Clean UI closure functionality resets tracking values safely
 function closeModal() {
     const modal = document.getElementById('addCollectionModal');
     if (modal) modal.classList.remove('show');
     document.body.style.overflow = '';
     
-    window.editingIndex = -1;
-    window.currentItems = [];
+    // Clear dynamic global forms parameters back to original entry states
+    editingIndex = -1;
+    currentItems = [];
     const submitBtn = document.querySelector('.btn-submit-green');
     if (submitBtn) submitBtn.innerHTML = '<i data-lucide="plus"></i> Submit';
 }
@@ -493,11 +511,14 @@ window.deleteEntry = function(index) {
     document.getElementById('deleteConfirmText').textContent = `Are you sure you want to delete the collection for "${collection.customer}"? This action cannot be undone.`;
     modal.style.display = 'flex';
 
+    // Event handlers cleanup to prevent multiple event fires on stale instances
     const confirmBtn = document.getElementById('deleteConfirmBtn');
     const cancelBtn = document.getElementById('deleteCancelBtn');
     
+    // Locate this block in your code and replace confirmBtn.onclick with this:
     confirmBtn.onclick = async () => {
         try {
+            // 1. Delete associated child items first to satisfy the foreign key constraint
             const { error: itemsDeleteError } = await _supabase
                 .from('collection_items')
                 .delete()
@@ -505,6 +526,7 @@ window.deleteEntry = function(index) {
     
             if (itemsDeleteError) throw itemsDeleteError;
     
+            // 2. Now it's perfectly safe to delete the parent collection record
             const { error: collectionDeleteError } = await _supabase
                 .from('collections')
                 .delete()
@@ -512,6 +534,7 @@ window.deleteEntry = function(index) {
                 
             if (collectionDeleteError) throw collectionDeleteError;
     
+            // 3. Update local state array & UI tracking view
             window.collections = window.collections.filter(c => c.id !== collection.id);
             renderTable();
             
@@ -610,13 +633,6 @@ window.viewReceipt = function(index) {
           <div class="field-item"><label>Salesman</label><div class="field-value"></div></div>
         </div>
         <table>
-          <colgroup>
-            <col style="width: 12%;">
-            <col style="width: 12%;">
-            <col style="width: 44%;">
-            <col style="width: 15%;">
-            <col style="width: 17%;">
-          </colgroup>
           <thead>
             <tr><th>QTY</th><th>UNIT</th><th style="text-align:left; padding-left:8px;">DESCRIPTION</th><th>PRICE</th><th>AMOUNT</th></tr>
           </thead>
