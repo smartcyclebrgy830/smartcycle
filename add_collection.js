@@ -34,10 +34,6 @@ window.openAddModal = async () => {
     setTimeout(refreshIcons, 100);
 };
 
-/**
- * NEW FIXED ENGINE FUNCTION: Called from your main dashboard controller to safely open edit mode.
- * Resolves the missing 'material' name mapping bug from 'collection_items' structural relations.
- */
 window.openEditModal = async (index, collectionHeader, detailedItems) => {
     const modal = document.getElementById('addCollectionModal');
     if (!modal) return;
@@ -45,13 +41,11 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    editingIndex = index;
+    window.editingIndex = index; // Ensure global context tracking
     clearAllErrors();
 
-    // 1. Force reload live prices into dropdown select and wait for cache population
     await loadActivePrices();
 
-    // 2. Populate Header Fields
     currentCategory = collectionHeader.type || 'School';
     document.querySelectorAll('.m-tab').forEach(tab => {
         const tabCategory = tab.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
@@ -63,41 +57,33 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     if (document.getElementById('inAddress')) document.getElementById('inAddress').value = collectionHeader.address || '';
     if (document.getElementById('inContact')) document.getElementById('inContact').value = collectionHeader.contact_number || '';
 
-    // ==========================================
-    // 🟩 FIXED SECTION 3 INSIDE window.openEditModal
-    // ==========================================
-    
-    // 3. SECURE FIX: Safely parse names and fallback naming properties safely
     window.currentItems = (detailedItems || []).map(item => {
-    // 1️⃣ Look for flat snake_case, flat camelCase, or nested Supabase relation IDs
-    let targetMaterialId = parseInt(item.material_id || item.materialId || item.price_list?.id, 10);
+        let targetMaterialId = parseInt(item.material_id || item.materialId || item.price_list?.id, 10);
 
-    // 2️⃣ Last-resort fallback: If ID is missing/NaN but a name exists, find its ID from your active cache
-    if (isNaN(targetMaterialId)) {
-        const nameToSearch = item.material_name || item.material || item.price_list?.material_name;
-        if (nameToSearch) {
-            const matchedCache = loadedPricesCache.find(p => p.material_name.toLowerCase() === nameToSearch.toLowerCase());
-            if (matchedCache) {
-                targetMaterialId = parseInt(matchedCache.id, 10);
+        if (isNaN(targetMaterialId)) {
+            const nameToSearch = item.material_name || item.material || item.price_list?.material_name;
+            if (nameToSearch) {
+                const matchedCache = loadedPricesCache.find(p => p.material_name.toLowerCase() === nameToSearch.toLowerCase());
+                if (matchedCache) {
+                    targetMaterialId = parseInt(matchedCache.id, 10);
+                }
             }
         }
-    }
 
-    // Resolve structural naming strings safely
-    const cachedItem = loadedPricesCache.find(p => parseInt(p.id, 10) === targetMaterialId);
-    const finalName = item.material_name || item.material || item.price_list?.material_name || (cachedItem ? cachedItem.material_name : 'Unknown Material');
+        const cachedItem = loadedPricesCache.find(p => parseInt(p.id, 10) === targetMaterialId);
+        const finalName = item.material_name || item.material || item.price_list?.material_name || (cachedItem ? cachedItem.material_name : 'Unknown Material');
 
-    return {
-        materialId: targetMaterialId, // Keeps a secure, clean numerical ID for your submit handler
-        material: finalName,        // Resolves your modal preview layout UI
-        material_name: finalName,   // Resolves your main dashboard loop template
-        rate: Number(item.rate || (cachedItem ? cachedItem.price : 0)),
-        weight: Number(item.weight || 0),
-        subtotal: Number(item.subtotal || (item.rate * item.weight) || 0)
-    };
-});
+        return {
+            materialId: targetMaterialId, 
+            material: finalName,        
+            material_name: finalName,   
+            // Prioritizes original historical entry rate so it doesn't change implicitly
+            rate: Number(item.rate !== undefined ? item.rate : (cachedItem ? cachedItem.price : 0)),
+            weight: Number(item.weight || 0),
+            subtotal: Number(item.subtotal || (item.rate * item.weight) || 0)
+        };
+    });
 
-    // 🟩 ADDED FIX: Match dropdown value to the first existing item in the collection when editing
     if (window.currentItems.length > 0) {
         const selMaterial = document.getElementById('selMaterial');
         if (selMaterial) {
@@ -105,10 +91,9 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
         }
     }
 
-    // 4. Transform Action Button to Update context
     const submitBtn = document.querySelector('.btn-submit-green');
     if (submitBtn) {
-        submitBtn.onclick = () => submitCollection();
+        // REMOVED: submitBtn.onclick manual bindings to stop double-triggering
         submitBtn.innerHTML = '<i data-lucide="check"></i> Update Entry';
     }
 
@@ -116,7 +101,6 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     renderItems();
     setTimeout(refreshIcons, 100);
 };
-
 // FIXED ENGINE: Added 'id' to the select string so item.id isn't undefined
 async function loadActivePrices() {
     const selMaterial = document.getElementById('selMaterial');
@@ -220,7 +204,6 @@ function formatContact(value) {
     return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 7)}-${cleaned.slice(7, 11)}`;
 }
 
-// RESET STATE ACTIONS
 function resetForm() {
     ['inCustomer', 'inDate', 'inAddress', 'inContact', 'inWeight'].forEach(id => {
         const el = document.getElementById(id);
@@ -229,6 +212,7 @@ function resetForm() {
 
     clearAllErrors();
     window.currentItems = []; 
+    window.editingIndex = -1; // CRITICAL: Reset the edit index back to default state
     renderItems();
 
     currentCategory = 'School';
@@ -238,7 +222,6 @@ function resetForm() {
 
     const submitBtn = document.querySelector('.btn-submit-green');
     if (submitBtn) {
-        submitBtn.onclick = () => submitCollection();
         submitBtn.innerHTML = '<i data-lucide="check"></i> Submit';
     }
 
