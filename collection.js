@@ -154,7 +154,7 @@ function getFilteredCollections() {
 function loadModalHTML() {
     fetch('add_collection.html')
         .then(res => res.text())
-        .then(html => {
+        .then(async html => {
             document.getElementById('modalContainer').innerHTML = html;
 
             await window.loadMaterialDropdownOptions();
