@@ -1,4 +1,4 @@
-// Ensure strict tracking context variables exist safely at module/global scale
+// Ensure strict tracking context variables exist safely at module
 let editingIndex = -1;
 let currentCategory = 'School';
 window.currentItems = []; // Initializing to prevent undefined array
