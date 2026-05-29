@@ -5,12 +5,18 @@ window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // 🟩 FIXED GLOBAL APP STATE (Explicitly shared with the window context)
 window.collections = [];
-window.currentItems = [];       // Changed from let to window.
-window.currentCategory = 'School'; // Changed from let to window.
-window.editingIndex = -1;       // Changed from let to window.
+window.currentItems = [];       
+window.currentCategory = 'School'; 
+window.editingIndex = -1;       
 let currentPage = 1;
 let currentFilter = 'all';
 const itemsPerPage = 10;
+
+// Helper utility to convert strings to Title Case cleanly
+function toTitleCase(str) {
+    if (!str) return '';
+    return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+}
 
 // 1. INITIALIZATION
 document.addEventListener('DOMContentLoaded', async () => {
@@ -29,7 +35,6 @@ function refreshIcons() {
 // Helper utility to convert YYYY-MM-DD string to MM-DD-YYYY
 function formatDateToMDY(dateString) {
     if (!dateString) return 'N/A';
-    // Splits the 'YYYY-MM-DD' format explicitly to prevent timezone shifts
     const parts = dateString.split('-');
     if (parts.length !== 3) return dateString; 
     const [year, month, day] = parts;
@@ -59,36 +64,31 @@ window.fetchAllCollections = async function() {
         return;
     }
 
-    console.log("Raw Data Received:", data);
-
     window.collections = data.map(col => {
-        // Safe extraction of collection items
         const rawItems = col.collection_items || [];
         
-    // Inside window.fetchAllCollections, find your rawItems.map block and update it to this:
-    const mappedItems = rawItems.map(item => {
-        let materialName = 'Unknown';
-        
-        if (item.price_list) {
-            if (Array.isArray(item.price_list) && item.price_list.length > 0) {
-                materialName = item.price_list[0].material_name || 'Unknown';
-            } else if (item.price_list.material_name) {
-                materialName = item.price_list.material_name;
+        const mappedItems = rawItems.map(item => {
+            let materialName = 'Unknown';
+            
+            if (item.price_list) {
+                if (Array.isArray(item.price_list) && item.price_list.length > 0) {
+                    materialName = item.price_list[0].material_name || 'Unknown';
+                } else if (item.price_list.material_name) {
+                    materialName = item.price_list.material_name;
+                }
+            } else if (item.material_name) {
+                materialName = item.material_name;
             }
-        } else if (item.material_name) {
-            materialName = item.material_name;
-        }
-        
-        return {
-            materialId: item.material_id, // 🌟 CRITICAL: Keep track of the numeric ID so it doesn't get lost on update!
-            material: materialName,
-            rate: parseFloat(item.rate) || 0,
-            weight: parseFloat(item.weight) || 0,
-            subtotal: parseFloat(item.subtotal) || 0
-        };
-    });
+            
+            return {
+                materialId: item.material_id, 
+                material: materialName,
+                rate: parseFloat(item.rate) || 0,
+                weight: parseFloat(item.weight) || 0,
+                subtotal: parseFloat(item.subtotal) || 0
+            };
+        });
 
-        // Map database fields directly to the keys your renderTable() expects
         return {
             id: col.id,
             date: formatDateToMDY(col.date_collected),
@@ -98,11 +98,10 @@ window.fetchAllCollections = async function() {
             totalWeight: mappedItems.reduce((sum, i) => sum + i.weight, 0),
             address: col.address,
             contact: col.contact_number,
-            items: mappedItems // Crucial: This populates the expanded sub-rows
+            items: mappedItems 
         };
     });
 
-    console.log("Parsed Collections State:", window.collections);
     renderTable();
 };
 
@@ -126,27 +125,17 @@ function loadModalHTML() {
                 weightInput.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        addItem();
+                        if (typeof addItem === 'function') addItem();
                     }
                 });
             }
 
-            // Intercept form submission or bind update buttons dynamically
-            const form = document.querySelector('#modalContainer form') || document.getElementById('collectionForm');
-            if (form) {
-                form.addEventListener('submit', async (e) => {
+            const submitBtn = document.querySelector('.btn-submit-green') || document.querySelector('.btn-update');
+            if (submitBtn) {
+                submitBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
                     await saveCollection();
                 });
-            } else {
-                // Fallback direct binding on update action buttons if form wrappers aren't present
-                const submitBtn = document.querySelector('.btn-submit-green') || document.querySelector('.btn-update');
-                if (submitBtn) {
-                    submitBtn.addEventListener('click', async (e) => {
-                        e.preventDefault();
-                        await saveCollection();
-                    });
-                }
             }
 
             if (typeof setupFieldListeners === 'function') setupFieldListeners();
@@ -269,7 +258,6 @@ function updatePagination(totalPages) {
     refreshIcons();
 }
 
-// 4. INTERACTION & UTILITIES
 window.goToPage = function(page) {
     currentPage = page;
     renderTable();
@@ -330,7 +318,7 @@ function setupSearch() {
 
 // 5. DATA MODIFICATION MATCHES (EDIT / SAVE / DELETE)
 window.editEntry = function(index) {
-    editingIndex = index;
+    window.editingIndex = index;
     const data = getFilteredCollections()[index]; 
     const modal = document.getElementById('addCollectionModal');
     if (!modal || !data) return;
@@ -351,13 +339,13 @@ window.editEntry = function(index) {
         document.getElementById('inDate').value = data.date;
     }
 
-    currentCategory = data.category;
+    window.currentCategory = data.category;
     document.querySelectorAll('.m-tab').forEach(tab => {
         tab.classList.toggle('active', tab.innerText.trim() === data.category);
     });
 
-    // 🌟 Retain full items payload properties, specifically preserving item.materialId
-    currentItems = [...(data.items || [])];
+    // 🌟 Retain full items payload properties safely
+    window.currentItems = [...(data.items || [])];
     if (typeof renderItems === 'function') renderItems();
 
     const submitBtn = document.querySelector('.btn-submit-green');
@@ -370,33 +358,48 @@ window.editEntry = function(index) {
     setTimeout(refreshIcons, 100);
 };
 
-// NEW SUBMISSION HANDLER THAT UPDATES BOTH THE COLLECTION ENTRY AND THE ITEMS ARRAY
+// 🟩 RE-ENGINEERED SYNC SUBMISSION HANDLER
 async function saveCollection() {
-    const customer = document.getElementById('inCustomer').value;
-    const address = document.getElementById('inAddress').value;
-    const contact = document.getElementById('inContact').value;
-    const date = document.getElementById('inDate').value;
+    const customer = document.getElementById('inCustomer')?.value.trim();
+    const address = document.getElementById('inAddress')?.value.trim();
+    const contact = document.getElementById('inContact')?.value.trim();
+    const date = document.getElementById('inDate')?.value;
 
     if (!customer || !date) {
         alert("Customer name and Date are required fields.");
         return;
     }
 
+    if (window.currentItems.length === 0) {
+        alert("Please add at least one line item to this collection record.");
+        return;
+    }
+
+    // Formats customer strings consistently across tables
+    const formattedCustomer = toTitleCase(customer);
+
     const collectionData = {
-        customer_name: customer,
-        address: address,
-        contact_number: contact,
+        customer_name: formattedCustomer,
+        address: address || 'N/A',
+        contact_number: contact || 'N/A',
         date_collected: date,
-        type: currentCategory
+        type: window.currentCategory
     };
 
+    // Calculate Dynamic Member Profiles routing classifications
+    const lowerCat = window.currentCategory ? window.currentCategory.toLowerCase() : '';
+    let determinedType = 'customer'; 
+    if (lowerCat === 'partner_category_name' || lowerCat === 'another_partner') {
+        determinedType = 'partner';
+    }
+
     try {
-        if (editingIndex > -1) {
-            // --- EDIT MODE ---
-            const originalCollection = getFilteredCollections()[editingIndex];
+        if (window.editingIndex > -1) {
+            // --- EDIT MODE TRANS-SYNC ---
+            const originalCollection = getFilteredCollections()[window.editingIndex];
             const collectionId = originalCollection.id;
 
-            // 1. Fetch the collection parent record first to locate its associated customer_id
+            // 1. Trace exact profile ID context from the parent row
             const { data: parentRecord, error: parentFetchError } = await _supabase
                 .from('collections')
                 .select('customer_id')
@@ -405,7 +408,7 @@ async function saveCollection() {
 
             if (parentFetchError) throw parentFetchError;
 
-            // 2. Update Collection Parent Details
+            // 2. Update Collection Parent Details Row
             const { error: updateCollectionError } = await _supabase
                 .from('collections')
                 .update(collectionData)
@@ -413,24 +416,23 @@ async function saveCollection() {
 
             if (updateCollectionError) throw updateCollectionError;
 
-            // 3. Update the matching profile in the profiles table if a customer relationship link exists
+            // 3. Update profile matching data entries in parallel
             if (parentRecord && parentRecord.customer_id) {
                 const { error: profileUpdateError } = await _supabase
                     .from('profiles')
                     .update({
-                        name: customer,
-                        address: address,
-                        contact_num: contact,
-                        category: currentCategory
+                        name: formattedCustomer,
+                        address: address || 'N/A',
+                        contact_num: contact || 'N/A',
+                        category: window.currentCategory,
+                        type: determinedType
                     })
                     .eq('id', parentRecord.customer_id);
 
-                if (profileUpdateError) {
-                    console.warn("Profiles table failed to update sync, checking profile constraints...", profileUpdateError.message);
-                }
+                if (profileUpdateError) throw profileUpdateError;
             }
 
-            // 4. Clear old items associated with this specific collection id
+            // 4. Clear structural line items
             const { error: deleteItemsError } = await _supabase
                 .from('collection_items')
                 .delete()
@@ -438,53 +440,31 @@ async function saveCollection() {
 
             if (deleteItemsError) throw deleteItemsError;
 
-            // 5. Map and Insert updated array back into sub-table
-            if (currentItems.length > 0) {
-                const itemsToInsert = currentItems.map(item => ({
-                    collection_id: collectionId,
-                    material_id: item.materialId, // 🌟 Crucial: This variable is now preserved cleanly!
-                    rate: item.rate,
-                    weight: item.weight,
-                    subtotal: item.subtotal
-                }));
+            // 5. Reinsert new lines utilizing explicit window object scope variables
+            const itemsToInsert = window.currentItems.map(item => ({
+                collection_id: collectionId,
+                material_id: item.materialId, 
+                rate: item.rate,
+                weight: item.weight,
+                subtotal: item.subtotal
+            }));
 
-                const { error: insertItemsError } = await _supabase
-                    .from('collection_items')
-                    .insert(itemsToInsert);
+            const { error: insertItemsError } = await _supabase
+                .from('collection_items')
+                .insert(itemsToInsert);
 
-                if (insertItemsError) throw insertItemsError;
-            }
+            if (insertItemsError) throw insertItemsError;
 
             alert("Collection and customer profile synced successfully!");
         } else {
             // --- INSERT MODE ---
-            const { data: newCollection, error: insertCollectionError } = await _supabase
-                .from('collections')
-                .insert([collectionData])
-                .select();
-            
-            if (insertCollectionError) throw insertCollectionError;
-            
-            if (currentItems.length > 0 && newCollection && newCollection.length > 0) {
-                const collectionId = newCollection[0].id;
-                const itemsToInsert = currentItems.map(item => ({
-                    collection_id: collectionId,
-                    material_id: item.materialId, 
-                    rate: item.rate,
-                    weight: item.weight,
-                    subtotal: item.subtotal
-                }));
-            
-                const { error: insertItemsError } = await _supabase
-                    .from('collection_items')
-                    .insert(itemsToInsert);
-            
-                if (insertItemsError) throw insertItemsError;
+            // Let add_collection.js process normal insertions to prevent overlapping sequence handlers
+            if (typeof window.submitCollection === 'function') {
+                await window.submitCollection();
+                return;
             }
-            alert("Collection saved successfully!");
         }
 
-        // Close modal, reset layout tracking variables and sync view state
         closeModal();
         await fetchAllCollections();
 
@@ -500,9 +480,8 @@ function closeModal() {
     if (modal) modal.classList.remove('show');
     document.body.style.overflow = '';
     
-    // Clear dynamic global forms parameters back to original entry states
-    editingIndex = -1;
-    currentItems = [];
+    window.editingIndex = -1;
+    window.currentItems = [];
     const submitBtn = document.querySelector('.btn-submit-green');
     if (submitBtn) submitBtn.innerHTML = '<i data-lucide="plus"></i> Submit';
 }
@@ -535,14 +514,11 @@ window.deleteEntry = function(index) {
     document.getElementById('deleteConfirmText').textContent = `Are you sure you want to delete the collection for "${collection.customer}"? This action cannot be undone.`;
     modal.style.display = 'flex';
 
-    // Event handlers cleanup to prevent multiple event fires on stale instances
     const confirmBtn = document.getElementById('deleteConfirmBtn');
     const cancelBtn = document.getElementById('deleteCancelBtn');
     
-    // Locate this block in your code and replace confirmBtn.onclick with this:
     confirmBtn.onclick = async () => {
         try {
-            // 1. Delete associated child items first to satisfy the foreign key constraint
             const { error: itemsDeleteError } = await _supabase
                 .from('collection_items')
                 .delete()
@@ -550,7 +526,6 @@ window.deleteEntry = function(index) {
     
             if (itemsDeleteError) throw itemsDeleteError;
     
-            // 2. Now it's perfectly safe to delete the parent collection record
             const { error: collectionDeleteError } = await _supabase
                 .from('collections')
                 .delete()
@@ -558,7 +533,6 @@ window.deleteEntry = function(index) {
                 
             if (collectionDeleteError) throw collectionDeleteError;
     
-            // 3. Update local state array & UI tracking view
             window.collections = window.collections.filter(c => c.id !== collection.id);
             renderTable();
             
