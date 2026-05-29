@@ -168,15 +168,22 @@ async function loadDashboardData() {
         // ----------------------------------------
         // 6. CHART: TOP CONTRIBUTION BY CATEGORY (Dynamic)
         // ----------------------------------------
-        // Dynamically group users by category/type to avoid case-sensitivity or hardcoding issues
+        
+        // Define the exact categories you want to appear in the chart
+        const allowedCategories = ['Barangay', 'School', 'Walk-in'];
         const categoriesCount = {};
+        
         profiles.forEach(p => {
             // Check 'category' first, fallback to 'type', default to 'Uncategorized'
             let cat = p.category || p.type || 'Uncategorized';
+            
             // Normalize string (e.g. 'barangay' -> 'Barangay')
             cat = cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase();
 
-            categoriesCount[cat] = (categoriesCount[cat] || 0) + 1;
+            // ONLY add to the count if the normalized category is in the allowed list
+            if (allowedCategories.includes(cat)) {
+                categoriesCount[cat] = (categoriesCount[cat] || 0) + 1;
+            }
         });
 
         const categoryLabels = Object.keys(categoriesCount);
