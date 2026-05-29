@@ -36,6 +36,41 @@ function formatDateToMDY(dateString) {
     return `${month}-${day}-${year}`;
 }    
 
+// Add this helper function to handle loading options from the database
+window.loadMaterialDropdownOptions = async function() {
+    const materialSelect = document.getElementById('inMaterial') || document.querySelector('select[name="material"]'); // Match your HTML selector ID
+    if (!materialSelect) {
+        console.warn("Material select dropdown element not found in DOM.");
+        return;
+    }
+
+    try {
+        console.log("Fetching price list categories for dropdown selection...");
+        const { data: materials, error } = await _supabase
+            .from('price_list')
+            .select('id, material_name, price, unit')
+            .eq('status', 'active'); // Optional: filter out any inactive rates if you track status
+
+        if (error) throw error;
+
+        // Reset dropdown and add a placeholder default row
+        materialSelect.innerHTML = '<option value="" disabled selected>Select a material...</option>';
+
+        // Append options containing the numeric primary Key 'id' as the value
+        materials.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.id; // Crucial: sets the incremental integer ID as the value
+            option.setAttribute('data-rate', item.price);
+            option.textContent = `${item.material_name} (₱${item.price}/${item.unit || 'kg'})`;
+            materialSelect.appendChild(option);
+        });
+
+        console.log("Dropdown material items successfully bound.");
+    } catch (err) {
+        console.error("Failed to load materials into UI selection dropdown:", err.message);
+    }
+};
+
 // 2. DATA MANAGEMENT (FETCH)
 window.fetchAllCollections = async function() {
     console.log("Fetching collections from Supabase...");
@@ -121,6 +156,8 @@ function loadModalHTML() {
         .then(res => res.text())
         .then(html => {
             document.getElementById('modalContainer').innerHTML = html;
+
+            await window.loadMaterialDropdownOptions();
 
             const weightInput = document.getElementById('inWeight');
             if (weightInput) {
