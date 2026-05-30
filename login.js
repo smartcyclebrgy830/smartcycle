@@ -159,9 +159,9 @@ document.getElementById('loginForm').addEventListener('submit', function (e) {
         setTimeout(() => {
             // You can route differently based on the role
             if (profileData.type === 'Super Admin') {
-                window.location.href = 'superadmin_dashboard.html';
-            } else {
                 window.location.href = 'dashboard.html';
+            } else {
+                window.location.href = 'admin_dashboard.html';
             }
         }, 2000);
     
