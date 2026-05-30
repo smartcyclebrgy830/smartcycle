@@ -156,6 +156,11 @@ function loadModalHTML() {
             document.getElementById('modalContainer').innerHTML = html;
             await window.loadMaterialDropdownOptions();
 
+            const dateInput = document.getElementById('inDate');
+            if (dateInput && !dateInput.value) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+        
             const weightInput = document.getElementById('inWeight');
             if (weightInput) {
                 weightInput.addEventListener('keypress', (e) => {
@@ -388,14 +393,22 @@ window.editEntry = function(index) {
     if (document.getElementById('inCustomer')) document.getElementById('inCustomer').value = data.customer_name || data.customer || '';
     if (document.getElementById('inAddress')) document.getElementById('inAddress').value = data.address || '';
     if (document.getElementById('inContact')) document.getElementById('inContact').value = data.contact_number || data.contact || '';
-    
-    if (document.getElementById('inDate') && data.date_collected) {
-        let dateVal = data.date_collected;
-        if (dateVal.includes('-') && dateVal.split('-')[0].length !== 4) {
-            const [m, d, y] = dateVal.split('-');
-            dateVal = `${y}-${m}-${d}`;
+
+    const dateInput = document.getElementById('inDate');
+    if (dateInput) {
+        let dateVal = data.date_collected || data.date; // fallback to parsed UI date if raw data is missing
+        
+        if (dateVal && dateVal !== 'N/A') {
+            // If it's in MM-DD-YYYY format from the table array, convert it to YYYY-MM-DD for the input
+            if (dateVal.includes('-') && dateVal.split('-')[0].length !== 4) {
+                const [m, d, y] = dateVal.split('-');
+                dateVal = `${y}-${m}-${d}`;
+            }
+            dateInput.value = dateVal;
+        } else {
+            // Fallback to today's local date if no date is found
+            dateInput.value = new Date().toISOString().split('T')[0];
         }
-        document.getElementById('inDate').value = dateVal;
     }
 
     window.currentCategory = data.type || 'School';
