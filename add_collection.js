@@ -96,7 +96,7 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     const submitBtn = document.querySelector('.btn-submit-green');
     if (submitBtn) {
         submitBtn.onclick = null;
-        submitBtn.onclick = (e) => window.(e);
+        submitBtn.onclick = (e) => window.submitCollection(e);
         submitBtn.innerHTML = '<i data-lucide="check"></i> Update Entry';
     }
 
