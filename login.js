@@ -86,7 +86,7 @@ document.getElementById('modalCloseBtn').addEventListener('click', function () {
 
 
 // FORM SUBMISSION
-document.getElementById('loginForm').addEventListener('submit', function (e) {
+document.getElementById('loginForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
     const email = emailInput.value.trim();
