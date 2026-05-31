@@ -500,7 +500,7 @@ function clearModalErrors() {
 });
 
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // 1. Fetch the actual profile from Supabase first
     const { data: { user } } = await window._supabase.auth.getUser();
     if (user) {
