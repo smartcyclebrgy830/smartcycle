@@ -1,6 +1,17 @@
+// --- Supabase Initialization ---
 const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
 window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// --- Global State Variables ---
+var myProfile = { name: 'Office Admin', email: 'admin@tezwa.com', mobile: '0912-345-6789', role: 'admin' };
+var users = [];
+var searchQuery = '';
+var currentPage = 1;
+var usersPerPage = 5;
+var nextId = 1;
+var editingUserId = null;
+var deletingUserId = null;
 
 var avatarColors = [
     '#46B336', '#3b82f6', '#f59e0b', '#ef4444',
@@ -303,6 +314,7 @@ document.getElementById('userForm').addEventListener('submit', function(e) {
         valid = false;
     }
     if (!valid) return;
+
     if (editingUserId !== null) {
         // Update Local State Mock
         var u = users.find(function(u) { return u.id === editingUserId; });
@@ -312,7 +324,7 @@ document.getElementById('userForm').addEventListener('submit', function(e) {
             u.mobile = mobile; 
             u.role = role; 
         }
-} else {
+    } else {
         // Calling the Edge Function using the Supabase Client
         window._supabase.functions.invoke('invite-user', {
             body: { email: email, role: role }
@@ -344,6 +356,8 @@ document.getElementById('userForm').addEventListener('submit', function(e) {
             alert('Failed to send invitation. Check console.');
         });
     }
+}); // <--- THIS WAS THE MISSING BRACKET AND PARENTHESIS
+
 // Delete modal
 function openDeleteUser(id) {
     var u = users.find(function(u) { return u.id === id; });
