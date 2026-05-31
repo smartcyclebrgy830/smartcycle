@@ -1,9 +1,6 @@
-var nextId         = 5;
-var editingUserId  = null;
-var deletingUserId = null;
-var currentPage    = 1;
-var usersPerPage   = 10;
-var searchQuery    = '';
+const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
+window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 var avatarColors = [
     '#46B336', '#3b82f6', '#f59e0b', '#ef4444',
