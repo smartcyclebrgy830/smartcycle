@@ -38,15 +38,16 @@ export default {
       const { data: authData, error: authError } = await ctx.supabaseAdmin.auth.admin.inviteUserByEmail(email);
       if (authError) throw authError;
 
+    // Sync user profile safely by providing the required primary key
       const { error: dbError } = await ctx.supabaseAdmin
       .from('profiles')
       .insert([
         {
-          id: authData.user.id, // Explicitly pass the unique auth ID string as the primary key
-          auth_id: authData.user.id, 
+          id: authData.user.id,        // FIXED: Satisfies the NOT-NULL constraint for the 'id' column
+          auth_id: authData.user.id,   
           name: email.split('@')[0],
           type: role,
-          category: 'Office Admin'
+          category: 'Admin' 
         }
       ]);
 
