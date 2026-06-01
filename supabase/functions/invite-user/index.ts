@@ -43,11 +43,10 @@ export default {
       .from('profiles')
       .insert([
         {
-          id: authData.user.id,        // FIXED: Satisfies the NOT-NULL constraint for the 'id' column
           auth_id: authData.user.id,   
           name: email.split('@')[0],
           type: role,
-          category: 'Admin' 
+          category: 'Admin'
         }
       ]);
 

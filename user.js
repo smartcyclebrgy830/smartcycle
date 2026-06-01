@@ -1,6 +1,6 @@
 // --- Supabase Initialization ---
 const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5seWJidmxoaGRqam1xa3pqbmh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDAwNzksImV4cCI6MjA4ODExNjA3OX0.QHqEUFwNhwhCyjCMr5MXMPkRqzCNRXP6I9toMdiAZ_4';
 window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // --- Global State Variables 
@@ -328,27 +328,11 @@ document.getElementById('userForm').addEventListener('submit', function(e) {
         renderUsers();
         userModal.classList.remove('show');
     } else {
-        // Grab the active session token before calling the function
-        window._supabase.auth.getSession().then(function(sessionRes) {
-            var session = sessionRes.data.session;
-            var token = session ? session.access_token : null;
-
-            if (!token) {
-                alert("Your session has expired. Please log out and log back in.");
-                return;
-            }
-
-            // Pass the dynamic form inputs and force explicit header casing
-            return window._supabase.functions.invoke('invite-user', {
+        window._supabase.functions.invoke('invite-user', {
                 body: { 
                     email: email, 
                     role: role 
                 },
-                headers: {
-                    // Force authorization explicitly into the outgoing HTTP request headers
-                    "Authorization": "Bearer " + token
-                }
-            });
         })
         .then(function(response) {
             if (!response) return;
