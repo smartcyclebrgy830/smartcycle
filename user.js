@@ -338,28 +338,30 @@ document.getElementById('userForm').addEventListener('submit', function(e) {
                 return;
             }
 
-            // Pass the dynamic form inputs and explicit Authorization header
+            // Pass the dynamic form inputs and force explicit header casing
             return window._supabase.functions.invoke('invite-user', {
                 body: { 
                     email: email, 
                     role: role 
                 },
                 headers: {
-                    'Authorization': 'Bearer ' + token
+                    // Force authorization explicitly into the outgoing HTTP request headers
+                    "Authorization": "Bearer " + token
                 }
             });
         })
         .then(function(response) {
-            // Guard against potential empty responses
-            if (!response) return; 
+            if (!response) return;
 
             var data = response.data;
             var error = response.error;
 
-            if (error) {
-                alert('Error: ' + error.message);
+            // Handle function wrapper errors or internal catch blocks
+            if (error || (data && data.error)) {
+                var errorMsg = error ? error.message : data.error;
+                alert('Error: ' + errorMsg);
             } else {
-                alert('Success: ' + data.message);
+                alert('Success: ' + (data ? data.message : "Invitation sent!"));
                 
                 // Temporarily add to local UI state using dynamic inputs
                 users.push({ 
@@ -371,7 +373,9 @@ document.getElementById('userForm').addEventListener('submit', function(e) {
                 });
                 
                 renderUsers();
-                userModal.classList.remove('show');
+                if (typeof userModal !== 'undefined' && userModal.classList) {
+                    userModal.classList.remove('show');
+                }
             }
         })
         .catch(function(err) {
