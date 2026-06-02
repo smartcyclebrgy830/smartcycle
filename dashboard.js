@@ -19,19 +19,31 @@ try {
 
 // CHECK AUTHENTICATION - Protect dashboard page
 (function checkAuth() {
-    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+const isLoggedIn = sessionStorage.getItem('isLoggedIn');
     
-    // If not logged in, redirect to login page
+    // 1. Safe Redirect Guard
     if (!isLoggedIn || isLoggedIn !== 'true') {
         window.location.href = 'login.html';
         return;
     }
     
-    // If logged in, display user name
-    const userName = sessionStorage.getItem('userName') || 'Admin';
+    // 2. Fetch User Identity and Role
+    const userName = sessionStorage.getItem('userName') || 'User';
+    const userRole = sessionStorage.getItem('userRole') || 'moderator'; // default fallback
+    
+    // 3. Update Sidebar Profile Name
     const userNameElement = document.getElementById('user-name');
     if (userNameElement) {
         userNameElement.textContent = userName;
+    }
+
+    // 4. Update Header Greeting Dynamically
+    // Assumes your H1 has an id="dashboard-greeting" or similar wrapper
+    const greetingElement = document.getElementById('dashboard-greeting');
+    if (greetingElement) {
+        // Formats 'super_admin' or 'admin' to clean display text
+        const formattedRole = userRole.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+        greetingElement.textContent = `Good Morning, ${formattedRole}!`;
     }
 })();
 
