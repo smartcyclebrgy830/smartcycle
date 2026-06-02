@@ -8,6 +8,35 @@ const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
 window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+let currentUserRole = null;
+
+async function getUserRole() {
+    const { data: { user } } = await window._supabase.auth.getUser();
+
+    if (!user) return null;
+
+    const { data, error } = await window._supabase
+        .from('profiles')
+        .select('type')
+        .eq('id', user.id) // IMPORTANT: must match auth_id
+        .single();
+
+    if (error) {
+        console.error('Role fetch error:', error.message);
+        return null;
+    }
+
+    return data.type; // "Super Admin", "Admin", "Moderator"
+}
+
+function applyRoleUI() {
+    const addBtn = document.getElementById('openSaleModalBtn');
+
+    if (currentUserRole === 'Moderator') {
+        if (addBtn) addBtn.style.display = 'none';
+    }
+}
+
 // STORAGE & DATA SANITIZATION (UPDATED FOR RELATED TABLES)
 async function fetchSales() {
     const { data, error } = await window._supabase
@@ -58,6 +87,10 @@ async function fetchSales() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    currentUserRole = await getUserRole();
+    await loadDataAndRender();
+    applyRoleUI();
+    
     // RUNTIME STATE
     const ITEMS_PER_PAGE = 10;
     let currentPage   = 1;
@@ -130,6 +163,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const trMain = document.createElement('tr');
             trMain.className = 'main-row';
             trMain.setAttribute('data-target', rowId);
+            const canModify = currentUserRole === 'Super Admin' || currentUserRole === 'Admin';
+            
             trMain.innerHTML = `
                 <td class="chevron-cell"><i data-lucide="chevron-down"></i></td>
                 <td>${sale.raw_date || 'N/A'}</td>
@@ -143,12 +178,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <button class="icon-btn receipt-btn" data-action="view-receipt" data-id="${sale.id}" title="View Receipt">
                             <i data-lucide="image"></i>
                         </button>
-                        <button class="icon-btn" data-action="edit" data-id="${sale.id}" title="Edit">
-                            <i data-lucide="edit-2"></i>
-                        </button>
-                        <button class="icon-btn delete" data-action="delete" data-id="${sale.id}" title="Delete">
-                            <i data-lucide="trash-2"></i>
-                        </button>
+            
+                        ${canModify ? `
+                            <button class="icon-btn" data-action="edit" data-id="${sale.id}" title="Edit">
+                                <i data-lucide="edit-2"></i>
+                            </button>
+                            <button class="icon-btn delete" data-action="delete" data-id="${sale.id}" title="Delete">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                        ` : ``}
                     </div>
                 </td>
             `;
@@ -227,9 +265,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (!sale) return;
 
+            const canModify = currentUserRole === 'Super Admin' || currentUserRole === 'Admin';
+            
             if (action === 'edit') {
+                if (!canModify) return alert('Unauthorized');
                 window.openEditModal(id);
+            
             } else if (action === 'delete') {
+                if (!canModify) return alert('Unauthorized');
                 window.showDeleteModal(id);
             } else if (action === 'view-receipt' && sale.receipt_image) {
                 const win = window.open('', '_blank');
