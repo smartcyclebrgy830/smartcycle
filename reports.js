@@ -10,6 +10,52 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    let currentUserRole = null;
+
+    async function getUserRole() {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+        if (userError || !user) {
+            console.error("User not logged in");
+            return;
+        }
+    
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('type')
+            .eq('auth_id', user.id)
+            .single();
+    
+        if (error) {
+            console.error("Error fetching role:", error.message);
+            return;
+        }
+    
+        currentUserRole = data.type;
+        applyRolePermissions();
+    }
+
+        function applyRolePermissions() {
+        const exportBtn = document.getElementById('exportDropdownBtn');
+        const exportSection = document.getElementById('exportDropdown');
+    
+        // 🔴 Moderator = VIEW ONLY
+        if (currentUserRole === 'Moderator') {
+            if (exportBtn) exportBtn.style.display = 'none';
+            if (exportSection) exportSection.style.display = 'none';
+    
+            // Also disable direct export buttons (safety)
+            document.querySelectorAll('.btn-export').forEach(btn => {
+                btn.style.display = 'none';
+            });
+        }
+    
+        // 🟢 Admin & Super Admin = allowed
+        if (currentUserRole === 'Admin' || currentUserRole === 'Super Admin') {
+            if (exportBtn) exportBtn.style.display = 'block';
+        }
+    }
+
     // ADD THIS LINE: Expose the active client instance globally
     window.supabase = supabase;
 
@@ -255,6 +301,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. FIXED: EXPORT ENGINE AND MODAL INTERACTION CORRECTION
     // -------------------------------------------------------------------------
     function handleExport(format) {
+        if (currentUserRole === 'Moderator') {
+            alert("Access denied: You are not allowed to export reports.");
+            return;
+        }
+    
         showExportModal(format);
     }
 
@@ -612,6 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------------------
     // 6. INITIAL RUN SEQUENCE
     // -------------------------------------------------------------------------
+    getUserRole()
     rebuildAllCalendars();
     fetchAndRenderReportData(formatDateToSQL(selectedStart), formatDateToSQL(selectedEnd));
 });
