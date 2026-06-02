@@ -18,7 +18,7 @@ async function getUserRole() {
     const { data, error } = await window._supabase
         .from('profiles')
         .select('type')
-        .eq('id', user.id) // IMPORTANT: must match auth_id
+        .eq('auth_id', user.id) // IMPORTANT: must match auth_id
         .single();
 
     if (error) {
@@ -87,10 +87,6 @@ async function fetchSales() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    currentUserRole = await getUserRole();
-    await loadDataAndRender();
-    applyRoleUI();
-    
     // RUNTIME STATE
     const ITEMS_PER_PAGE = 10;
     let currentPage   = 1;
@@ -102,6 +98,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const emptyState     = document.getElementById('emptyState');
     const paginationEl   = document.getElementById('pagination');
     const searchInput    = document.getElementById('salesSearch');
+
+    currentUserRole = await getUserRole();
+    applyRoleUI();
 
     // Central data pipeline
     async function loadDataAndRender() {
