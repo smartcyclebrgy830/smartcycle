@@ -2,9 +2,17 @@ const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
 window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- RBAC Configuration ---
-// Change this value to test: 'Super Admin', 'Admin', or 'Moderator'
-window.currentUserRole = 'Super Admin'; 
+// --- Dynamic Role Detection ---
+// This checks your bottom-left user card to see who is logged in automatically.
+function detectUserRole() {
+    const pageText = document.body.innerText || "";
+    if (pageText.includes("tezwamoderator") || pageText.includes("Moderator")) {
+        window.currentUserRole = 'Moderator';
+    } else {
+        window.currentUserRole = 'Super Admin';
+    }
+    console.log("Detected User Role:", window.currentUserRole);
+}
 
 window.collections = [];
 window.currentItems = [];
@@ -15,6 +23,7 @@ let currentFilter = 'all';
 const itemsPerPage = 10;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    detectUserRole();      // Find out who is logged in first
     loadModalHTML();
     setupSearch();
     setupAddCollectionButton(); // Bind click handler & handle Moderator visibility
@@ -23,7 +32,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Enforces structural visibility for the top bar buttons based on role
 function setupAddCollectionButton() {
-    // Find all buttons on the page to locate the "+ Add Collection" button
     const buttons = document.querySelectorAll('button');
     let addBtn = null;
     
@@ -41,9 +49,9 @@ function setupAddCollectionButton() {
             // Ensure it's visible and properly wired for Admins / Super Admins
             addBtn.style.display = 'flex'; 
             
-            // Remove any old inline handlers and safely attach click trigger
+            // Remove old inline handlers and safely attach click trigger
             addBtn.onclick = null; 
-            addBtn.addEventListener('click', () => {
+            addBtn.onclick = function() {
                 window.editingIndex = -1; // Reset edit state for fresh entries
                 const modal = document.getElementById('addCollectionModal');
                 if (modal) {
@@ -66,7 +74,7 @@ function setupAddCollectionButton() {
                 } else {
                     console.error("Modal element #addCollectionModal not found in DOM.");
                 }
-            });
+            };
         }
     }
 }
@@ -208,7 +216,7 @@ function renderTable() {
     const tbody = document.getElementById('collectionTableBody');
     if (!tbody) return;
     
-    // Always make sure the top bar aligns with the current role state during table rendering lifecycles
+    // Always keep buttons aligned with the current layout state
     setupAddCollectionButton();
 
     const filtered = getFilteredCollections();
@@ -237,7 +245,7 @@ function renderTable() {
         // View receipt button is always accessible to everyone
         let actionButtonsHTML = `<button class="icon-btn receipt-btn" onclick="viewReceipt(${actualIndex})"><i data-lucide="image"></i></button>`;
         
-        // Show edit and delete actions only for Super Admin, Admin, and Office Admin
+        // Show edit and delete actions only if the user is NOT a Moderator
         if (window.currentUserRole !== 'Moderator') {
             actionButtonsHTML += `
                 <button class="icon-btn" onclick="editEntry(${actualIndex})"><i data-lucide="edit-2"></i></button>
@@ -575,7 +583,7 @@ async function saveCollection() {
     } catch (err) {
         console.error("Database mutation error:", err);
         alert("Failed to save collection updates: " + err.message);
-    } finaly {
+    } finally { // <-- Typo Corrected here: changed 'finaly' to 'finally'
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i data-lucide="check"></i> Submit';
