@@ -182,11 +182,15 @@ function addContactToTable(contact) {
         window.location.href = `profile_transaction.html?id=${contact.dbId}`;
     });
     const deleteBtn = row.querySelector('.delete-btn');
-
-    if (!contact.isTemporary) {
-        row.querySelector('.delete-btn').addEventListener('click', async function() {
+    
+    if (!contact.isTemporary && deleteBtn) {
+        deleteBtn.addEventListener('click', async function() {
             if (confirm(`Are you sure you want to delete ${contact.name}?`)) {
-                const { error } = await _supabase.from('profiles').delete().eq('id', contact.dbId);
+                const { error } = await _supabase
+                    .from('profiles')
+                    .delete()
+                    .eq('id', contact.dbId);
+    
                 if (!error) {
                     row.remove();
                     checkEmptyState();
@@ -339,7 +343,7 @@ function initializeSearch() {
 // 3. INITIALIZE ON LOAD
 document.addEventListener('DOMContentLoaded', () => {
     await fetchCurrentUserRole()
-    fetchProfilesFromSupabase(); 
+    await fetchProfilesFromSupabase(); 
     initializeTabSwitching();
     initializeSearch();
 });
