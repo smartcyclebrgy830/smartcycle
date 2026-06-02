@@ -186,6 +186,7 @@ function addContactToTable(contact) {
     if (!contact.isTemporary && deleteBtn) {
         deleteBtn.addEventListener('click', async function() {
             if (confirm(`Are you sure you want to delete ${contact.name}?`)) {
+    
                 const { error } = await _supabase
                     .from('profiles')
                     .delete()
@@ -341,7 +342,7 @@ function initializeSearch() {
 }
 
 // 3. INITIALIZE ON LOAD
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async() => {
     await fetchCurrentUserRole()
     await fetchProfilesFromSupabase(); 
     initializeTabSwitching();
