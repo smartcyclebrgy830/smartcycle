@@ -3,12 +3,35 @@ const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+let currentUserRole = null;
 let currentTab = 'all';
 const ITEMS_PER_PAGE = 10;
 let currentPage = 1; 
 
 // Initialize Lucide icons
 lucide.createIcons();
+
+async function fetchCurrentUserRole() {
+    const { data: { user }, error: userError } = await _supabase.auth.getUser();
+
+    if (userError || !user) {
+        console.error("No logged in user");
+        return;
+    }
+
+    const { data, error } = await _supabase
+        .from('profiles')
+        .select('type')
+        .eq('auth_id', user.id)
+        .single();
+
+    if (error) {
+        console.error("Error fetching role:", error.message);
+        return;
+    }
+
+    currentUserRole = data.type;
+}
 
 async function fetchProfilesFromSupabase() {
     const tableBody = document.getElementById('contactsTableBody');
@@ -119,6 +142,21 @@ function addContactToTable(contact) {
                 <i data-lucide="trash-2"></i>
            </button>`;
 
+    let actionButtonsHTML = '';
+
+    if (currentUserRole === 'Admin' || currentUserRole === 'Super Admin') {
+        actionButtonsHTML = `
+            <div class="action-buttons" style="justify-content: center;">
+                <button class="action-btn edit-btn" title="Edit" ${contact.isTemporary ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>
+                    <i data-lucide="edit-2"></i>
+                </button>
+                ${deleteButtonHtml}
+            </div>
+        `;
+    } else {
+        // Moderator → no buttons
+        actionButtonsHTML = `<div class="action-buttons"></div>`;
+    }
     // --- REORDERED DATA CELLS WITH FIXED LAYOUT WIDTHS ---
     row.innerHTML = `
         <td style="width: 250px; min-width: 250px;">
@@ -134,12 +172,7 @@ function addContactToTable(contact) {
         <td style="width: 250px; min-width: 250px;">${contact.address}</td>
         <td style="width: 140px; min-width: 160px;">${contact.contactNumber}</td>
         <td style="width: 100px; min-width: 100px;">
-            <div class="action-buttons" style="justify-content: center;">
-                <button class="action-btn edit-btn" title="Edit" ${contact.isTemporary ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>
-                    <i data-lucide="edit-2"></i>
-                </button>
-                ${deleteButtonHtml}
-            </div>
+            ${actionButtonsHTML}
         </td>
     `;
 
@@ -148,6 +181,7 @@ function addContactToTable(contact) {
         if(e.target.closest('.action-buttons')) return;
         window.location.href = `profile_transaction.html?id=${contact.dbId}`;
     });
+    const deleteBtn = row.querySelector('.delete-btn');
 
     if (!contact.isTemporary) {
         row.querySelector('.delete-btn').addEventListener('click', async function() {
@@ -304,6 +338,7 @@ function initializeSearch() {
 
 // 3. INITIALIZE ON LOAD
 document.addEventListener('DOMContentLoaded', () => {
+    await fetchCurrentUserRole()
     fetchProfilesFromSupabase(); 
     initializeTabSwitching();
     initializeSearch();
