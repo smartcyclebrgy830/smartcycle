@@ -43,7 +43,7 @@ async function loadUsers() {
     
         type = type.toLowerCase();
     
-        if (type === 'super admin') return 'admin';
+        if (type === 'super admin') return 'super admin';
         if (type === 'admin') return 'admin';
         if (type === 'moderator') return 'moderator';
     
@@ -62,11 +62,21 @@ function colorFor(name) {
 }
 
 function roleBadgeClass(role) {
-    return { admin: 'role-admin', moderator: 'role-moderator', viewer: 'role-viewer' }[role] || 'role-viewer';
+    return {
+        'super admin': 'role-super-admin', // ✅ ADD THIS
+        admin: 'role-admin',
+        moderator: 'role-moderator',
+        viewer: 'role-viewer'
+    }[role] || 'role-viewer';
 }
 
 function roleLabel(role) {
-    return { admin: 'Admin', moderator: 'Moderator', viewer: 'Viewer' }[role] || role;
+    return {
+        'super admin': 'Super Admin', // ✅ ADD THIS
+        admin: 'Admin',
+        moderator: 'Moderator',
+        viewer: 'Viewer'
+    }[role] || role;
 }
 
 function isValidPHPhone(val) {
@@ -549,16 +559,38 @@ function clearModalErrors() {
 document.addEventListener('DOMContentLoaded', async function() {
     // 1. Fetch the actual profile from Supabase first
     const { data: { user } } = await window._supabase.auth.getUser();
+
     if (user) {
         const { data: profile } = await window._supabase
             .from('profiles')
             .select('*')
             .eq('auth_id', user.id)
             .single();
-        
-        myProfile = profile || { name: 'New User', email: user.email, mobile: '', role: 'viewer' };
+
+        // ✅ REPLACED THIS PART
+        if (profile) {
+            myProfile = {
+                name: profile.name,
+                email: user.email,
+                mobile: profile.contact_num || '',
+                role: normalizeRole(profile.type)
+            };
+        } else {
+            myProfile = {
+                name: 'New User',
+                email: user.email,
+                mobile: '',
+                role: 'viewer'
+            };
+        }
+
     } else {
-        myProfile = { name: 'Guest', email: '', mobile: '', role: 'viewer' };
+        myProfile = {
+            name: 'Guest',
+            email: '',
+            mobile: '',
+            role: 'viewer'
+        };
     }
     
     renderProfile();
