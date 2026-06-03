@@ -390,21 +390,20 @@ document.getElementById('userForm').addEventListener('submit', async function(e)
         var u = users.find(function(u) { return u.id === editingUserId; });
         if (!u) return;
         
-    const cleanedMobile = mobile.replace(/\D/g, ''); // ✅ ADD THIS
+    const cleanedMobile = mobile.replace(/\D/g, '');
     
     const { error } = await window._supabase
         .from('profiles')
         .update({
             name: name,
-            contact_num: cleanedMobile // ✅ USE CLEANED VALUE
+            contact_num: cleanedMobile,
+            type:
+                role === 'super admin' ? 'Super Admin' :
+                role === 'admin' ? 'Admin' :
+                role === 'moderator' ? 'Moderator' :
+                role
         })
-        .eq('auth_id', user.id);
-        
-        if (error) {
-            console.error(error);
-            alert('Failed to update user.');
-            return;
-        }
+        .eq('auth_id', u.auth_id);
         
         // ✅ UPDATE LOCAL STATE AFTER SUCCESS
         u.name = name;
