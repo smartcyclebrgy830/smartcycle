@@ -106,6 +106,10 @@ function isValidEmail(val) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
 }
 
+function isSuperAdmin() {
+    return myProfile?.role?.toLowerCase() === 'super admin';
+}
+
 function renderProfile() {
     document.getElementById('profileAvatar').style.background = colorFor(myProfile.name);
     document.getElementById('displayName').textContent     = myProfile.name;
@@ -160,15 +164,18 @@ function renderUsers() {
                 : '<span class="text-muted">No number</span>') +
             '</td>' +
             '<td>' +
-                '<div class="action-buttons" role="group" aria-label="Actions for ' + u.name + '">' +
-                    '<button class="action-btn edit-btn"   data-id="' + u.id + '" aria-label="Edit ' + u.name + '"   title="Edit">' +
-                        '<i data-lucide="edit-2" aria-hidden="true"></i>' +
-                    '</button>' +
-                    '<button class="action-btn delete-btn" data-id="' + u.id + '" aria-label="Remove ' + u.name + '" title="Remove">' +
-                        '<i data-lucide="trash-2" aria-hidden="true"></i>' +
-                    '</button>' +
-                '</div>' +
-            '</td>' +
+                (isSuperAdmin() 
+                    ? '<div class="action-buttons" role="group" aria-label="Actions for ' + u.name + '">' +
+                        '<button class="action-btn edit-btn" data-id="' + u.id + '" title="Edit">' +
+                            '<i data-lucide="edit-2"></i>' +
+                        '</button>' +
+                        '<button class="action-btn delete-btn" data-id="' + u.id + '" title="Remove">' +
+                            '<i data-lucide="trash-2"></i>' +
+                        '</button>' +
+                      '</div>'
+                    : ''
+                ) +
+            '</td>'
         '</tr>';
     }).join('');
 
@@ -331,6 +338,11 @@ function clearProfileErrors() {
 
 // Add & Edit user modal
 var userModal = document.getElementById('userModal');
+const addBtn = document.getElementById('addUserBtn');
+
+if (!isSuperAdmin()) {
+    if (addBtn) addBtn.style.display = 'none';
+}
 
 document.getElementById('addUserBtn').addEventListener('click', function() {
     editingUserId = null;
@@ -349,6 +361,7 @@ document.getElementById('addUserBtn').addEventListener('click', function() {
 });
 
 function openEditUser(id) {
+    if (!isSuperAdmin()) return;
     var u = users.find(function(u) { return u.id === id; });
     if (!u) return;
     editingUserId = id;
@@ -371,6 +384,10 @@ document.getElementById('cancelUserModal').addEventListener('click',  function()
 
 document.getElementById('userForm').addEventListener('submit', async function(e) {
     e.preventDefault();
+    if (!isSuperAdmin()) {
+        alert('Unauthorized action.');
+        return;
+    }
 
     var name   = document.getElementById('modalName').value.trim();
     var email  = document.getElementById('modalEmail').value.trim();
@@ -474,6 +491,7 @@ document.getElementById('userForm').addEventListener('submit', async function(e)
 
 // Delete modal
 function openDeleteUser(id) {
+    if (!isSuperAdmin()) return;
     var u = users.find(function(u) { return u.id === id; });
     if (!u) return;
     deletingUserId = id;
@@ -652,6 +670,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     renderProfile();
+    if (!isSuperAdmin()) {
+        const actionHeader = document.getElementById('actionHeader');
+        if (actionHeader) actionHeader.style.display = 'none';
+    }
     await loadUsers();
     lucide.createIcons();
 
