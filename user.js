@@ -50,16 +50,20 @@ async function loadUsers() {
         console.error('Error loading users:', error);
         return;
     }
-
-    // Map DB → frontend format
-    users = data.map((u, index) => ({
-        id: index + 1,
-        auth_id: u.auth_id, // ✅ ADD THIS
-        name: u.name || 'No Name',
-        email: u.email || 'No Email',
-        mobile: formatPHNumber(u.contact_num || ''),
-        role: normalizeRole(u.type)
-    }));
+    // ✅ Get current logged-in user
+    const { data: { user } } = await window._supabase.auth.getUser();
+    
+    users = data
+        // ✅ REMOVE CURRENT USER
+        .filter(u => u.auth_id !== user.id)
+        .map((u, index) => ({
+            id: index + 1,
+            auth_id: u.auth_id,
+            name: u.name || 'No Name',
+            email: u.email || 'No Email',
+            mobile: formatPHNumber(u.contact_num || ''),
+            role: normalizeRole(u.type)
+        }));
     renderUsers();
 }
 
