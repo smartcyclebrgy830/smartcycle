@@ -108,7 +108,7 @@ function renderUsers() {
         : users;
 
     if (!filtered.length) {
-        tbody.innerHTML = '<tr><td colspan="3" class="empty-state-cell"><div class="empty-state"><i data-lucide="users"></i><p>' +
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-state-cell"><div class="empty-state"><i data-lucide="users"></i><p>' +
             (searchQuery ? 'No users match your search.' : 'No users added yet.') +
             '</p></div></td></tr>';
         lucide.createIcons();
@@ -134,6 +134,11 @@ function renderUsers() {
                 '</div>' +
             '</td>' +
             '<td><span class="role-badge ' + roleBadgeClass(u.role) + '">' + roleLabel(u.role) + '</span></td>' +
+            '<td>' +
+              (u.mobile 
+                ? '<span class="user-mobile">' + u.mobile + '</span>' 
+                : '<span class="text-muted">No number</span>') +
+            '</td>' +
             '<td>' +
                 '<div class="action-buttons" role="group" aria-label="Actions for ' + u.name + '">' +
                     '<button class="action-btn edit-btn"   data-id="' + u.id + '" aria-label="Edit ' + u.name + '"   title="Edit">' +
