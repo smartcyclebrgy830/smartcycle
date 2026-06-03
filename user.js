@@ -298,42 +298,6 @@ document.getElementById('cancelEditBtn').addEventListener('click', function() {
     clearProfileErrors();
 });
 
-document.getElementById('editProfileForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    var name   = document.getElementById('editName').value.trim();
-    var email  = document.getElementById('editEmail').value.trim();
-    var mobile = document.getElementById('editMobile').value.trim();
-    var valid  = true;
-
-    clearProfileErrors();
-
-    if (!name) {
-        showError('editNameError', 'editName', 'Full name is required.');
-        valid = false;
-    }
-    if (!email) {
-        showError('editEmailError', 'editEmail', 'Email address is required.');
-        valid = false;
-    } else if (!isValidEmail(email)) {
-        showError('editEmailError', 'editEmail', 'Enter a valid email address.');
-        valid = false;
-    }
-    if (mobile && !isValidPHPhone(mobile)) {
-        showError('editMobileError', 'editMobile', 'Enter a valid PH number (09XX XXX XXXX).');
-        valid = false;
-    }
-
-    if (!valid) return;
-
-    myProfile.name   = name;
-    myProfile.email  = email;
-    myProfile.mobile = mobile;
-    renderProfile();
-    editProfileModal.classList.remove('show');
-    clearProfileErrors();
-});
-
 editProfileModal.addEventListener('click', function(e) {
     if (e.target === editProfileModal) editProfileModal.classList.remove('show');
 });
@@ -674,6 +638,20 @@ document.addEventListener('DOMContentLoaded', async function() {
     renderProfile();
     await loadUsers();
     lucide.createIcons();
+
+    const editBtn = document.getElementById('editProfileBtn');
+
+    if (editBtn) {
+        editBtn.addEventListener('click', function () {
+            document.getElementById('editName').value   = myProfile.name;
+            document.getElementById('editEmail').value  = myProfile.email;
+            document.getElementById('editMobile').value = myProfile.mobile;
+    
+            clearProfileErrors();
+            editProfileModal.classList.add('show');
+            lucide.createIcons();
+        });
+    }
 
     var searchInput = document.getElementById('userSearchInput');
     if (searchInput) {
