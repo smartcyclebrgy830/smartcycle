@@ -381,11 +381,11 @@ function openEditUser(id) {
     lucide.createIcons();
 }
 
-document.getElementById('cancelUserModal').addEventListener('click', function() {
+document.getElementById('cancelUserModal').addEventListener('click',  function() {
     userModal.classList.remove('show');
 });
 
-document.getElementById('userForm').addEventListener('submit', function(e) {
+document.getElementById('userForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     var name   = document.getElementById('modalName').value.trim();
