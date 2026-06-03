@@ -86,6 +86,10 @@ body {
     letter-spacing: 0.4px;
 }
 
+.role-super-admin {
+    color: #7c3aed; /* 🔥 purple (distinct from others) */
+    font-weight: 700;
+}
 .role-admin     { color: #16a34a; }
 .role-moderator { color: #1d4ed8; }
 .role-viewer    { color: #475569; }
