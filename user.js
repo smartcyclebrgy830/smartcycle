@@ -18,6 +18,18 @@ var avatarColors = [
     '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'
 ];
 
+function normalizeRole(role) {
+    if (!role) return 'viewer';
+
+    const r = role.toLowerCase();
+
+    if (r === 'super admin') return 'super admin';
+    if (r === 'admin') return 'admin';
+    if (r === 'moderator') return 'moderator';
+
+    return 'viewer';
+}
+
 async function loadUsers() {
     const { data, error } = await window._supabase
         .from('users_with_auth') // ✅ use view
@@ -37,19 +49,6 @@ async function loadUsers() {
         mobile: u.contact_num || '', // Map contact_num from DB to your frontend's mobile field
         role: normalizeRole(u.type)
     }));
-
-    function normalizeRole(type) {
-        if (!type) return 'viewer';
-    
-        type = type.toLowerCase();
-    
-        if (type === 'super admin') return 'super admin';
-        if (type === 'admin') return 'admin';
-        if (type === 'moderator') return 'moderator';
-    
-        return 'viewer';
-    }
-
     renderUsers();
 }
 
