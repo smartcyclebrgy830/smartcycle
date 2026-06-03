@@ -18,6 +18,40 @@ var avatarColors = [
     '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'
 ];
 
+async function loadUsers() {
+    const { data, error } = await window._supabase
+        .from('profiles')
+        .select('*');
+
+    if (error) {
+        console.error('Error loading users:', error);
+        return;
+    }
+
+    // Map DB → frontend format
+    users = data.map((u, index) => ({
+        id: index + 1,
+        name: u.name || 'No Name',
+        email: u.email || 'No Email',
+        mobile: u.mobile || '',
+        role: normalizeRole(u.type)
+    }));
+
+    function normalizeRole(type) {
+        if (!type) return 'viewer';
+    
+        type = type.toLowerCase();
+    
+        if (type === 'super admin') return 'admin';
+        if (type === 'admin') return 'admin';
+        if (type === 'moderator') return 'moderator';
+    
+        return 'viewer';
+    }
+
+    renderUsers();
+}
+
 function colorFor(name) {
     var hash = 0;
     for (var i = 0; i < name.length; i++) {
@@ -527,7 +561,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     renderProfile();
-    renderUsers();
+    await loadUsers();
     lucide.createIcons();
 
     var searchInput = document.getElementById('userSearchInput');
