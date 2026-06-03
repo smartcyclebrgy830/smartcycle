@@ -17,7 +17,6 @@ var avatarColors = [
     '#46B336', '#3b82f6', '#f59e0b', '#ef4444',
     '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'
 ];
-
 function formatPHNumber(val) {
     const digits = val.replace(/\D/g, '').slice(0, 11);
 
