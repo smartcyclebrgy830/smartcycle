@@ -35,68 +35,18 @@ async function logAction(action, page = '') {
     }
 }
 
-// MOCK DATA
-const MOCK_LOGS = [
-    {
-        id: 1,
-        user_name: 'Jadey morales',
-        user_role: 'Admin',
-        action: 'Deleted Sale #102',
-        created_at: '2026-05-29T20:30:00',
-        is_deleted: false
-    },
-    {
-        id: 2,
-        user_name: 'Polytechnic',
-        user_role: 'Super-Admin',
-        action: 'Edited Yero price',
-        created_at: '2026-05-29T20:30:00',
-        is_deleted: false
-    },
-    {
-        id: 3,
-        user_name: 'Sir Allan',
-        user_role: 'Admin',
-        action: 'Added Collection #092',
-        created_at: '2026-05-29T20:30:00',
-        is_deleted: false
-    },
-    {
-        id: 4,
-        user_name: 'Princess',
-        user_role: 'Admin',
-        action: 'Deleted Sale #102',
-        created_at: '2026-05-29T20:30:00',
-        is_deleted: false
-    },
-    {
-        id: 5,
-        user_name: 'Tanay national',
-        user_role: 'Super-Admin',
-        action: 'Added Collection #092',
-        created_at: '2026-05-27T20:30:00',
-        is_deleted: false
-    },
-    {
-        id: 6,
-        user_name: 'KPOP junk',
-        user_role: 'Moderator',
-        action: 'Viewed Sale #030',
-        created_at: '2026-05-27T20:30:00',
-        is_deleted: false
-    },
-    {
-        id: 7,
-        user_name: 'EVERYGLORY',
-        user_role: 'Moderator',
-        action: 'Edited Collection #045',
-        created_at: '2026-05-27T20:30:00',
-        is_deleted: true
-    }
-];
-
 async function fetchHistory() {
-    allLogs = MOCK_LOGS;
+    const { data, error } = await _supabase
+        .from('logs')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error(error);
+        return;
+    }
+
+    allLogs = data || [];
     applyFiltersAndRender();
 }
 
@@ -235,7 +185,19 @@ function showDeleteModal(log) {
 }
 
 async function deleteLog(id) {
-    console.log('Delete log id:', id);
+    const { error } = await _supabase
+        .from('logs')
+        .update({ is_deleted: true })
+        .eq('id', id);
+
+    if (error) console.error(error);
+}
+
+async function restoreLog(id) {
+    await _supabase
+        .from('logs')
+        .update({ is_deleted: false })
+        .eq('id', id);
 }
 
 // HELPERS
