@@ -36,8 +36,8 @@ async function initRoleControl() {
         // ❌ Hide Add button
         if (addBtn) addBtn.style.display = 'none';
 
-        // ❌ Remove Action column header
-        const actionHeader = document.querySelector('th.action-column');
+        // ❌ Remove ACTION column header
+        const actionHeader = document.querySelector('.action-column');
         if (actionHeader) actionHeader.remove();
     }
 }
