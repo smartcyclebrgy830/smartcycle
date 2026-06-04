@@ -1,8 +1,11 @@
 // --- Supabase Initialization ---
-const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5seWJidmxoaGRqam1xa3pqbmh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDAwNzksImV4cCI6MjA4ODExNjA3OX0.QHqEUFwNhwhCyjCMr5MXMPkRqzCNRXP6I9toMdiAZ_4';
-window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+
+if (!window._supabase) {
+    const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5seWJidmxoaGRqam1xa3pqbmh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDAwNzksImV4cCI6MjA4ODExNjA3OX0.QHqEUFwNhwhCyjCMr5MXMPkRqzCNRXP6I9toMdiAZ_4';
+    window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+}
 // --- Global State Variables 
 let myProfile;
 let users = [];
