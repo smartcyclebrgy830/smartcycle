@@ -4,7 +4,7 @@ const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
 // Use ONE global client
 window._supabase = window._supabase || supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function logAction(action, page = '') {
+window.logAction = async function(action, page = '') {
     try {
         const { data: { user } } = await window._supabase.auth.getUser();
         if (!user) return;
