@@ -519,3 +519,87 @@ table {
     background: #fef2f2;
     border-color: #fca5a5;
 }
+
+/* Delete modal */
+#profileDeleteModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 3000;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(4px);
+}
+
+#profileDeleteModal .delete-modal-box {
+    background: white;
+    border-radius: 20px;
+    padding: 36px 32px 28px;
+    width: 360px;
+    max-width: 90vw;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+#profileDeleteModal .delete-modal-icon {
+    width: 64px;
+    height: 64px;
+    background: #fef2f2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+}
+
+#profileDeleteModal .delete-modal-icon i {
+    width: 28px;
+    height: 28px;
+    color: #ef4444;
+}
+
+#profileDeleteModal h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px;
+}
+
+#profileDeleteModal p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0 0 28px;
+    line-height: 1.5;
+}
+
+#profileDeleteModal .delete-modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+#profileDeleteCancel {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+#profileDeleteConfirm {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: #ef4444;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+}
