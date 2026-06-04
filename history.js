@@ -1,39 +1,11 @@
-const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
-const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 lucide.createIcons();
 
 let currentView = 'archive';
 let allLogs = [];
 let filteredLogs = [];
-
-async function logAction(action, page = '') {
-    try {
-        const { data: { user } } = await _supabase.auth.getUser();
-        if (!user) return;
-
-        // Get profile
-        const { data: profile } = await _supabase
-            .from('profiles')
-            .select('id, name, type')
-            .eq('auth_id', user.id)
-            .single();
-
-        if (!profile) return;
-
-        await _supabase.from('logs').insert({
-            user_id: profile.id,
-            user_name: profile.name,
-            user_role: profile.type,
-            action: action,
-            page: page
-        });
-
-    } catch (err) {
-        console.error('Log error:', err);
-    }
-}
 
 async function fetchHistory() {
     const { data, error } = await _supabase
