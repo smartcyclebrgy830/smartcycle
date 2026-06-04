@@ -1,5 +1,4 @@
-
-window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const _supabase = window._supabase;
 
 lucide.createIcons();
 
