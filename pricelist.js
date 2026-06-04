@@ -188,7 +188,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Update failed: ' + error.message);
                 return;
             }
-    
+             logAction(
+                'Updated material',
+                `Updated "${material}" (Unit: ${unit}, Price: ₱${parseFloat(price).toFixed(2)})`
+            );
             // 🔥 Update UI row
             editRow.cells[0].textContent = material;
             editRow.cells[1].textContent = unit;
@@ -214,7 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Insert failed: ' + error.message);
                 return;
             }
-    
+            logAction(
+                'Added material',
+                `Added "${material}" (Unit: ${unit}, Price: ₱${parseFloat(price).toFixed(2)})`
+            );
             renderRow(data[0]);
         }
     
@@ -344,7 +350,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Delete failed: ' + error.message);
                 return;
             }
-    
+            logAction(
+                'Deleted material',
+                `Deleted "${name}" (ID: ${id})`
+            );
             row.remove();
             checkEmptyState();
         });
