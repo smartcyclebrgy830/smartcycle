@@ -589,8 +589,18 @@ async function saveCollection() {
 
             if (insertItemsError) throw insertItemsError;
         }
-
-        alert(window.editingIndex > -1 ? "Collection updated successfully!" : "Collection saved successfully!");
+        const isEdit = window.editingIndex > -1;
+        
+        alert(isEdit ? "Collection updated successfully!" : "Collection saved successfully!");
+        
+        // ✅ LOG ACTION
+        if (typeof logAction === 'function') {
+            if (isEdit) {
+                logAction('Edited collection for ${customer}', window.location.pathname);
+            } else {
+                logAction('Added collection for ${customer}', window.location.pathname);
+            }
+        }
         
         if (typeof closeAddModal === 'function') closeAddModal(); 
         else if (typeof closeModal === 'function') closeModal();
@@ -674,6 +684,9 @@ window.deleteEntry = function(index) {
             renderTable();
             modal.style.display = 'none';
             alert("Collection deleted successfully.");
+            if (typeof logAction === 'function') {
+                logAction('Deleted collection for ${collection.customer}', window.location.pathname);
+            }
         } catch (err) {
             console.error(err);
             alert("Error deleting record: " + err.message);
@@ -701,7 +714,9 @@ function buildReceiptItemRows(items, minRows) {
     }
     return rows;
 }
-
+if (typeof logAction === 'function') {
+    logAction('Printed receipt for ${data.customer}', window.location.pathname);
+}
 window.viewReceipt = function(index) {
     const data = getFilteredCollections()[index];
     if (!data) return;
