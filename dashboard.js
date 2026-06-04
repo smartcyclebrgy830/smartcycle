@@ -48,7 +48,7 @@ const isLoggedIn = sessionStorage.getItem('isLoggedIn');
 })();
 
 document.addEventListener('DOMContentLoaded', function() {
-    logAction('Viewed page', window.location.pathname);
+    await logAction('Viewed Dashboard', '/dashboard');
     // Initialize Lucide icons
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
