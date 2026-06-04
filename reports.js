@@ -15,14 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUserRole = null;
 
     async function getUserRole() {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await window._supabase.auth.getUser()
     
         if (userError || !user) {
             console.error("User not logged in");
             return;
         }
     
-        const { data, error } = await supabase
+        const { data, error } = await window._supabase
+
             .from('profiles')
             .select('type')
             .eq('auth_id', user.id)
@@ -54,9 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (exportSection) exportSection.style.display = 'block'; // or block depending on your layout
         }
     }
-
-    // ADD THIS LINE: Expose the active client instance globally
-    window.supabase = supabase;
 
     // -------------------------------------------------------------------------
     // 2. POPOVER HELPERS & LIFECYCLE MANAGEMENT
@@ -206,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!finalStart || !finalEnd) return;
 
-            const { data, error } = await supabase.rpc('get_material_transactions', {
+            const { data, error } = await window._supabase.rpc('get_material_transactions', {
                 start_date: finalStart,
                 end_date: finalEnd
             });
