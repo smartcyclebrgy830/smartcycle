@@ -339,7 +339,7 @@ function wireModal() {
             
                 const { error: insertItemsError } = await window._supabase.from('sale_items').insert(itemsToInsert);
                 if (insertItemsError) throw new Error("Failed to insert items: " + insertItemsError.message);
-            
+                await window.logAction(`Updated sale for ${partnerVal}`, 'Sales');
             } else {
                 // ==========================================
                 // INSERT FLOW
@@ -415,6 +415,7 @@ function wireModal() {
                     .insert(itemsToInsert);
         
                 if (insertItemsError) throw new Error("Failed to insert sale items: " + insertItemsError.message);
+                await window.logAction(`Added sale for ${partnerVal}`, 'Sales');
             }
         
             closeModal();
