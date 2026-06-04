@@ -345,11 +345,7 @@ function clearProfileErrors() {
 
 // Add & Edit user modal
 var userModal = document.getElementById('userModal');
-const addBtn = document.getElementById('addUserBtn');
 
-if (!isSuperAdmin()) {
-    if (addBtn) addBtn.style.display = 'none';
-}
 
 document.getElementById('addUserBtn').addEventListener('click', function() {
     editingUserId = null;
@@ -702,6 +698,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     renderProfile();
+    const addBtn = document.getElementById('addUserBtn');
+
+    if (isSuperAdmin()) {
+        addBtn.style.display = 'inline-flex'; // or 'flex'
+    } else {
+        addBtn.style.display = 'none';
+    }
     if (!isSuperAdmin()) {
         const actionHeader = document.getElementById('actionHeader');
         if (actionHeader) actionHeader.remove(); 
