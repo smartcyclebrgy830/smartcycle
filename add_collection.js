@@ -485,6 +485,9 @@ window.submitCollection = async function(e) {
             if (itemsClearError) throw itemsClearError;
 
             alert("Collection entry updated successfully!");
+            if (typeof logAction === 'function') {
+                logAction(`Updated collection for ${formattedCustomer}`, window.location.pathname);
+            }
 
         } else {
             // --- INSERT MODE ---
@@ -544,6 +547,10 @@ window.submitCollection = async function(e) {
             
             activeCollectionId = headerData.id; // Assign for item insertion later
             alert("Collection entry added successfully!");
+
+            if (typeof logAction === 'function') {
+                logAction(`Added collection for ${formattedCustomer}`, window.location.pathname);
+            }
         }
 
         // --- SHARED ITEM INSERTION FOR BOTH MODES ---
