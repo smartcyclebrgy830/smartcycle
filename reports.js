@@ -421,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.querySelector('#exportModalCancel').addEventListener('click', close);
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 
-        overlay.querySelector('#exportModalConfirm').addEventListener('click', () => {
+        overlay.querySelector('#exportModalConfirm').addEventListener('click', async () => {
             // CRITICAL FIX: Bundling the compiled metrics payload into your options map
             const opts = {
                 month:           parseInt(overlay.querySelector('#expMonth').value),
@@ -438,6 +438,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 floorArea:       overlay.querySelector('#expFloor').value.trim(),
                 noOfAide:        overlay.querySelector('#expAide').value.trim(),
                 reportData:      processedReportSummary // Sent directly to the export module template script!
+
+                // ✅ LOG EXPORT ACTION
+                if (currentUserRole === 'Admin' || currentUserRole === 'Super Admin') {
+                    const exportType = format.toUpperCase(); // PDF or CSV
+                    await window.logAction(`Exported ${exportType} report for ${opts.junkshopName}`);
+                }
             };
 
             close();
