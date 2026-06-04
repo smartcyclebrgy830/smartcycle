@@ -1,6 +1,10 @@
-const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
-window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ✅ Only create client if it doesn't exist yet
+if (!window._supabase) {
+    const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
+
+    window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+}
 
 async function detectUserRole() {
     try {
