@@ -600,9 +600,9 @@ async function saveCollection() {
         // ✅ LOG ACTION
         if (typeof logAction === 'function') {
             if (isEdit) {
-                logAction('Edited collection for ${customer}', window.location.pathname);
+                logAction(`Edited collection for ${formattedCustomer}`, window.location.pathname);
             } else {
-                logAction('Added collection for ${customer}', window.location.pathname);
+                logAction(`Added collection for ${formattedCustomer}`, window.location.pathname);
             }
         }
         
@@ -689,7 +689,7 @@ window.deleteEntry = function(index) {
             modal.style.display = 'none';
             alert("Collection deleted successfully.");
             if (typeof logAction === 'function') {
-                logAction('Deleted collection for ${collection.customer}', window.location.pathname);
+                logAction(`Deleted collection for ${collection.customer}`, window.location.pathname);
             }
         } catch (err) {
             console.error(err);
