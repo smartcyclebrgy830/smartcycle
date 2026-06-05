@@ -342,75 +342,6 @@ table {
   cursor: not-allowed;
 }
 
-/* MOBILE */
-@media (max-width: 768px) {
-    .main-content {
-        padding: 14px;
-        margin-left: 0;
-        margin-top: 60px;
-    }
-
-    .page-header h1 {
-        font-size: 24px;
-    }
-
-    .contacts-toolbar {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
-    }
-
-    .tab-navigation {
-        order: -1;
-        width: 100%;
-        gap: 16px;
-        overflow-x: auto;
-    }
-
-    .tab-btn {
-        font-size: 12px;
-    }
-
-    .search-container {
-        width: 100%;
-    }
-
-    .search-input {
-        width: 100%;
-    }
-
-    .search-input input {
-        width: 100%;
-        min-width: unset;
-    }
-
-    .contacts-table th,
-    .contacts-table td {
-        font-size: 13px;
-        padding: 10px;
-    }
-
-    .action-btn {
-        width: 28px;
-        height: 28px;
-        padding: 5px;
-    }
-
-    .action-btn i {
-        width: 13px;
-        height: 13px;
-    }
-
-    .action-buttons {
-        gap: 4px;
-    }
-
-    .customer-avatar {
-        width: 32px;
-        height: 32px;
-    }
-}
-
 .modal {
     position: fixed;
     inset: 0;
@@ -556,7 +487,7 @@ table {
 #profileDeleteModal .delete-modal-icon i {
     width: 28px;
     height: 28px;
-    color: #ef4444;
+    color: #ef4444 !important;
 }
 
 #profileDeleteModal h3 {
@@ -602,4 +533,74 @@ table {
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
+}
+
+
+/* MOBILE */
+@media (max-width: 768px) {
+    .main-content {
+        padding: 14px;
+        margin-left: 0;
+        margin-top: 60px;
+    }
+
+    .page-header h1 {
+        font-size: 24px;
+    }
+
+    .contacts-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .tab-navigation {
+        order: -1;
+        width: 100%;
+        gap: 16px;
+        overflow-x: auto;
+    }
+
+    .tab-btn {
+        font-size: 12px;
+    }
+
+    .search-container {
+        width: 100%;
+    }
+
+    .search-input {
+        width: 100%;
+    }
+
+    .search-input input {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .contacts-table th,
+    .contacts-table td {
+        font-size: 13px;
+        padding: 10px;
+    }
+
+    .action-btn {
+        width: 28px;
+        height: 28px;
+        padding: 5px;
+    }
+
+    .action-btn i {
+        width: 13px;
+        height: 13px;
+    }
+
+    .action-buttons {
+        gap: 4px;
+    }
+
+    .customer-avatar {
+        width: 32px;
+        height: 32px;
+    }
 }
