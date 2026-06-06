@@ -26,7 +26,7 @@ async function getUserRole() {
         return null;
     }
 
-    return data.type; // "Super Admin", "Admin", "Moderator"
+    return data.type; // Super Admin, Admin, Moderator
 }
 
 async function initRoleControl() {
@@ -35,10 +35,10 @@ async function initRoleControl() {
     const addBtn = document.getElementById('addItemBtn');
 
     if (currentUserRole !== 'Super Admin') {
-        // ❌ Hide Add button
+        // Hide Add button
         if (addBtn) addBtn.style.display = 'none';
 
-        // ❌ Remove ACTION column header
+        // Remove ACTION column header
         const actionHeader = document.querySelector('.action-column');
         if (actionHeader) actionHeader.remove();
     }
@@ -169,9 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let result;
     
         if (editRow) {
-            // =========================
-            // ✏️ UPDATE EXISTING ITEM
-            // =========================
+            // UPDATE EXISTING ITEM
             const id = editRow.dataset.id;
     
             const { data, error } = await _supabase
@@ -192,23 +190,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 'Updated material',
                 `Updated "${material}" (Unit: ${unit}, Price: ₱${parseFloat(price).toFixed(2)})`
             );
-            // 🔥 Update UI row
+            // Update UI row
             editRow.cells[0].textContent = material;
             editRow.cells[1].textContent = unit;
             editRow.cells[2].textContent = `₱${parseFloat(price).toFixed(2)}`;
     
         } else {
-            // =========================
-            // ➕ INSERT NEW ITEM
-            // =========================
+            // INSERT NEW ITEM
             const { data, error } = await _supabase
                 .from('price_list')
                 .insert([
                     {
                         material_name: material,
                         unit: unit,
-                        price: parseFloat(price),
-                        status: 'Active'
+                        price: parseFloat(price)
                     }
                 ])
                 .select();
@@ -237,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
         let actionColumn = '';
     
-        // ✅ ONLY Super Admin sees Edit/Delete
+        // ONLY Super Admin sees Edit/Delete
         if (currentUserRole === 'Super Admin') {
             actionColumn = `
                 <td>
@@ -261,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ${actionColumn}
         `;
     
-        // ✅ Only attach events if Super Admin
+        // Only attach events if Super Admin
         if (currentUserRole === 'Super Admin') {
             row.querySelector('.edit-btn')?.addEventListener('click', () => editItem(row));
             row.querySelector('.delete-btn')?.addEventListener('click', () => deleteItem(row));
@@ -376,22 +371,10 @@ document.addEventListener('DOMContentLoaded', () => {
         updateItemCount();
     }
 
-    // LOCALSTORAGE
-    function saveToLocalStorage() {
-        const rows = [];
-        document.querySelectorAll('#priceTableBody tr').forEach(tr => {
-            rows.push({
-                material: tr.cells[0].textContent,
-                unit:     tr.cells[1].textContent,
-                price:    tr.cells[2].textContent.replace('₱', '')
-            });
-        });
-        localStorage.setItem('smartCyclePrices', JSON.stringify(rows));
-    }
 
     async function loadPriceList() {
         const { data, error } = await _supabase
-            .from('price_list') // <-- your table name
+            .from('price_list')
             .select('*')
             .order('id', { ascending: true });
     
