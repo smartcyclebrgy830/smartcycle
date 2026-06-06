@@ -1,3 +1,11 @@
+(function checkAuth() {
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+    if (!isLoggedIn || isLoggedIn !== 'true') {
+        window.location.href = 'index.html';
+        return;
+    }
+})();
+
 const _supabase = window._supabase;
 
 lucide.createIcons();
