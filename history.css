@@ -220,8 +220,8 @@ body {
 .main-table td:nth-child(1) { width: 180px; }
 .main-table td:nth-child(2) { width: 120px; }
 .main-table td:nth-child(3) { width: auto; }
-.main-table td:nth-child(4) { width: 160px; }
-.main-table td:nth-child(5) { width: 60px; }
+.main-table td:nth-child(4) { width: 160px; text-align: right; }
+.main-table td:nth-child(5) { width: 60px; text-align: right; }
 
 .main-table th,
 .main-table td {
