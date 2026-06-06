@@ -1,4 +1,11 @@
-// ✅ Only create client if it doesn't exist yet
+(function checkAuth() {
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+    if (!isLoggedIn || isLoggedIn !== 'true') {
+        window.location.href = 'index.html';
+        return;
+    }
+})();
+
 if (!window._supabase) {
     const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
@@ -11,7 +18,7 @@ async function detectUserRole() {
         const { data: { user }, error: userError } = await _supabase.auth.getUser();
         if (userError || !user) {
             console.error("No logged-in user");
-            window.currentUserRole = 'Moderator'; // safest fallback
+            window.currentUserRole = 'Moderator';
             return;
         }
 
@@ -45,12 +52,13 @@ let currentFilter = 'all';
 const itemsPerPage = 10;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await detectUserRole(); // ✅ WAIT for role first
+    await detectUserRole(); // wait for role first
     loadModalHTML();
     setupSearch();
     setupAddCollectionButton();
     await fetchAllCollections();
 });
+
 // Enforces structural visibility for the top bar buttons based on role
 function setupAddCollectionButton() {
     const buttons = document.querySelectorAll('button');
@@ -70,7 +78,7 @@ function setupAddCollectionButton() {
             // Ensure it's visible and properly wired for Admins / Super Admins
             addBtn.style.display = 'flex'; 
             
-            // Remove old inline handlers and safely attach click trigger
+            // Click trigger
             addBtn.onclick = null; 
             addBtn.onclick = function() {
                 window.editingIndex = -1; // Reset edit state for fresh entries
@@ -605,7 +613,7 @@ async function saveCollection() {
     } catch (err) {
         console.error("Database mutation error:", err);
         alert("Failed to save collection updates: " + err.message);
-    } finally { // <-- Typo Corrected here: changed 'finaly' to 'finally'
+    } finally { 
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i data-lucide="check"></i> Submit';
