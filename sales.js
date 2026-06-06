@@ -28,7 +28,7 @@ async function getUserRole() {
     const { data, error } = await window._supabase
         .from('profiles')
         .select('type')
-        .eq('auth_id', user.id) // IMPORTANT: must match auth_id
+        .eq('auth_id', user.id) 
         .single();
 
     if (error) {
@@ -36,7 +36,7 @@ async function getUserRole() {
         return null;
     }
 
-    return data.type; // "Super Admin", "Admin", "Moderator"
+    return data.type; // Super Admin, Admin, Moderator
 }
 
 function applyRoleUI() {
@@ -47,7 +47,7 @@ function applyRoleUI() {
     }
 }
 
-// STORAGE & DATA SANITIZATION (UPDATED FOR RELATED TABLES)
+// STORAGE & DATA SANITIZATION
 async function fetchSales() {
     const { data, error } = await window._supabase
         .from('sales')
@@ -70,7 +70,6 @@ async function fetchSales() {
         return [];
     }
 
-    // Change this section inside your fetchSales() function:
     return data.map(sale => {
         const items = Array.isArray(sale.sale_items) ? sale.sale_items : [];
     
@@ -82,9 +81,8 @@ async function fetchSales() {
             
             partner: sale.profiles ? sale.profiles.name : 'Unknown',
             
-            // Inside your sales.js fetchSales() data mapping transformation loop:
             items: items.map(i => ({
-                material_id: i.material_id, // 🔹 ADD THIS LINE so edit mode can read it!
+                material_id: i.material_id, 
                 name: i.price_list ? i.price_list.material_name : 'Unknown Material',
                 weight: Number(i.weight) || 0,
                 rate: Number(i.rate) || 0,
@@ -103,7 +101,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentFilter = 'all';
     let currentSearch = '';
 
-    // DOM ELEMENTS
     const salesTableBody = document.getElementById('salesTableBody');
     const emptyState     = document.getElementById('emptyState');
     const paginationEl   = document.getElementById('pagination');
@@ -120,9 +117,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderTable();
     }
 
-    // RENDER TABLE (Instantaneous execution directly over local state)
+    // RENDER TABLE 
     function renderTable() {
-        // 1. FILTER LOCAL MEMORY
+        // FILTER LOCAL MEMORY
         let filtered = state.sales;
 
         if (currentFilter !== 'all') {
@@ -137,14 +134,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         state.filtered = filtered;
 
-        // 2. PAGINATION MATH
+        // PAGINATION MATH
         const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
         if (currentPage > totalPages) currentPage = totalPages;
 
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         const pageItems = filtered.slice(start, start + ITEMS_PER_PAGE);
 
-        // 3. RENDER DOM STATES
+        // RENDER DOM STATES
         salesTableBody.innerHTML = '';
 
         if (pageItems.length === 0) {
@@ -155,7 +152,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         emptyState?.classList.remove('visible');
 
-        // 4. BUILD DOCUMENT FRAGMENT
+        // BUILD DOCUMENT FRAGMENT
         const fragment = document.createDocumentFragment();
 
         pageItems.forEach(sale => {
@@ -200,7 +197,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </td>
             `;
 
-            // 🔹 FIX: Safely fallback if there are no sub-items inside the sale row
             let itemsHTML = '';
             if (sale.items.length === 0) {
                 itemsHTML = `
@@ -260,11 +256,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Expose entrypoint for local sales forms to force fresh fetches
     window.renderTable = loadDataAndRender;
 
-    // EVENT DELEGATION: Rows & Action Buttons
     salesTableBody.addEventListener('click', (e) => {
         const target = e.target;
         
-        // Context 1: Intercept Action Buttons
         const btn = target.closest('[data-action]');
         if (btn) {
             e.stopPropagation();
@@ -295,7 +289,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Context 2: Expandable Row Toggle Behavior
+        // Expandable Row Toggle Behavior
         const mainRow = target.closest('.main-row');
         if (mainRow) {
             const targetId = mainRow.getAttribute('data-target');
@@ -365,7 +359,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         lucide.createIcons();
     };
 
-    // PAGINATION GENERATION
+    // PAGINATION
     function renderPagination(totalCount) {
         const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
         paginationEl.innerHTML = '';
