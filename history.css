@@ -214,7 +214,14 @@ body {
     width: 100%;
     min-width: 600px;
     border-collapse: collapse;
+    table-layout: fixed;
 }
+
+.main-table td:nth-child(1) { width: 180px; }
+.main-table td:nth-child(2) { width: 120px; }
+.main-table td:nth-child(3) { width: auto; }
+.main-table td:nth-child(4) { width: 160px; }
+.main-table td:nth-child(5) { width: 60px; }
 
 .main-table th,
 .main-table td {
