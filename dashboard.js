@@ -6,7 +6,7 @@ const isLoggedIn = sessionStorage.getItem('isLoggedIn');
     
     // 1. Safe Redirect Guard
     if (!isLoggedIn || isLoggedIn !== 'true') {
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
         return;
     }
     
