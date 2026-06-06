@@ -419,6 +419,9 @@ table {
 #saveEditBtn {
     background: #46B336;
     color: white;
+    align-items: center;
+    gap: 6px;
+    display: flex;
     border: none;
     padding: 12px 28px;
     border-radius: 10px;
@@ -435,6 +438,9 @@ table {
 
 .modal-content button[onclick="closeEditModal()"] {
     background: white;
+    align-items: center;
+    gap: 6px;
+    display: flex;
     color: #dc2626;
     border: 1px solid #fecaca;
     padding: 12px 24px;
@@ -484,10 +490,10 @@ table {
     margin: 0 auto 18px;
 }
 
-#profileDeleteModal .delete-modal-icon i {
+#profileDeleteModal .delete-modal-icon svg {
     width: 28px;
     height: 28px;
-    color: #ef4444 !important;
+    color: #ef4444;
 }
 
 #profileDeleteModal h3 {
