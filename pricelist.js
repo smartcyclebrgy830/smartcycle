@@ -1,3 +1,11 @@
+(function checkAuth() {
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+    if (!isLoggedIn || isLoggedIn !== 'true') {
+        window.location.href = 'index.html';
+        return;
+    }
+})();
+
 if (!window._supabase) {
     const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
