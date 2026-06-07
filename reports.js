@@ -419,6 +419,12 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 
         overlay.querySelector('#exportModalConfirm').addEventListener('click', async () => {
+            const aggregated = await JunkshopExport.aggregateSupabaseData(
+                parseInt(overlay.querySelector('#expMonth').value),
+                parseInt(overlay.querySelector('#expYear').value)
+            );
+        
+            console.log("AGGREGATED DATA:", aggregated); // 👈 debug
             // Bundling the compiled metrics payload into options map
             const opts = {
                 month:           parseInt(overlay.querySelector('#expMonth').value),
@@ -434,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dateEstablished: overlay.querySelector('#expDateEst').value.trim(),
                 floorArea:       overlay.querySelector('#expFloor').value.trim(),
                 noOfAide:        overlay.querySelector('#expAide').value.trim(),
-                reportData:      processedReportSummary // Sent directly to the export module template script
+                reportData: aggregated
             };
             // LOG EXPORT ACTION
             if (currentUserRole === 'Admin' || currentUserRole === 'Super Admin') {
