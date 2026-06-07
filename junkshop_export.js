@@ -433,7 +433,7 @@ const JunkshopExport = (() => {
             const month = opts.month ?? now.getMonth();
             const year  = opts.year ?? now.getFullYear();
     
-            // ✅ Use already computed data if available
+            // ✅ Use precomputed data if available
             const { dataGrid, materialsList } =
                 opts.reportData || await aggregateSupabaseData(month, year);
     
@@ -443,60 +443,86 @@ const JunkshopExport = (() => {
             }
     
             const rows = [];
-            rows.push([`Junkshop: ${opts.junkshopName || ""}`]);
-            rows.push([`Address: ${opts.address || ""}`]);
-            rows.push([`Month: ${month + 1}/${year}`]);
-            rows.push([]); // empty row
-            // ✅ HEADER ROW
-            rows.push([
-                "Material",
-                "Week 1",
-                "Week 2",
-                "Week 3",
-                "Week 4",
-                "Total"
-            ]);
     
-            // ✅ PROCESS EACH MATERIAL
+            // ✅ HEADER ROW (MATCH PDF GRID)
+            const header = ["Material"];
+    
+            for (let w = 1; w <= 4; w++) {
+                for (let d = 1; d <= 7; d++) {
+                    header.push(`W${w}-D${d}`);
+                }
+                header.push(`W${w} Total`);
+            }
+    
+            header.push("Monthly Total");
+            rows.push(header);
+            const totals = Array(4 * 7).fill(0); // 28 daily columns
+            const weeklyTotals = [0, 0, 0, 0];
+            let grandMonthly = 0;
+            
             materialsList.forEach(mat => {
-                const item = dataGrid[mat] || { dailyWeights: Array(32).fill(0), total: 0 };
-    
-                let w1 = 0, w2 = 0, w3 = 0, w4 = 0;
-    
-                // Week 1 (Day 1–7)
-                for (let d = 1; d <= 7; d++) w1 += item.dailyWeights[d] || 0;
-    
-                // Week 2 (8–14)
-                for (let d = 8; d <= 14; d++) w2 += item.dailyWeights[d] || 0;
-    
-                // Week 3 (15–21)
-                for (let d = 15; d <= 21; d++) w3 += item.dailyWeights[d] || 0;
-    
-                // Week 4 (22–31)
-                for (let d = 22; d <= 31; d++) w4 += item.dailyWeights[d] || 0;
-    
-                rows.push([
-                    mat,
-                    w1.toFixed(1),
-                    w2.toFixed(1),
-                    w3.toFixed(1),
-                    w4.toFixed(1),
-                    item.total.toFixed(1)
-                ]);
+                const item = dataGrid[mat] || {
+                    dailyWeights: Array(32).fill(0),
+                    total: 0
+                };
+            
+                const row = [mat];
+                let monthlyTotal = 0;
+            
+                for (let w = 0; w < 4; w++) {
+                    let weeklyTotal = 0;
+            
+                    for (let d = 1; d <= 7; d++) {
+                        const dayIndex = w * 7 + d;
+                        const val = item.dailyWeights[dayIndex] || 0;
+                        row.push(val.toFixed(1));
+                        totals[w * 7 + (d - 1)] += val;
+                        weeklyTotal += val;
+                    }
+            
+                    row.push(weeklyTotal.toFixed(1));
+                    weeklyTotals[w] += weeklyTotal;
+                    monthlyTotal += weeklyTotal;
+                }
+                // include 29–31 in monthly total ONLY
+                for (let d = 29; d <= 31; d++) {
+                    monthlyTotal += item.dailyWeights[d] || 0;
+                }
+                grandMonthly += monthlyTotal;
+                const grandRow = ["GRAND TOTAL"];
+                let index = 0;
+                
+                for (let w = 0; w < 4; w++) {
+                    for (let d = 0; d < 7; d++) {
+                        grandRow.push(totals[index].toFixed(1));
+                        index++;
+                    }
+                
+                    grandRow.push(weeklyTotals[w].toFixed(1));
+                }
+                grandRow.push(grandMonthly.toFixed(1));
+                rows.push(grandRow);
             });
+            
+            rows.unshift(
+                [`Junkshop: ${opts.junkshopName || ""}`],
+                [`Address: ${opts.address || ""}`],
+                [`Month: ${month + 1}/${year}`],
+                [] // empty row for spacing
+            );
     
-            // ✅ CONVERT TO CSV STRING
+            // ✅ CONVERT TO CSV
             const csvContent = rows
                 .map(row => row.map(val => `"${val}"`).join(","))
                 .join("\n");
     
-            // ✅ CREATE DOWNLOAD
+            // ✅ DOWNLOAD
             const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
             const url = URL.createObjectURL(blob);
     
             const a = document.createElement("a");
             a.href = url;
-            a.download = `junkshop_report_${year}_${month + 1}.csv`;
+            a.download = `Junkshop_Report_${year}_${month + 1}.csv`;
             a.click();
     
             URL.revokeObjectURL(url);
