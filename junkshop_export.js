@@ -427,10 +427,90 @@ const JunkshopExport = (() => {
         doc.save(`JunkshopMonitoringForm_${MONTHS[month]}${year}.pdf`);
     }
 
+    async function exportCSV(opts = {}) {
+        try {
+            const now = new Date();
+            const month = opts.month ?? now.getMonth();
+            const year  = opts.year ?? now.getFullYear();
+    
+            // ✅ Use already computed data if available
+            const { dataGrid, materialsList } =
+                opts.reportData || await aggregateSupabaseData(month, year);
+    
+            if (!dataGrid || !materialsList || materialsList.length === 0) {
+                alert("No data available for CSV export.");
+                return;
+            }
+    
+            const rows = [];
+            rows.push([`Junkshop: ${opts.junkshopName || ""}`]);
+            rows.push([`Address: ${opts.address || ""}`]);
+            rows.push([`Month: ${month + 1}/${year}`]);
+            rows.push([]); // empty row
+            // ✅ HEADER ROW
+            rows.push([
+                "Material",
+                "Week 1",
+                "Week 2",
+                "Week 3",
+                "Week 4",
+                "Total"
+            ]);
+    
+            // ✅ PROCESS EACH MATERIAL
+            materialsList.forEach(mat => {
+                const item = dataGrid[mat] || { dailyWeights: Array(32).fill(0), total: 0 };
+    
+                let w1 = 0, w2 = 0, w3 = 0, w4 = 0;
+    
+                // Week 1 (Day 1–7)
+                for (let d = 1; d <= 7; d++) w1 += item.dailyWeights[d] || 0;
+    
+                // Week 2 (8–14)
+                for (let d = 8; d <= 14; d++) w2 += item.dailyWeights[d] || 0;
+    
+                // Week 3 (15–21)
+                for (let d = 15; d <= 21; d++) w3 += item.dailyWeights[d] || 0;
+    
+                // Week 4 (22–31)
+                for (let d = 22; d <= 31; d++) w4 += item.dailyWeights[d] || 0;
+    
+                rows.push([
+                    mat,
+                    w1.toFixed(1),
+                    w2.toFixed(1),
+                    w3.toFixed(1),
+                    w4.toFixed(1),
+                    item.total.toFixed(1)
+                ]);
+            });
+    
+            // ✅ CONVERT TO CSV STRING
+            const csvContent = rows
+                .map(row => row.map(val => `"${val}"`).join(","))
+                .join("\n");
+    
+            // ✅ CREATE DOWNLOAD
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+    
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `junkshop_report_${year}_${month + 1}.csv`;
+            a.click();
+    
+            URL.revokeObjectURL(url);
+    
+        } catch (err) {
+            console.error("CSV export error:", err);
+            alert("CSV export failed.");
+        }
+    }
+
     return {
     aggregateSupabaseData,
     exportPDF,
-    exportCSV: () => {} // placeholder if not yet implemented
+    exportCSV
 };
 })();
 
