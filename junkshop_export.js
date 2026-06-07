@@ -11,7 +11,7 @@ const JunkshopExport = (() => {
      * Aggregates collection weights dynamically map-linked to your live database price_list
      */
     async function aggregateSupabaseData(month, year) {
-        const db = window.supabase || window.supabaseClient || null;
+        const db = window._supabase || null;
         
         let materialsList = [];
         const result = {};
