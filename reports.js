@@ -302,6 +302,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
     
+        if (!processedReportSummary || Object.keys(processedReportSummary).length === 0) {
+            alert("No data available to export. Please select a valid date range.");
+            return;
+        }
+    
         showExportModal(format);
     }
 
@@ -419,6 +424,16 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 
         overlay.querySelector('#exportModalConfirm').addEventListener('click', async () => {
+            // 🔥 FORCE refresh before export
+            await fetchAndRenderReportData(
+                formatDateToSQL(selectedStart),
+                formatDateToSQL(selectedEnd)
+            );
+        
+            if (!processedReportSummary || Object.keys(processedReportSummary).length === 0) {
+                alert("Still no data after refresh. Check your database or filters.");
+                return;
+            }
             // Bundling the compiled metrics payload into options map
             const opts = {
                 month:           parseInt(overlay.querySelector('#expMonth').value),
@@ -436,6 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 noOfAide:        overlay.querySelector('#expAide').value.trim(),
                 reportData:      processedReportSummary // Sent directly to the export module template script
             };
+            console.log("EXPORT DATA:", processedReportSummary);
             // LOG EXPORT ACTION
             if (currentUserRole === 'Admin' || currentUserRole === 'Super Admin') {
                 const exportType = format.toUpperCase(); // PDF or CSV
