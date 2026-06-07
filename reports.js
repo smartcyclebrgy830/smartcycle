@@ -419,10 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 
         overlay.querySelector('#exportModalConfirm').addEventListener('click', async () => {
-            const aggregated = await JunkshopExport.aggregateSupabaseData(
-                parseInt(overlay.querySelector('#expMonth').value),
-                parseInt(overlay.querySelector('#expYear').value)
-            );
+            const aggregated = await JunkshopExport.aggregateData(month, year);
         
             console.log("AGGREGATED DATA:", aggregated); // 👈 debug
             // Bundling the compiled metrics payload into options map
