@@ -160,6 +160,34 @@ const JunkshopExport = (() => {
         'July','August','September','October','November','December'
     ];
 
+    function convertWeeklyToDaily(reportData) {
+        const result = {};
+        const materialsList = Object.keys(reportData);
+    
+        materialsList.forEach(material => {
+            const item = reportData[material];
+    
+            result[material] = {
+                dailyWeights: Array(32).fill(0),
+                total: item.total || 0
+            };
+    
+            // 🧠 Map weeks → fake daily slots (so your table still works)
+            // Week 1 → Day 1
+            result[material].dailyWeights[1] = item.week1 || 0;
+    
+            // Week 2 → Day 8
+            result[material].dailyWeights[8] = item.week2 || 0;
+    
+            // Week 3 → Day 15
+            result[material].dailyWeights[15] = item.week3 || 0;
+    
+            // Week 4 → Day 22
+            result[material].dailyWeights[22] = item.week4 || 0;
+        });
+    
+        return { dataGrid: result, materialsList };
+    }
     async function exportPDF(opts = {}) {
         const jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
         if (!jsPDF) {
@@ -171,8 +199,23 @@ const JunkshopExport = (() => {
         const month = opts.month ?? now.getMonth();
         const year = opts.year ?? now.getFullYear();
 
-        // Fetch grid information directly mapping down from Supabase
-        const { dataGrid, materialsList } = await aggregateSupabaseData(month, year);
+        let dataGrid, materialsList;
+        
+        // ✅ USE PASSED DATA (FROM report.js)
+        if (opts.reportData && Object.keys(opts.reportData).length > 0) {
+            console.log("✅ Using report.js data for export");
+        
+            const converted = convertWeeklyToDaily(opts.reportData);
+            dataGrid = converted.dataGrid;
+            materialsList = converted.materialsList;
+        
+        } else {
+            console.warn("⚠ No reportData passed. Falling back to Supabase.");
+            const res = await aggregateSupabaseData(month, year);
+            dataGrid = res.dataGrid;
+            materialsList = res.materialsList;
+        }
+        
         const monthLabel = `${MONTHS[month]} ${year}`;
 
         const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
