@@ -4,6 +4,9 @@ if (!window._supabase) {
 
     window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 }
+
+// ✅ FIX: assign it here
+const supabase = window._supabase;
 // EMAIL VALIDATION
 
 const emailInput = document.getElementById('email');
