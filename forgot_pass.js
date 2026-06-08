@@ -1,3 +1,7 @@
+const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
+const SUPABASE_KEY = 'YOUR_PUBLIC_ANON_KEY';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // EMAIL VALIDATION
 
 const emailInput = document.getElementById('email');
@@ -38,80 +42,64 @@ emailInput.addEventListener('input', function() {
 });
 
 // FORM SUBMISSION
-form.addEventListener('submit', function (e) {
+form.addEventListener('submit', async function (e) {
     e.preventDefault();
 
     const email = emailInput.value.trim();
-    let isValid = true;
 
-    // Validate email
     if (!emailPattern.test(email)) {
         emailInput.classList.add('invalid');
-        emailInput.classList.remove('valid');
-        emailInput.setAttribute('aria-invalid', 'true');
         emailError.classList.add('show');
-        isValid = false;
-        emailInput.focus();
-    } else {
-        emailInput.classList.remove('invalid');
-        emailInput.classList.add('valid');
-        emailInput.setAttribute('aria-invalid', 'false');
-        emailError.classList.remove('show');
-    }
-
-    // Stop if validation failed
-    if (!isValid) {
         return;
     }
 
-    // Show loading state
     resetButton.disabled = true;
-    resetButton.classList.add('loading');
+    resetButton.textContent = "Sending...";
 
-    // Simulate call, replace with actual password reset logic
-    setTimeout(() => {
-        // Remove loading state
-        resetButton.disabled = false;
-        resetButton.classList.remove('loading');
-        
-        // Hide only the form (keep header visible) and show success message
+    try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: "https://louisvillaflor.github.io/smartcycle/account_setup.html"
+        });
+
+        if (error) throw error;
+
+        // Show success UI
         form.style.display = 'none';
         successMessage.classList.add('show');
-        
-        // Store the email for resend functionality
+
         sessionStorage.setItem('resetEmail', email);
-        
-    }, 2000); // 2 second simulated delay
+
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+
+    resetButton.disabled = false;
+    resetButton.textContent = "Send reset link";
 });
 
 
 // RESEND EMAIL FUNCTIONALITY
 let resendCooldown = false;
 
-resendButton.addEventListener('click', function() {
-    if (resendCooldown) {
-        return;
+resendButton.addEventListener('click', async function () {
+    const email = sessionStorage.getItem('resetEmail');
+    if (!email) return;
+
+    this.disabled = true;
+    this.textContent = "Sending...";
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: "https://louisvillaflor.github.io/smartcycle/account_setup.html"
+    });
+
+    if (error) {
+        alert(error.message);
+    } else {
+        this.textContent = "Email sent!";
     }
 
-    const email = sessionStorage.getItem('resetEmail');
-    
-    // Disable button temporarily
-    this.disabled = true;
-    resendCooldown = true;
-    
-    // Show loading state
-    this.textContent = 'Sending...';
-
-    // Simulate resend, replace with actual logic
     setTimeout(() => {
-        this.textContent = 'Email sent!';
-        
-        // Reset after 2 seconds
-        setTimeout(() => {
-            this.textContent = 'Resend Email';
-            this.disabled = false;
-            resendCooldown = false;
-        }, 2000);
-        
-    }, 1500);
+        this.textContent = "Resend Email";
+        this.disabled = false;
+    }, 2000);
 });
