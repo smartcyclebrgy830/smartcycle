@@ -105,19 +105,11 @@ async function loadActivePrices() {
     if (!selMaterial) return;
 
     try {
-        const { data } = await _supabase
-          .from('collection_items')
-          .select(`
-            material_id,
-            rate,
-            weight,
-            subtotal,
-            price_list (
-              id,
-              material_name
-            )
-          `)
-          .eq('collection_id', id);
+        // Corrected target table to 'price_list' and selected the correct columns matching your dashboard
+        const { data: prices, error } = await _supabase
+            .from('price_list')
+            .select('id, material_name, price, status')
+            .eq('status', 'Active'); // Ensures only Active rows are pulled
 
         if (error) throw error;
 
@@ -134,19 +126,22 @@ async function loadActivePrices() {
         }
     } catch (err) {
         console.error("Error fetching live price rates from database:", err.message);
+        
+        // Updated hardcoded fallback IDs to precisely match your actual Supabase table IDs
         loadedPricesCache = [
-            { id: 1, material_name: "Plastic", price: 3 },
-            { id: 2, material_name: "Bakal", price: 15 },
-            { id: 3, material_name: "PET-Assorted", price: 5 },
-            { id: 4, material_name: "Paper Assorted", price: 8 },
-            { id: 5, material_name: "Yero", price: 8 }
+            { id: 4, material_name: "Plastic", price: 6 },
+            { id: 5, material_name: "Bakal", price: 13 },
+            { id: 6, material_name: "Paper Assorted", price: 8 },
+            { id: 7, material_name: "Yero", price: 7 },
+            { id: 8, material_name: "PET Assorted", price: 5 }
         ];
+        
         selMaterial.innerHTML = `
-            <option value=1 data-name="Plastic" data-rate="3" selected>Plastic - ₱3/kg</option>
-            <option value=2 data-name="Bakal" data-rate="15">Bakal - ₱15/kg</option>
-            <option value=3 data-name="PET-Assorted" data-rate="5">PET-Assorted - ₱5/kg</option>
-            <option value=4 data-name="Paper Assorted" data-rate="8">Paper Assorted - ₱8/kg</option>
-            <option value=5 data-name="Yero" data-rate="8">Yero - ₱8/kg</option>
+            <option value="4" data-name="Plastic" data-rate="6" selected>Plastic - ₱6/kg</option>
+            <option value="5" data-name="Bakal" data-rate="13">Bakal - ₱13/kg</option>
+            <option value="6" data-name="Paper Assorted" data-rate="8">Paper Assorted - ₱8/kg</option>
+            <option value="7" data-name="Yero" data-rate="7">Yero - ₱7/kg</option>
+            <option value="8" data-name="PET Assorted" data-rate="5">PET Assorted - ₱5/kg</option>
         `;
     }
 }
