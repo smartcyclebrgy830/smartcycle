@@ -10,6 +10,7 @@ const confirmPasswordError = document.getElementById('confirmPasswordError');
 const submitButton = document.getElementById('submitBtn');
 const successModal = document.getElementById('successModal');
 const errorModal = document.getElementById('errorModal');
+const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-])[A-Za-z\d@$!%*?&.#_-]{6,30}$/;
 
 // 1. LISTEN FOR AUTH STATE INITIALIZATION (Fixes the "Loading email..." race condition)
 window._supabase.auth.onAuthStateChange((event, session) => {
@@ -30,24 +31,51 @@ window._supabase.auth.onAuthStateChange((event, session) => {
 
 // 2. LIVE INPUT VALIDATION
 passwordInput.addEventListener('input', function () {
-    if (this.value.length >= 6) {
-        this.classList.remove('invalid');
-        this.classList.add('valid');
-        passwordError.classList.remove('show');
+    const password = this.value;
+
+    if (password.length > 0) {
+        if (passwordPattern.test(password)) {
+            this.classList.remove('invalid');
+            this.classList.add('valid');
+            this.setAttribute('aria-invalid', 'false');
+            passwordError.classList.remove('show');
+        } else {
+            this.classList.remove('valid');
+            this.classList.add('invalid');
+            this.setAttribute('aria-invalid', 'true');
+
+            passwordError.textContent =
+                "6–30 chars, include uppercase, lowercase, number, and special character";
+            passwordError.classList.add('show');
+        }
     } else {
-        this.classList.remove('valid');
-        passwordError.classList.add('show');
+        this.classList.remove('valid', 'invalid');
+        this.setAttribute('aria-invalid', 'false');
+        passwordError.classList.remove('show');
     }
 });
 
 confirmPasswordInput.addEventListener('input', function () {
-    if (this.value === passwordInput.value && this.value.length > 0) {
-        this.classList.remove('invalid');
-        this.classList.add('valid');
-        confirmPasswordError.classList.remove('show');
+    const confirmPassword = this.value;
+
+    if (confirmPassword.length > 0) {
+        if (confirmPassword === passwordInput.value) {
+            this.classList.remove('invalid');
+            this.classList.add('valid');
+            this.setAttribute('aria-invalid', 'false');
+            confirmPasswordError.classList.remove('show');
+        } else {
+            this.classList.remove('valid');
+            this.classList.add('invalid');
+            this.setAttribute('aria-invalid', 'true');
+
+            confirmPasswordError.textContent = "Passwords do not match";
+            confirmPasswordError.classList.add('show');
+        }
     } else {
-        this.classList.remove('valid');
-        confirmPasswordError.classList.add('show');
+        this.classList.remove('valid', 'invalid');
+        this.setAttribute('aria-invalid', 'false');
+        confirmPasswordError.classList.remove('show');
     }
 });
 
@@ -86,15 +114,25 @@ document.getElementById('setupForm').addEventListener('submit', async function (
     const confirmPassword = confirmPasswordInput.value;
     let isValid = true;
 
-    if (password.length < 6) {
+    if (!passwordPattern.test(password)) {
         passwordInput.classList.add('invalid');
+        passwordInput.classList.remove('valid');
+        passwordInput.setAttribute('aria-invalid', 'true');
+    
+        passwordError.textContent =
+            "Password must be 6–30 chars and include uppercase, lowercase, number, and special character";
         passwordError.classList.add('show');
+    
         isValid = false;
     }
-
+    
     if (password !== confirmPassword || confirmPassword.length === 0) {
         confirmPasswordInput.classList.add('invalid');
+        confirmPasswordInput.setAttribute('aria-invalid', 'true');
+    
+        confirmPasswordError.textContent = "Passwords do not match";
         confirmPasswordError.classList.add('show');
+    
         isValid = false;
     }
 
