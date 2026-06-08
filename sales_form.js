@@ -545,7 +545,17 @@ async function openEditModal(id) {
 
     document.getElementById('partnerName').value = sale.partner || '';
     document.getElementById('saleAddress').value = sale.address || '';
-    document.getElementById('saleContact').value = sale.contact || '';
+    
+   function formatContactForInput(num) {
+        if (!num) return '';
+        const digits = num.replace(/\D/g, '').slice(0, 11);
+    
+        if (digits.length <= 4) return digits;
+        if (digits.length <= 7) return `${digits.slice(0,4)}-${digits.slice(4)}`;
+        return `${digits.slice(0,4)}-${digits.slice(4,7)}-${digits.slice(7,11)}`;
+    }
+    
+    document.getElementById('saleContact').value = formatContactForInput(sale.contact);
 
     if (sale.date) {
         // splits "2026-05-25T23:39:58" down to "2026-05-25"
