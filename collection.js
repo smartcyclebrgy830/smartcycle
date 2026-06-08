@@ -234,26 +234,39 @@ function loadModalHTML() {
             }
 
             // 2. NEW: Strict Contact Number Filter (Blocks letters completely)
+            // Strict Contact Number Filter (Blocks letters AND caps valid PH mobile numbers)
             const contactInput = document.getElementById('inContact');
             if (contactInput) {
                 contactInput.addEventListener('input', (e) => {
-                    // Allows only digits and a single leading '+' for international formatting
+                    // 1. Strip out anything that isn't a digit or a plus sign
                     let value = e.target.value.replace(/[^0-9+]/g, '');
                     
-                    // Prevent multiple plus signs or plus signs anywhere but the start
+                    // 2. Ensure the '+' can only ever exist at the very beginning
                     if (value.includes('+')) {
                         value = '+' + value.replace(/\+/g, '');
                     }
                     
+                    // 3. Enforce Philippine standard lengths
+                    if (value.startsWith('+63')) {
+                        // Format: +63 9XX XXX XXXX -> Max 13 characters
+                        if (value.length > 13) {
+                            value = value.slice(0, 13);
+                        }
+                    } else {
+                        // Format: 09XX XXX XXXX -> Max 11 characters
+                        if (value.length > 11) {
+                            value = value.slice(0, 11);
+                        }
+                    }
+                    
                     e.target.value = value;
-
-                    // Force your real-time preview function to update with the clean data
+            
+                    // 4. Force real-time receipt preview sync
                     if (typeof updatePreview === 'function') {
                         updatePreview();
                     }
                 });
             }
-
             const dateInput = document.getElementById('inDate');
             if (dateInput && !dateInput.value) {
                 dateInput.value = new Date().toISOString().split('T')[0];
