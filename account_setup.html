@@ -37,6 +37,7 @@
                             id="password" 
                             name="password" 
                             placeholder="Create a secure password" 
+                            maxlength="30"
                             required 
                             aria-required="true"
                             aria-invalid="false"
@@ -50,7 +51,9 @@
                             </svg>
                         </button>
                     </div>
-                    <small id="passwordError" role="alert">Password must be at least 6 characters long</small>
+                    <small id="passwordError" role="alert">
+                        6–30 chars, include uppercase, lowercase, number, and special character
+                    </small>
                 </div>
 
                 <div class="form-group">
@@ -61,6 +64,7 @@
                             id="confirmPassword" 
                             name="confirmPassword" 
                             placeholder="Re-enter your password" 
+                            maxlength="30"
                             required 
                             aria-required="true"
                             aria-invalid="false"
