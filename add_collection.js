@@ -59,32 +59,27 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     if (document.getElementById('inContact')) document.getElementById('inContact').value = collectionHeader.contact_number || '';
 
     window.currentItems = (detailedItems || []).map(item => {
-        let targetMaterialId = parseInt(item.material_id || item.materialId || item.price_list_id || item.price_list?.id, 10);
-        
-        if (isNaN(targetMaterialId)) {
-            const nameToSearch = item.material_name || item.material || item.price_list?.material_name;
-            if (nameToSearch) {
-                const matchedCache = loadedPricesCache.find(p => p.material_name.toLowerCase() === nameToSearch.toLowerCase());
-                if (matchedCache) {
-                    targetMaterialId = parseInt(matchedCache.id, 10);
-                }
-            }
-        }
-
-        const cachedItem = loadedPricesCache.find(p => parseInt(p.id, 10) === targetMaterialId);
-        const finalName = item.material_name || item.material || item.price_list?.material_name || (cachedItem ? cachedItem.material_name : 'Unknown Material');
-
+        const materialId = parseInt(item.material_id || item.price_list?.id, 10);
+    
+        const cachedItem = loadedPricesCache.find(
+            p => parseInt(p.id, 10) === materialId
+        );
+    
+        const materialName =
+            item.price_list?.material_name ||
+            item.material_name ||
+            (cachedItem ? cachedItem.material_name : null);
+    
         return {
-            materialId: targetMaterialId,
-            material_id: targetMaterialId, 
-            material: finalName,        
-            material_name: finalName,   
-            rate: Number(item.rate !== undefined ? item.rate : (cachedItem ? cachedItem.price : 0)),
+            materialId: materialId,
+            material_id: materialId,
+            material: materialName || 'Unknown',
+            material_name: materialName || 'Unknown',
+            rate: Number(item.rate ?? cachedItem?.price ?? 0),
             weight: Number(item.weight || 0),
-            subtotal: Number(item.subtotal || (item.rate * item.weight) || 0)
+            subtotal: Number(item.subtotal || 0)
         };
     });
-
     if (window.currentItems.length > 0) {
         const selMaterial = document.getElementById('selMaterial');
         if (selMaterial) {
@@ -110,10 +105,19 @@ async function loadActivePrices() {
     if (!selMaterial) return;
 
     try {
-        const { data: prices, error } = await _supabase
-            .from('price_list')
-            .select('id, material_name, price')
-            .eq('status', 'Active'); 
+        const { data } = await _supabase
+          .from('collection_items')
+          .select(`
+            material_id,
+            rate,
+            weight,
+            subtotal,
+            price_list (
+              id,
+              material_name
+            )
+          `)
+          .eq('collection_id', id);
 
         if (error) throw error;
 
