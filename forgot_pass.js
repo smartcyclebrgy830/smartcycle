@@ -5,8 +5,8 @@ if (!window._supabase) {
     window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 }
 
-// ✅ FIX: assign it here
-const supabase = window._supabase;
+// ✅ Use a different name to avoid conflict
+const supabaseClient = window._supabase;
 // EMAIL VALIDATION
 
 const emailInput = document.getElementById('email');
@@ -62,7 +62,7 @@ form.addEventListener('submit', async function (e) {
     resetButton.textContent = "Sending...";
 
     try {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
             redirectTo: "https://louisvillaflor.github.io/smartcycle/account_setup.html"
         });
 
@@ -93,7 +93,7 @@ resendButton.addEventListener('click', async function () {
     this.disabled = true;
     this.textContent = "Sending...";
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
         redirectTo: "https://louisvillaflor.github.io/smartcycle/account_setup.html"
     });
 
