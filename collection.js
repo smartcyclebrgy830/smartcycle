@@ -6,12 +6,14 @@
     }
 })();
 
+// 1. Initialize Supabase globally and create a local reference proxy to avoid ReferenceErrors
 if (!window._supabase) {
     const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
 
     window._supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 }
+const _supabase = window._supabase; 
 
 async function detectUserRole() {
     try {
@@ -71,13 +73,10 @@ function setupAddCollectionButton() {
 
     if (addBtn) {
         if (window.currentUserRole === 'Moderator') {
-            // Completely hide it for moderators
             addBtn.style.display = 'none';
         } else {
-            // Ensure it's visible and properly wired for Admins / Super Admins
             addBtn.style.display = 'flex'; 
             
-            // Click trigger
             addBtn.onclick = null; 
             addBtn.onclick = function() {
                 window.editingIndex = -1; // Reset edit state for fresh entries
@@ -86,7 +85,6 @@ function setupAddCollectionButton() {
                     modal.classList.add('show');
                     document.body.style.overflow = 'hidden';
                     
-                    // Reset input fields
                     if (document.getElementById('inCustomer')) document.getElementById('inCustomer').value = '';
                     if (document.getElementById('inAddress')) document.getElementById('inAddress').value = '';
                     if (document.getElementById('inContact')) document.getElementById('inContact').value = '';
@@ -227,9 +225,10 @@ function loadModalHTML() {
             const weightInput = document.getElementById('inWeight');
             if (weightInput) {
                 weightInput.addEventListener('input', (e) => {
-                    let value = e.target.value.replace(/\D/g, '');
-                    value = value.replace(/^0+/, ''); // remove leading zeros
-                    value = value.slice(0, 4);
+                    // Restored ability to use single decimal points for weight data values
+                    let value = e.target.value.replace(/[^0-9.]/g, '');
+                    const parts = value.split('.');
+                    if (parts.length > 2) value = parts[0] + '.' + parts.slice(1).join('');
                     e.target.value = value;
                 });
             }
@@ -253,7 +252,6 @@ function renderTable() {
     const tbody = document.getElementById('collectionTableBody');
     if (!tbody) return;
     
-    // Always keep buttons aligned with the current layout state
     setupAddCollectionButton();
 
     const filtered = getFilteredCollections();
@@ -279,10 +277,8 @@ function renderTable() {
             materialSummary = uniqueMaterials.length === 1 ? uniqueMaterials[0] : `${uniqueMaterials.length} types`;
         }
 
-        // View receipt button is always accessible to everyone
         let actionButtonsHTML = `<button class="icon-btn receipt-btn" onclick="viewReceipt(${actualIndex})"><i data-lucide="image"></i></button>`;
         
-        // Show edit and delete actions only if the user is NOT a Moderator
         if (window.currentUserRole !== 'Moderator') {
             actionButtonsHTML += `
                 <button class="icon-btn" onclick="editEntry(${actualIndex})"><i data-lucide="edit-2"></i></button>
@@ -519,6 +515,51 @@ async function saveCollection() {
         };
 
         let targetId;
+        let profileId = null;
+
+        // Sync and associate customer profile details cleanly for both additions and modifications
+        const { data: existingProfile } = await _supabase
+            .from('profiles')
+            .select('id, name')
+            .ilike('name', formattedCustomer)
+            .maybeSingle();
+
+        let determinedType = 'customer';
+        if (window.currentCategory?.toLowerCase() === 'partner_category_name') {
+            determinedType = 'partner';
+        }
+
+        if (existingProfile) {
+            profileId = existingProfile.id;
+            await _supabase
+                .from('profiles')
+                .update({
+                    address: address || 'N/A',
+                    contact_num: contact || 'N/A',
+                    category: window.currentCategory || 'Walk-ins',
+                    type: determinedType
+                })
+                .eq('id', profileId);
+        } else {
+            const displayId = typeof generateDisplayId === 'function' ? generateDisplayId('C') : 'C-' + Date.now();
+            const { data: newProfile, error: profileError } = await _supabase
+                .from('profiles')
+                .insert([{
+                    name: formattedCustomer,
+                    category: window.currentCategory || 'Walk-ins',
+                    address: address || 'N/A',
+                    contact_num: contact || 'N/A',
+                    display_id: displayId,
+                    type: determinedType
+                }])
+                .select()
+                .single();
+
+            if (profileError) throw profileError;
+            profileId = newProfile.id;
+        }
+
+        collectionPayload.customer_id = profileId;
 
         if (window.editingIndex > -1) {
             const originalCollection = getFilteredCollections()[window.editingIndex];
@@ -539,51 +580,6 @@ async function saveCollection() {
             if (deleteItemsError) throw deleteItemsError;
 
         } else {
-            const displayId = typeof generateDisplayId === 'function' ? generateDisplayId('C') : 'C-' + Date.now();
-            let profileId = null;
-
-            const { data: existingProfile } = await _supabase
-                .from('profiles')
-                .select('id, name')
-                .ilike('name', formattedCustomer)
-                .maybeSingle();
-
-            let determinedType = 'customer';
-            if (window.currentCategory?.toLowerCase() === 'partner_category_name') {
-                determinedType = 'partner';
-            }
-
-            if (existingProfile) {
-                profileId = existingProfile.id;
-                await _supabase
-                    .from('profiles')
-                    .update({
-                        address: address || 'N/A',
-                        contact_num: contact || 'N/A',
-                        category: window.currentCategory || 'Walk-ins',
-                        type: determinedType
-                    })
-                    .eq('id', profileId);
-            } else {
-                const { data: newProfile, error: profileError } = await _supabase
-                    .from('profiles')
-                    .insert([{
-                        name: formattedCustomer,
-                        category: window.currentCategory || 'Walk-ins',
-                        address: address || 'N/A',
-                        contact_num: contact || 'N/A',
-                        display_id: displayId,
-                        type: determinedType
-                    }])
-                    .select()
-                    .single();
-
-                if (profileError) throw profileError;
-                profileId = newProfile.id;
-            }
-
-            collectionPayload.customer_id = profileId;
-
             const { data: newCollection, error: insertCollectionError } = await _supabase
                 .from('collections')
                 .insert([collectionPayload])
