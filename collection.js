@@ -159,7 +159,7 @@ window.fetchAllCollections = async function() {
             *, 
             collection_items (
                 *,
-                price_list (
+                price_list:material_id (
                     material_name
                 )
             )
@@ -224,6 +224,15 @@ function loadModalHTML() {
             document.getElementById('modalContainer').innerHTML = html;
             await window.loadMaterialDropdownOptions();
 
+            const weightInput = document.getElementById('inWeight');
+            if (weightInput) {
+                weightInput.addEventListener('input', (e) => {
+                    let value = e.target.value.replace(/\D/g, '');
+                    value = value.replace(/^0+/, ''); // remove leading zeros
+                    value = value.slice(0, 4);
+                    e.target.value = value;
+                });
+            }
             const dateInput = document.getElementById('inDate');
             if (dateInput && !dateInput.value) {
                 dateInput.value = new Date().toISOString().split('T')[0];
