@@ -9,7 +9,7 @@ const passwordError = document.getElementById('passwordError');
 const loginButton = document.querySelector('.login-button');
 const successModal = document.getElementById('successModal');
 const errorModal = document.getElementById('errorModal');
-const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,30}$/;
+const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-])[A-Za-z\d@$!%*?&.#_-]{6,30}$/;
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -52,7 +52,9 @@ passwordInput.addEventListener('input', function () {
             this.classList.remove('valid');
             this.classList.add('invalid');
             this.setAttribute('aria-invalid', 'true');
-            passwordError.textContent = "Password must include at least 1 number";
+
+            passwordError.textContent =
+                "6-30 chars, include uppercase, lowercase, number, and special character";
             passwordError.classList.add('show');
         }
     } else {
@@ -123,8 +125,11 @@ document.getElementById('loginForm').addEventListener('submit', async function (
         passwordInput.classList.add('invalid');
         passwordInput.classList.remove('valid');
         passwordInput.setAttribute('aria-invalid', 'true');
-        passwordError.textContent = "Password must include at least 1 number";
+    
+        passwordError.textContent =
+            "Password must be 6-30 chars and include uppercase, lowercase, number, and special character";
         passwordError.classList.add('show');
+    
         if (emailPattern.test(email)) passwordInput.focus();
         isValid = false;
     } else {
