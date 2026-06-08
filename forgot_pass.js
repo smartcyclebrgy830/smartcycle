@@ -21,6 +21,7 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Real-time email validation on input
 emailInput.addEventListener('input', function() {
+    this.value = this.value.toLowerCase();
     const email = this.value.trim();
     
     // Only validate if there's input
@@ -46,11 +47,20 @@ emailInput.addEventListener('input', function() {
     }
 });
 
+emailInput.addEventListener('paste', function(e) {
+    e.preventDefault();
+    const paste = (e.clipboardData || window.clipboardData)
+        .getData('text')
+        .toLowerCase();
+
+    document.execCommand('insertText', false, paste);
+});
+
 // FORM SUBMISSION
 form.addEventListener('submit', async function (e) {
     e.preventDefault();
-
-    const email = emailInput.value.trim();
+    const email = emailInput.value.trim().toLowerCase();
+    emailInput.value = email; 
 
     if (!emailPattern.test(email)) {
         emailInput.classList.add('invalid');
