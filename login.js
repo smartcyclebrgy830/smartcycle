@@ -9,12 +9,14 @@ const passwordError = document.getElementById('passwordError');
 const loginButton = document.querySelector('.login-button');
 const successModal = document.getElementById('successModal');
 const errorModal = document.getElementById('errorModal');
+const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,30}$/;
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 
 // EMAIL VALIDATION
 emailInput.addEventListener('input', function () {
+    this.value = this.value.toLowerCase();
     const email = this.value.trim();
 
     if (email.length > 0) {
@@ -38,11 +40,21 @@ emailInput.addEventListener('input', function () {
 
 // PASSWORD VALIDATION
 passwordInput.addEventListener('input', function () {
-    if (this.value.length > 0) {
-        this.classList.remove('invalid');
-        this.classList.add('valid');
-        this.setAttribute('aria-invalid', 'false');
-        passwordError.classList.remove('show');
+    const password = this.value;
+
+    if (password.length > 0) {
+        if (passwordPattern.test(password)) {
+            this.classList.remove('invalid');
+            this.classList.add('valid');
+            this.setAttribute('aria-invalid', 'false');
+            passwordError.classList.remove('show');
+        } else {
+            this.classList.remove('valid');
+            this.classList.add('invalid');
+            this.setAttribute('aria-invalid', 'true');
+            passwordError.textContent = "Password must include at least 1 number";
+            passwordError.classList.add('show');
+        }
     } else {
         this.classList.remove('valid', 'invalid');
         this.setAttribute('aria-invalid', 'false');
@@ -107,10 +119,11 @@ document.getElementById('loginForm').addEventListener('submit', async function (
         emailError.classList.remove('show');
     }
 
-    if (password.length === 0) {
+    if (!passwordPattern.test(password)) {
         passwordInput.classList.add('invalid');
         passwordInput.classList.remove('valid');
         passwordInput.setAttribute('aria-invalid', 'true');
+        passwordError.textContent = "Password must include at least 1 number";
         passwordError.classList.add('show');
         if (emailPattern.test(email)) passwordInput.focus();
         isValid = false;
