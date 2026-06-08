@@ -197,11 +197,26 @@ function wireModal() {
     }
 
     contactInput?.addEventListener('input', (e) => {
-        const raw = e.target.value.replace(/[^\d]/g, '').slice(0, 11);
-        let fmt = raw;
-        if (raw.length > 4 && raw.length <= 7) fmt = `${raw.slice(0,4)}-${raw.slice(4)}`;
-        else if (raw.length > 7) fmt = `${raw.slice(0,4)}-${raw.slice(4,7)}-${raw.slice(7,11)}`;
-        e.target.value = fmt;
+        let digits = e.target.value.replace(/\D/g, '');
+    
+        // 🔒 FORCE "09" prefix
+        if (!digits.startsWith('09')) {
+            digits = '09' + digits.replace(/^0+/, ''); // avoid multiple 0s
+        }
+    
+        // Limit to 11 digits total
+        digits = digits.slice(0, 11);
+    
+        // 🎯 FORMAT: 09XX-XXX-XXXX
+        let formatted = digits;
+    
+        if (digits.length > 4 && digits.length <= 7) {
+            formatted = `${digits.slice(0,4)}-${digits.slice(4)}`;
+        } else if (digits.length > 7) {
+            formatted = `${digits.slice(0,4)}-${digits.slice(4,7)}-${digits.slice(7,11)}`;
+        }
+    
+        e.target.value = formatted;
     });
 
     // Real-time clear error text inputs
