@@ -287,8 +287,9 @@ body {
     white-space: nowrap;
 }
 
-.role-badge.admin       { color: #f59e0b; }
-.role-badge.super-admin { color: #46B336; }
+.role-badge.admin       { color: #16a34a; }
+.role-badge.super-admin { color: #ef4444;
+                        font-weight: 700;}
 .role-badge.moderator   { color: #6366f1; }
 
 .action-desc {
