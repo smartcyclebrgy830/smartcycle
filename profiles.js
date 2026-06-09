@@ -88,6 +88,7 @@ async function fetchProfilesFromSupabase() {
             address: profile.address || 'N/A',
             contactNumber: profile.contact_num || 'N/A',
             category: normalizedCategory,
+            type: profile.type, // Added to keep track of customer vs partner type
             displayCategory: getCategoryDisplayName(rawCategory), 
             avatarColor: getRandomColor(),
             isTemporary: false
@@ -117,6 +118,7 @@ function formatProfileId(displayId, normalizedCategory) {
 
     return `${prefix}-${sevenDigits}`;
 }
+
 // Get category display name safely regardless of DB casing
 function getCategoryDisplayName(category) {
     if (!category || category === 'N/A') return 'N/A';
@@ -207,7 +209,7 @@ function addContactToTable(contact) {
         // Moderator → no buttons
         actionButtonsHTML = `<div class="action-buttons"></div>`;
     }
-    // --- REORDERED DATA CELLS WITH FIXED LAYOUT WIDTHS ---
+    
     row.innerHTML = `
         <td style="width: 250px; min-width: 250px;">
             <div class="customer-cell">
@@ -310,9 +312,36 @@ function openEditModal(contact) {
     document.getElementById('editName').value = contact.name;
     document.getElementById('editAddress').value = contact.address;
     
-    // Pass it through the formatter so it looks clean immediately
     document.getElementById('editContact').value = formatPhoneNumber(contact.contactNumber);
-    document.getElementById('editCategory').value = contact.category;
+
+    // Dynamically assign drop-down options according to profile type
+    const categorySelect = document.getElementById('editCategory');
+    categorySelect.innerHTML = '';
+
+    if (contact.type === 'customer') {
+        categorySelect.innerHTML = `
+            <option value="walk-ins">Walk-ins</option>
+            <option value="school">School</option>
+            <option value="barangay">Barangay</option>
+        `;
+    } else if (contact.type === 'partner') {
+        categorySelect.innerHTML = `
+            <option value="junkshop">Junkshop</option>
+            <option value="organization">Organization</option>
+        `;
+    } else {
+        // Fallback standard options list
+        categorySelect.innerHTML = `
+            <option value="walk-ins">Walk-ins</option>
+            <option value="school">School</option>
+            <option value="barangay">Barangay</option>
+            <option value="junkshop">Junkshop</option>
+            <option value="organization">Organization</option>
+        `;
+    }
+
+    // Match selected database field value
+    categorySelect.value = contact.category;
 
     document.getElementById('editProfileModal').style.display = 'flex';
 }
@@ -320,6 +349,7 @@ function openEditModal(contact) {
 function closeEditModal() {
     document.getElementById('editProfileModal').style.display = 'none';
 }
+
 document.getElementById('saveEditBtn').addEventListener('click', async () => {
     const id = document.getElementById('editProfileId').value;
     const name = document.getElementById('editName').value;
@@ -343,7 +373,7 @@ document.getElementById('saveEditBtn').addEventListener('click', async () => {
             address: address,
             contact_num: contact,
             category: category,
-            type: profileType // Keeps the core classification synchronized
+            type: profileType 
         })
         .eq('id', id);
 
@@ -352,19 +382,16 @@ document.getElementById('saveEditBtn').addEventListener('click', async () => {
         return;
     }
 
-    // Safe fallback check in case logAction is loaded from an external script
     if (typeof logAction === 'function') {
         await logAction(`Updated profile: ${name}`);
     } else {
         console.log(`Action Logged: Updated profile: ${name}`);
     }
 
-    // Close the UI modal container
     closeEditModal();
-
-    // Re-fetch database rows to display the newly modified row right away
     await fetchProfilesFromSupabase();
 });
+
 // Check if table is empty and show message
 function checkEmptyState() {
     const tableBody = document.getElementById('contactsTableBody');
@@ -500,7 +527,6 @@ function initializeSearch() {
 }
 
 // INITIALIZE ON LOAD
-// INITIALIZE ON LOAD
 document.addEventListener('DOMContentLoaded', async() => {
     await fetchCurrentUserRole();
     applyRoleUI();
@@ -508,7 +534,6 @@ document.addEventListener('DOMContentLoaded', async() => {
     initializeTabSwitching();
     initializeSearch();
 
-    // Enforce live validation and formatting on the edit input field
     const contactInput = document.getElementById('editContact');
     if (contactInput) {
         contactInput.addEventListener('input', function(e) {
