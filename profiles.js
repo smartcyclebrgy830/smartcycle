@@ -142,6 +142,37 @@ function getRandomColor() {
     return colors[Math.floor(Math.random() * colors.length)];
 }
 
+function formatPhoneNumber(value) {
+    // Remove all non-digit characters
+    let numbers = value.replace(/\D/g, '');
+
+    // Force it to always start with '09'
+    if (numbers.length > 0 && !numbers.startsWith('0')) {
+        numbers = '09' + numbers;
+    } else if (numbers.length > 1 && !numbers.startsWith('09')) {
+        numbers = '09' + numbers.slice(2);
+    }
+
+    // Enforce max 11 digits (09 + 9 digits)
+    if (numbers.length > 11) {
+        numbers = numbers.slice(0, 11);
+    }
+
+    // Build the 09XX-XXX-XXXX format dynamically
+    let formatted = '';
+    if (numbers.length > 0) {
+        formatted += numbers.slice(0, 4); // 09XX
+    }
+    if (numbers.length > 4) {
+        formatted += '-' + numbers.slice(4, 7); // -XXX
+    }
+    if (numbers.length > 7) {
+        formatted += '-' + numbers.slice(7, 11); // -XXXX
+    }
+
+    return formatted;
+}
+
 // Add contact to table
 function addContactToTable(contact) {
     const tableBody = document.getElementById('contactsTableBody');
@@ -273,11 +304,14 @@ function addContactToTable(contact) {
     tableBody.appendChild(row);
     lucide.createIcons();
 }
+
 function openEditModal(contact) {
     document.getElementById('editProfileId').value = contact.dbId;
     document.getElementById('editName').value = contact.name;
     document.getElementById('editAddress').value = contact.address;
-    document.getElementById('editContact').value = contact.contactNumber;
+    
+    // Pass it through the formatter so it looks clean immediately
+    document.getElementById('editContact').value = formatPhoneNumber(contact.contactNumber);
     document.getElementById('editCategory').value = contact.category;
 
     document.getElementById('editProfileModal').style.display = 'flex';
@@ -450,10 +484,19 @@ function initializeSearch() {
 }
 
 // INITIALIZE ON LOAD
+// INITIALIZE ON LOAD
 document.addEventListener('DOMContentLoaded', async() => {
     await fetchCurrentUserRole();
     applyRoleUI();
     await fetchProfilesFromSupabase(); 
     initializeTabSwitching();
     initializeSearch();
+
+    // Enforce live validation and formatting on the edit input field
+    const contactInput = document.getElementById('editContact');
+    if (contactInput) {
+        contactInput.addEventListener('input', function(e) {
+            this.value = formatPhoneNumber(this.value);
+        });
+    }
 });
