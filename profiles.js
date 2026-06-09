@@ -327,13 +327,23 @@ document.getElementById('saveEditBtn').addEventListener('click', async () => {
     const contact = document.getElementById('editContact').value;
     const category = document.getElementById('editCategory').value;
 
+    // Dynamically resolve the structural profile type based on the chosen category
+    let profileType = 'customer';
+    const salesPartners = ['junkshop', 'organization', 'partner'];
+    
+    if (category && salesPartners.includes(category.toLowerCase().trim())) {
+        profileType = 'partner';
+    }
+
+    // Execute the update query on your Supabase table
     const { error } = await _supabase
         .from('profiles')
         .update({
-            name: name,  // FIXED: Changed 'display_name' to 'name'
+            name: name,
             address: address,
             contact_num: contact,
-            category: category
+            category: category,
+            type: profileType // Keeps the core classification synchronized
         })
         .eq('id', id);
 
@@ -342,11 +352,17 @@ document.getElementById('saveEditBtn').addEventListener('click', async () => {
         return;
     }
 
-    await logAction(`Updated profile: ${name}`);
+    // Safe fallback check in case logAction is loaded from an external script
+    if (typeof logAction === 'function') {
+        await logAction(`Updated profile: ${name}`);
+    } else {
+        console.log(`Action Logged: Updated profile: ${name}`);
+    }
 
+    // Close the UI modal container
     closeEditModal();
 
-    // Refresh table
+    // Re-fetch database rows to display the newly modified row right away
     await fetchProfilesFromSupabase();
 });
 // Check if table is empty and show message
