@@ -13,9 +13,7 @@ function generateDisplayId(prefix) {
     const rand = Math.floor(Math.random() * 1000);
     return `${prefix}-${time}${rand}`;
 }
-// ==========================================
-// RENDER MATERIALS TABLE
-// ==========================================
+
 function renderMaterialsTable() {
     const materialsBody = document.getElementById('materialsBody');
     const formTotalLine = document.getElementById('saleFormTotalLine');
