@@ -7,7 +7,6 @@ let cachedProfiles = [];
 // Local cache to resolve names during edit mode if needed
 let loadedPricesCache = [];
 
-// Function to fetch existing profiles for the autocomplete
 async function fetchProfilesForAutocomplete() {
     try {
         const { data, error } = await _supabase
