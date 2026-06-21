@@ -554,4 +554,16 @@ body {
         width: 13px;
         height: 13px;
     }
+    .pagination {
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 12px 0;
+    }
+
+    .page-btn {
+        min-width: 32px;
+        height: 32px;
+        padding: 4px 8px;
+        font-size: 12px;
+    }
 }
