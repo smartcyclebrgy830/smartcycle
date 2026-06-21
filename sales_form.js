@@ -51,7 +51,7 @@ function renderMaterialsTable() {
     lucide.createIcons();
 }
 function wireModal() {
-    if (isModalWired) return; // Prevent multiple event listener bind
+    if (isModalWired) return; // Prevent multiple event listener bin
     isModalWired = true;
     
     const saleModal = document.getElementById('saleModal');
