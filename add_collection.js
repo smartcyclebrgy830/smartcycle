@@ -695,15 +695,15 @@ window.setupFieldListeners = function() {
         let profilesCache = [];
     
         async function loadProfiles() {
-            const { data, error } = await _supabase
+            // ✅ FIX: Use window._supabase to avoid cross-file reference errors
+            const { data, error } = await window._supabase
                 .from('profiles')
                 .select('name')
                 .order('name', { ascending: true });
-    
+        
             if (!error && data) {
                 profilesCache = data;
-    
-                // ✅ AUTO PLACEHOLDER SUGGESTION (first profile)
+        
                 if (profilesCache.length > 0) {
                     inCustomer.placeholder = `Ex: ${profilesCache[0].name}`;
                 }
