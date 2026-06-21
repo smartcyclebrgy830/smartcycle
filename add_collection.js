@@ -6,20 +6,6 @@ window.currentItems = window.currentItems || []; // Initializing to prevent unde
 document.addEventListener('DOMContentLoaded', () => {
 // Local cache to resolve names during edit mode if 
 let loadedPricesCache = [];
-let profilesCache = [];
-
-async function loadProfiles() {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('name');
-
-    if (error) {
-        console.error('Error loading profiles:', error);
-        return;
-    }
-
-    profilesCache = data || [];
-}
 
 function generateDisplayId(prefix) {
     return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -30,48 +16,6 @@ function toTitleCase(str) {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 }
 
-const customerInput = document.getElementById('inCustomer');
-const suggestionsBox = document.getElementById('customerSuggestions');
-
-console.log(customerInput);
-customerInput.addEventListener('input', function () {
-    const query = this.value.toLowerCase().trim();
-
-    if (!query) {
-        suggestionsBox.style.display = 'none';
-        return;
-    }
-
-    const filtered = profilesCache.filter(profile =>
-        profile.name.toLowerCase().includes(query)
-    );
-
-    showSuggestions(filtered);
-});
-
-function showSuggestions(list) {
-    suggestionsBox.innerHTML = '';
-
-    if (list.length === 0) {
-        suggestionsBox.style.display = 'none';
-        return;
-    }
-
-    list.forEach(profile => {
-        const div = document.createElement('div');
-        div.classList.add('suggestion-item');
-        div.textContent = profile.name;
-
-        div.onclick = () => {
-            customerInput.value = profile.name;
-            suggestionsBox.style.display = 'none';
-        };
-
-        suggestionsBox.appendChild(div);
-    });
-
-    suggestionsBox.style.display = 'block';
-}
 
 // GLOBAL ASSIGNMENTS & MODAL INTERACTIONS
 window.openAddModal = async () => {
@@ -84,7 +28,7 @@ window.openAddModal = async () => {
     window.editingIndex = -1; // Reset global tracker
     resetForm();
 
-    await loadProfiles();
+    setupFieldListeners();
     // Dynamically fetch and fill up material prices matching your Price List dashboard
     await loadActivePrices();
 
@@ -736,6 +680,56 @@ window.setupFieldListeners = function() {
     const inWeight = document.getElementById('inWeight');
     if (inWeight) {
         inWeight.addEventListener('input', () => clearError('inWeight'));
+    }
+    const suggestionsBox = document.getElementById('customerSuggestions');
+    
+    if (inCustomer && suggestionsBox) {
+    
+        let profilesCache = [];
+    
+        async function loadProfiles() {
+            const { data, error } = await _supabase
+                .from('profiles')
+                .select('name');
+    
+            if (!error) profilesCache = data || [];
+        }
+    
+        loadProfiles();
+    
+        inCustomer.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+    
+            if (!query) {
+                suggestionsBox.style.display = 'none';
+                return;
+            }
+    
+            const filtered = profilesCache.filter(p =>
+                p.name.toLowerCase().includes(query)
+            );
+    
+            suggestionsBox.innerHTML = '';
+    
+            if (!filtered.length) {
+                suggestionsBox.style.display = 'none';
+                return;
+            }
+    
+            filtered.forEach(p => {
+                const div = document.createElement('div');
+                div.textContent = p.name;
+    
+                div.onclick = () => {
+                    inCustomer.value = p.name;
+                    suggestionsBox.style.display = 'none';
+                };
+    
+                suggestionsBox.appendChild(div);
+            });
+    
+            suggestionsBox.style.display = 'block';
+        });
     }
 };
 
