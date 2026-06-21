@@ -694,9 +694,10 @@ window.setupFieldListeners = function() {
         async function loadProfiles() {
             // ✅ FIX: Use window._supabase to avoid cross-file reference errors
             const { data, error } = await window._supabase
-                .from('profiles')
-                .select('name')
-                .order('name', { ascending: true });
+             .from('profiles')
+             .select('name')
+             .is('auth_id', null) // ✅ ADD THIS: Only fetches rows where auth_id is empty/null
+             .order('name', { ascending: true });
         
             if (!error && data) {
                 profilesCache = data;
@@ -718,12 +719,28 @@ window.setupFieldListeners = function() {
                 div.className = 'suggestion-item';
                 div.textContent = p.name;
     
-                div.onclick = () => {
-                    inCustomer.value = p.name;
-                    suggestionsBox.style.display = 'none';
-                    clearError('inCustomer');
-                    if (typeof updatePreview === 'function') updatePreview();
-                };
+             div.onclick = () => {
+                 // 1. Fill the customer name
+                 inCustomer.value = p.name;
+                 
+                 // 2. Target the other input fields
+                 const addrInput = document.getElementById('inAddress');
+                 const contactInput = document.getElementById('inContact');
+                 
+                 // 3. Auto-fill the data if it exists in the database
+                 if (addrInput) addrInput.value = p.address || '';
+                 if (contactInput) {
+                     contactInput.value = p.contact_number || '';
+                     
+                     // 🔥 Trigger the input event manually so your strict phone number mask applies to the auto-filled data
+                     contactInput.dispatchEvent(new Event('input')); 
+                 }
+             
+                 // 4. Clean up the UI
+                 suggestionsBox.style.display = 'none';
+                 clearError('inCustomer');
+                 if (typeof updatePreview === 'function') updatePreview();
+             };
     
                 suggestionsBox.appendChild(div);
             });
@@ -762,12 +779,28 @@ window.setupFieldListeners = function() {
                 div.className = 'suggestion-item';
                 div.textContent = p.name;
     
-               div.onclick = () => {
-                   inCustomer.value = p.name;
-                   suggestionsBox.style.display = 'none';
-                   clearError('inCustomer');
-                   if (typeof updatePreview === 'function') updatePreview();
-               };
+            div.onclick = () => {
+                // 1. Fill the customer name
+                inCustomer.value = p.name;
+                
+                // 2. Target the other input fields
+                const addrInput = document.getElementById('inAddress');
+                const contactInput = document.getElementById('inContact');
+                
+                // 3. Auto-fill the data if it exists in the database
+                if (addrInput) addrInput.value = p.address || '';
+                if (contactInput) {
+                    contactInput.value = p.contact_number || '';
+                    
+                    // 🔥 Trigger the input event manually so your strict phone number mask applies to the auto-filled data
+                    contactInput.dispatchEvent(new Event('input')); 
+                }
+            
+                // 4. Clean up the UI
+                suggestionsBox.style.display = 'none';
+                clearError('inCustomer');
+                if (typeof updatePreview === 'function') updatePreview();
+            };
     
                 suggestionsBox.appendChild(div);
             });
