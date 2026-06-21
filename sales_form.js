@@ -505,7 +505,16 @@ function wireModal() {
     const suggestionsBox = document.getElementById('partnerSuggestions');
     
     function showSuggestions(filter = '') {
-        const filtered = allProfiles.filter(p => 
+        // 1. Sort alphabetically by name
+        const sortedProfiles = [...allProfiles].sort((a, b) => 
+            a.name.localeCompare(b.name)
+        );
+    
+        // 2. Filter: 
+        //    - Must match search text (if provided)
+        //    - Must have type === 'partner'
+        const filtered = sortedProfiles.filter(p => 
+            p.type === 'partner' && 
             p.name.toLowerCase().includes(filter.toLowerCase())
         );
     
@@ -521,8 +530,11 @@ function wireModal() {
             div.textContent = p.name;
             div.onclick = () => {
                 partnerInput.value = p.name;
-                document.getElementById('saleAddress').value = p.address || '';
-                document.getElementById('saleContact').value = p.contact_num || '';
+                // Update address and contact fields
+                const addrEl = document.getElementById('saleAddress');
+                const contEl = document.getElementById('saleContact');
+                if (addrEl) addrEl.value = p.address || '';
+                if (contEl) contEl.value = p.contact_num || '';
                 suggestionsBox.style.display = 'none';
             };
             suggestionsBox.appendChild(div);
