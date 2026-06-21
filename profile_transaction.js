@@ -618,7 +618,7 @@ function buildCollectionReceiptHTML(tx) {
 
   <!-- Header -->
   <div style="display:flex;align-items:center;gap:6px;padding-bottom:5px;border-bottom:1px solid #111;margin-bottom:5px;">
-    <img src="photo/tezwa_logo.jpg" alt="Logo" onerror="this.style.display='none'" style="width:32px;height:auto;object-fit:contain;border-radius:50%;flex-shrink:0;">
+    <img src="photo/tezwa_logo.jpg" alt="Logo" onerror="this.style.display='none'" style="width:32px;height:auto;object-fit:contain;flex-shrink:0;">
     <div style="flex:1;text-align:center;">
       <h3 style="font-size:8px;font-weight:700;color:#0ea5e9;text-transform:uppercase;margin:0 0 1px 0;letter-spacing:0.2px;">TAGUMPAY 83ZERO WASTE ASSOCIATION</h3>
       <p style="font-size:7px;color:#444;margin:1px 0;line-height:1.3;">South Nagtahan, Brgy. 830, Zone 90 District VI, Paco, Manila</p>
