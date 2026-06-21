@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </label>
                     </div>
 
-                    <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                         <label style="${labelStyle}">Date Established
                             <input id="expDateEst" type="text" placeholder="MM/DD/YYYY" style="${fieldStyle}">
                         </label>
