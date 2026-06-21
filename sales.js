@@ -377,12 +377,47 @@ document.addEventListener('DOMContentLoaded', async () => {
         prevBtn.addEventListener('click', () => { currentPage--; renderTable(); });
         paginationEl.appendChild(prevBtn);
 
-        for (let i = 1; i <= totalPages; i++) {
+        // Page 1 always visible
+        const firstBtn = document.createElement('button');
+        firstBtn.className = `page-btn ${currentPage === 1 ? 'active' : ''}`;
+        firstBtn.textContent = 1;
+        firstBtn.addEventListener('click', () => { currentPage = 1; renderTable(); });
+        paginationEl.appendChild(firstBtn);
+        
+        // Left "..."
+        if (currentPage > 3) {
+            const dots = document.createElement('span');
+            dots.className = 'page-btn';
+            dots.textContent = '...';
+            dots.style.cssText = 'cursor:default; border:none;';
+            paginationEl.appendChild(dots);
+        }
+        
+        // Middle pages
+        for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
             const btn = document.createElement('button');
             btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
             btn.textContent = i;
             btn.addEventListener('click', () => { currentPage = i; renderTable(); });
             paginationEl.appendChild(btn);
+        }
+        
+        // Right "..."
+        if (currentPage < totalPages - 2) {
+            const dots = document.createElement('span');
+            dots.className = 'page-btn';
+            dots.textContent = '...';
+            dots.style.cssText = 'cursor:default; border:none;';
+            paginationEl.appendChild(dots);
+        }
+        
+        // Last page always visible
+        if (totalPages > 1) {
+            const lastBtn = document.createElement('button');
+            lastBtn.className = `page-btn ${currentPage === totalPages ? 'active' : ''}`;
+            lastBtn.textContent = totalPages;
+            lastBtn.addEventListener('click', () => { currentPage = totalPages; renderTable(); });
+            paginationEl.appendChild(lastBtn);
         }
 
         const nextBtn = document.createElement('button');
