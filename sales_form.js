@@ -94,6 +94,7 @@ function wireModal() {
     openSaleModalBtn?.addEventListener('click', async () => {
         editingId = null;
         resetModal();
+        await loadProfiles();
         await loadMaterialsToDropdown();
         if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
         saleModal.classList.add('show');
