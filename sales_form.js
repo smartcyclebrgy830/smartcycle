@@ -497,6 +497,57 @@ function wireModal() {
         if (submitSaleBtn) submitSaleBtn.innerHTML = '<i data-lucide="check"></i> Submit';
         lucide.createIcons();
     }
+    // Add this inside wireModal() or as a standalone function
+    const partnerInput = document.getElementById('partnerName');
+    const suggestionsBox = document.getElementById('partnerSuggestions');
+    
+    partnerInput?.addEventListener('input', async (e) => {
+        const query = e.target.value;
+        
+        if (query.length < 1) {
+            suggestionsBox.style.display = 'none';
+            return;
+        }
+    
+        // Query Supabase for matching names
+        const { data, error } = await window._supabase
+            .from('profiles')
+            .select('name, address, contact_num')
+            .ilike('name', `%${query}%`)
+            .limit(5);
+    
+        if (error || !data || data.length === 0) {
+            suggestionsBox.style.display = 'none';
+            return;
+        }
+    
+        // Render suggestions
+        suggestionsBox.innerHTML = '';
+        data.forEach(p => {
+            const div = document.createElement('div');
+            div.textContent = p.name;
+            div.style.padding = '8px';
+            div.style.cursor = 'pointer';
+            div.onmouseover = () => div.style.backgroundColor = '#f0f0f0';
+            div.onmouseout = () => div.style.backgroundColor = 'white';
+            
+            // When clicked, fill the inputs
+            div.onclick = () => {
+                partnerInput.value = p.name;
+                document.getElementById('saleAddress').value = p.address || '';
+                document.getElementById('saleContact').value = p.contact_num || '';
+                suggestionsBox.style.display = 'none';
+            };
+            suggestionsBox.appendChild(div);
+        });
+        
+        suggestionsBox.style.display = 'block';
+    });
+    
+    // Close suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (e.target !== partnerInput) suggestionsBox.style.display = 'none';
+    });
 }
 
 // ==========================================
