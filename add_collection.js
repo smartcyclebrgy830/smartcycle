@@ -684,23 +684,53 @@ window.setupFieldListeners = function() {
         inWeight.addEventListener('input', () => clearError('inWeight'));
     }
     const suggestionsBox = document.getElementById('customerSuggestions');
+    const inCustomer = document.getElementById('inCustomer');
     
     if (inCustomer && suggestionsBox) {
-    
         let profilesCache = [];
     
         async function loadProfiles() {
             const { data, error } = await _supabase
                 .from('profiles')
-                .select('name');
+                .select('name')
+                .order('name', { ascending: true });
     
-            if (!error) profilesCache = data || [];
+            if (!error && data) {
+                profilesCache = data;
+    
+                // ✅ AUTO PLACEHOLDER SUGGESTION (first profile)
+                if (profilesCache.length > 0) {
+                    inCustomer.placeholder = `Ex: ${profilesCache[0].name}`;
+                }
+            }
         }
     
+        // 🔥 CALL THIS IMMEDIATELY
         loadProfiles();
+
+        inCustomer.addEventListener('focus', () => {
+            suggestionsBox.innerHTML = '';
     
+            profilesCache.slice(0, 5).forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.textContent = p.name;
+    
+                div.onclick = () => {
+                    inCustomer.value = p.name;
+                    suggestionsBox.style.display = 'none';
+                };
+    
+                suggestionsBox.appendChild(div);
+            });
+    
+            suggestionsBox.style.display = profilesCache.length ? 'block' : 'none';
+        });
+        
         inCustomer.addEventListener('input', function () {
             const query = this.value.toLowerCase().trim();
+    
+            suggestionsBox.innerHTML = '';
     
             if (!query) {
                 suggestionsBox.style.display = 'none';
@@ -709,9 +739,7 @@ window.setupFieldListeners = function() {
     
             const filtered = profilesCache.filter(p =>
                 p.name.toLowerCase().includes(query)
-            );
-    
-            suggestionsBox.innerHTML = '';
+            ).slice(0, 5); // limit results
     
             if (!filtered.length) {
                 suggestionsBox.style.display = 'none';
@@ -720,6 +748,7 @@ window.setupFieldListeners = function() {
     
             filtered.forEach(p => {
                 const div = document.createElement('div');
+                div.className = 'suggestion-item';
                 div.textContent = p.name;
     
                 div.onclick = () => {
