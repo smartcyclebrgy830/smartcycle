@@ -239,7 +239,8 @@ const JunkshopExport = (() => {
 
         ctext('Month: ' + monthLabel, y, 10, 'normal');
         const mw = doc.getTextWidth('Month: ' + monthLabel);
-        hline(W/2 - mw/2, W/2 + mw/2, y + 1, 0.6);
+        const mwLabel = doc.getTextWidth('Month: ');
+        hline(W/2 - mw/2 + mwLabel, W/2 + mw/2, y + 1, 0.6);
         y += 18;
 
         const field = (label, value, x, yy, ulLen) => {
