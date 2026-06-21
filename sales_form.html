@@ -18,9 +18,10 @@
 
       <!-- Partner / Contact / Date -->
       <div class="form-grid-modal">
-        <div class="form-group" style="grid-column: 1 / -1;">
+        <div class="form-group" style="grid-column: 1 / -1; position: relative;">
           <label for="partnerName">Partner Name</label>
-          <input type="text" id="partnerName" placeholder="Enter partner name">
+          <input type="text" id="partnerName" placeholder="Enter partner name" autocomplete="off">
+          <div id="partnerSuggestions" style="position: absolute; width: 100%; border: 1px solid #ccc; background: white; z-index: 1000; display: none;"></div>
           <span class="field-error" id="partnerNameError"></span>
         </div>
         <div class="form-group" style="grid-column: 1 / -1;">
