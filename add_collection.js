@@ -106,7 +106,7 @@ async function loadActivePrices() {
     if (!selMaterial) return;
 
     try {
-        // Corrected target table to 'price_list' and selected the correct columns matching your dashboardd
+        // Corrected target table to 'price_list' and selected the correct columns matching your dashboard
         const { data: prices, error } = await _supabase
             .from('price_list')
             .select('id, material_name, price, status')
