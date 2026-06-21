@@ -694,7 +694,7 @@ window.setupFieldListeners = function() {
             // ✅ FIX: Use window._supabase to avoid cross-file reference errors
             const { data, error } = await window._supabase
              .from('profiles')
-             .select('name')
+             .select('name, address, contact_number')
              .is('auth_id', null) // ✅ ADD THIS: Only fetches rows where auth_id is empty/null
              .order('name', { ascending: true });
         
