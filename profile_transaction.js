@@ -614,7 +614,7 @@ function buildCollectionReceiptHTML(tx) {
 </head>
 <body>
 
-<div style="background:white;padding:5px 8px;font-family:Arial,sans-serif;font-size:8px;color:#111;border:1px solid #111;">
+<div class="receipt-preview" style="background:white;padding:5px 8px;font-family:Arial,sans-serif;font-size:8px;color:#111;border:1px solid #111;">
 
   <!-- Header -->
   <div style="display:flex;align-items:center;gap:6px;padding-bottom:5px;border-bottom:1px solid #111;margin-bottom:5px;">
