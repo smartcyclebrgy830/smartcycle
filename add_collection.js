@@ -3,22 +3,24 @@ window.editingIndex = typeof window.editingIndex !== 'undefined' ? window.editin
 window.currentCategory = typeof window.currentCategory !== 'undefined' ? window.currentCategory : 'School';
 window.currentItems = window.currentItems || []; // Initializing to prevent undefined array
 
-let cachedProfiles = [];
 // Local cache to resolve names during edit mode if needed
 let loadedPricesCache = [];
+window.cachedProfiles = [];
 
-async function fetchProfilesForAutocomplete() {
+window.fetchProfilesForAutocomplete = async function() {
     try {
         const { data, error } = await _supabase
             .from('profiles')
-            .select('id, name, address, contact_num');
+            .select('id, name, address, contact_num')
+            .order('name', { ascending: true }); // Alphabetical for easier scanning
             
         if (error) throw error;
-        cachedProfiles = data || [];
+        window.cachedProfiles = data || [];
+        console.log(`[SmartCycle] Loaded ${window.cachedProfiles.length} profiles for autocomplete.`);
     } catch (err) {
         console.error("Error fetching profiles for autocomplete:", err.message);
     }
-}
+};
 
 function generateDisplayId(prefix) {
     return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -40,7 +42,7 @@ window.openAddModal = async () => {
     resetForm();
 
     // NEW ADDITION: Fetch profiles for the autocomplete dropdown
-    await fetchProfilesForAutocomplete();
+    await window.fetchProfilesForAutocomplete();
 
     // Dynamically fetch and fill up material prices matching your Price List dashboard
     await loadActivePrices();
@@ -639,23 +641,63 @@ window.submitCollection = async function(e) {
 };
 
 window.setupFieldListeners = function() {
+    // 1. DYNAMICALLY INJECT STYLES TO GUARANTEE UI RENDERS
+    if (!document.getElementById('autocomplete-styles')) {
+        const style = document.createElement('style');
+        style.id = 'autocomplete-styles';
+        style.innerHTML = `
+            .autocomplete-list {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                z-index: 9999;
+                background: #ffffff;
+                border: 1px solid #cbd5e1;
+                border-radius: 0.375rem;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                max-height: 220px;
+                overflow-y: auto;
+                list-style: none;
+                padding: 0;
+                margin: 4px 0 0 0;
+                display: none;
+            }
+            .autocomplete-list li {
+                padding: 10px 12px;
+                cursor: pointer;
+                color: #334155;
+                font-size: 0.95rem;
+                border-bottom: 1px solid #f1f5f9;
+                transition: background 0.2s;
+            }
+            .autocomplete-list li:last-child { border-bottom: none; }
+            .autocomplete-list li:hover { background-color: #f1f5f9; }
+            .autocomplete-address-sub {
+                display: block;
+                font-size: 0.75rem;
+                color: #64748b;
+                margin-top: 2px;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     const inCustomer = document.getElementById('inCustomer');
     if (inCustomer) {
-        // Create the suggestion box dynamically if it doesn't exist
+        inCustomer.parentNode.style.position = 'relative'; // Crucial for absolute positioning
+
         let suggestionBox = document.getElementById('customer-suggestions');
         if (!suggestionBox) {
             suggestionBox = document.createElement('ul');
             suggestionBox.id = 'customer-suggestions';
             suggestionBox.className = 'autocomplete-list';
-            
-            // Ensure the parent container can hold absolute positioning securely
-            inCustomer.parentNode.style.position = 'relative'; 
             inCustomer.parentNode.appendChild(suggestionBox);
         }
 
         inCustomer.addEventListener('input', (e) => {
             const val = e.target.value.toLowerCase().trim();
-            suggestionBox.innerHTML = ''; // Clear previous suggestions
+            suggestionBox.innerHTML = ''; 
             
             if (val) clearError('inCustomer');
 
@@ -664,20 +706,26 @@ window.setupFieldListeners = function() {
                 return;
             }
 
-            // Filter the cached Supabase profiles
-            const matches = cachedProfiles.filter(p => p.name.toLowerCase().includes(val));
+            // Filter using the safely scoped global cache
+            const profiles = window.cachedProfiles || [];
+            const matches = profiles.filter(p => p.name && p.name.toLowerCase().includes(val));
 
             if (matches.length > 0) {
                 suggestionBox.style.display = 'block';
                 matches.forEach(profile => {
                     const li = document.createElement('li');
-                    li.textContent = profile.name;
                     
-                    // Populate fields when a name is clicked
+                    // Regex to highlight the matching letters the user typed
+                    const regex = new RegExp(`(${val})`, "gi");
+                    const highlightedName = profile.name.replace(regex, "<strong>$1</strong>");
+                    
+                    // Display the name with the address underneath to handle identical names
+                    const addressText = (profile.address && profile.address !== 'N/A') ? profile.address : 'No Address';
+                    li.innerHTML = `${highlightedName} <span class="autocomplete-address-sub">${addressText}</span>`;
+                    
                     li.onclick = () => {
                         inCustomer.value = profile.name;
                         
-                        // Auto-fill address and contact number if available
                         const inAddress = document.getElementById('inAddress');
                         const inContact = document.getElementById('inContact');
                         
@@ -690,7 +738,7 @@ window.setupFieldListeners = function() {
                         
                         suggestionBox.style.display = 'none';
                         clearError('inCustomer');
-                        updatePreview(); // Update the receipt preview instantly
+                        if (typeof updatePreview === 'function') updatePreview(); 
                     };
                     suggestionBox.appendChild(li);
                 });
@@ -699,10 +747,15 @@ window.setupFieldListeners = function() {
             }
         });
 
+        // Global click listener to close the dropdown securely when clicking outside
+        document.addEventListener('click', (e) => {
+            if (e.target !== inCustomer && !suggestionBox.contains(e.target)) {
+                suggestionBox.style.display = 'none';
+            }
+        });
+
+        // Simplified blur logic (removed the timeout hack)
         inCustomer.addEventListener('blur', () => {
-            // Slight delay before hiding so the user can actually click the suggestion
-            setTimeout(() => { suggestionBox.style.display = 'none'; }, 150);
-            
             const val = inCustomer.value.trim();
             if (!val) showError('inCustomer', 'Customer name is required');
             else if (val.length > 100) showError('inCustomer', 'Max 100 characters');
