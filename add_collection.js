@@ -82,6 +82,11 @@ window.openAddModal = async () => {
     
         suggestionsBox.style.display = 'block';
     }
+    document.addEventListener('click', function (e) {
+        if (!customerInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+            suggestionsBox.style.display = 'none';
+        }
+    });
     
     await loadProfiles();
     // Dynamically fetch and fill up material prices matching your Price List dashboard
@@ -217,12 +222,6 @@ document.addEventListener('click', (e) => {
     const modal = document.getElementById('addCollectionModal');
     if (modal && e.target === modal) {
         window.closeAddModal();
-    }
-});
-
-document.addEventListener('click', function (e) {
-    if (!customerInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
-        suggestionsBox.style.display = 'none';
     }
 });
 
