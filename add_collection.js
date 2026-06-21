@@ -1,6 +1,6 @@
 window.editingIndex = typeof window.editingIndex !== 'undefined' ? window.editingIndex : -1;
 window.currentCategory = typeof window.currentCategory !== 'undefined' ? window.currentCategory : 'School';
-window.currentItems = window.currentItems || []; // Initializing to prevent undefined array
+window.currentItems = window.currentItems || []; 
 
 document.addEventListener('DOMContentLoaded', () => {
  
@@ -43,7 +43,6 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    // Fix: Force integer type parsing to guarantee type consistency during comparison evaluations
     window.editingIndex = parseInt(index, 10); 
     clearAllErrors();
 
