@@ -505,32 +505,32 @@ function wireModal() {
     const suggestionsBox = document.getElementById('partnerSuggestions');
     
     function showSuggestions(filter = '') {
-        // 1. Sort alphabetically by name
+        // 1. Sort alphabetically
         const sortedProfiles = [...allProfiles].sort((a, b) => 
             a.name.localeCompare(b.name)
         );
     
-        // 2. Filter: 
-        //    - Must match search text (if provided)
-        //    - Must have type === 'partner'
+        // 2. Filter by type 'partner' and search text
         const filtered = sortedProfiles.filter(p => 
             p.type === 'partner' && 
             p.name.toLowerCase().includes(filter.toLowerCase())
         );
     
+        // 3. Limit to first 5 items
+        const limitedList = filtered.slice(0, 5);
+    
         suggestionsBox.innerHTML = '';
-        if (filtered.length === 0) {
+        if (limitedList.length === 0) {
             suggestionsBox.style.display = 'none';
             return;
         }
     
-        filtered.forEach(p => {
+        limitedList.forEach(p => {
             const div = document.createElement('div');
             div.className = 'suggestion-item';
             div.textContent = p.name;
             div.onclick = () => {
                 partnerInput.value = p.name;
-                // Update address and contact fields
                 const addrEl = document.getElementById('saleAddress');
                 const contEl = document.getElementById('saleContact');
                 if (addrEl) addrEl.value = p.address || '';
