@@ -171,7 +171,7 @@ const JunkshopExport = (() => {
         const { dataGrid, materialsList } = opts.reportData || await aggregateSupabaseData(month, year);
         const monthLabel = `${MONTHS[month]} ${year}`;
 
-        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: [612, 936] });
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'legal' });
         const W = doc.internal.pageSize.getWidth();
         const H = doc.internal.pageSize.getHeight();
         const ML = 30, MR = 30;
