@@ -24,7 +24,6 @@ const JunkshopExport = (() => {
             const { data: priceList, error: priceError } = await db
                 .from('price_list')
                 .select('id, material_name')
-                .eq('status', 'Active')
                 .order('id', { ascending: true }); 
 
             if (priceError) throw priceError;
