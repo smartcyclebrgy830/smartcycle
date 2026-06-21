@@ -29,17 +29,6 @@ function toTitleCase(str) {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 }
 
-// GLOBAL ASSIGNMENTS & MODAL INTERACTIONS
-window.openAddModal = async () => {
-    const modal = document.getElementById('addCollectionModal');
-    if (!modal) return;
-
-    modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-
-    window.editingIndex = -1; // Reset global tracker
-    resetForm();
-
     const customerInput = document.getElementById('inCustomer');
     const suggestionsBox = document.getElementById('customerSuggestions');
 
@@ -82,12 +71,18 @@ window.openAddModal = async () => {
     
         suggestionsBox.style.display = 'block';
     }
-    document.addEventListener('click', function (e) {
-        if (!customerInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
-            suggestionsBox.style.display = 'none';
-        }
-    });
-    
+
+// GLOBAL ASSIGNMENTS & MODAL INTERACTIONS
+window.openAddModal = async () => {
+    const modal = document.getElementById('addCollectionModal');
+    if (!modal) return;
+
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    window.editingIndex = -1; // Reset global tracker
+    resetForm();
+
     await loadProfiles();
     // Dynamically fetch and fill up material prices matching your Price List dashboard
     await loadActivePrices();
@@ -222,6 +217,11 @@ document.addEventListener('click', (e) => {
     const modal = document.getElementById('addCollectionModal');
     if (modal && e.target === modal) {
         window.closeAddModal();
+    }
+});
+document.addEventListener('click', function (e) {
+    if (!customerInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+        suggestionsBox.style.display = 'none';
     }
 });
 
