@@ -5,22 +5,6 @@ window.currentItems = window.currentItems || []; // Initializing to prevent unde
 
 // Local cache to resolve names during edit mode if needed
 let loadedPricesCache = [];
-window.cachedProfiles = [];
-
-window.fetchProfilesForAutocomplete = async function() {
-    try {
-        const { data, error } = await _supabase
-            .from('profiles')
-            .select('id, name, address, contact_num')
-            .order('name', { ascending: true }); // Alphabetical for easier scanning
-            
-        if (error) throw error;
-        window.cachedProfiles = data || [];
-        console.log(`[SmartCycle] Loaded ${window.cachedProfiles.length} profiles for autocomplete.`);
-    } catch (err) {
-        console.error("Error fetching profiles for autocomplete:", err.message);
-    }
-};
 
 function generateDisplayId(prefix) {
     return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -31,6 +15,7 @@ function toTitleCase(str) {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 }
 
+// GLOBAL ASSIGNMENTS & MODAL INTERACTIONS
 window.openAddModal = async () => {
     const modal = document.getElementById('addCollectionModal');
     if (!modal) return;
@@ -40,9 +25,6 @@ window.openAddModal = async () => {
 
     window.editingIndex = -1; // Reset global tracker
     resetForm();
-
-    // NEW ADDITION: Fetch profiles for the autocomplete dropdown
-    await window.fetchProfilesForAutocomplete();
 
     // Dynamically fetch and fill up material prices matching your Price List dashboard
     await loadActivePrices();
@@ -641,120 +623,9 @@ window.submitCollection = async function(e) {
 };
 
 window.setupFieldListeners = function() {
-    // 1. DYNAMICALLY INJECT STYLES TO GUARANTEE UI RENDERS
-    if (!document.getElementById('autocomplete-styles')) {
-        const style = document.createElement('style');
-        style.id = 'autocomplete-styles';
-        style.innerHTML = `
-            .autocomplete-list {
-                position: absolute;
-                top: 100%;
-                left: 0;
-                width: 100%;
-                z-index: 9999;
-                background: #ffffff;
-                border: 1px solid #cbd5e1;
-                border-radius: 0.375rem;
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-                max-height: 220px;
-                overflow-y: auto;
-                list-style: none;
-                padding: 0;
-                margin: 4px 0 0 0;
-                display: none;
-            }
-            .autocomplete-list li {
-                padding: 10px 12px;
-                cursor: pointer;
-                color: #334155;
-                font-size: 0.95rem;
-                border-bottom: 1px solid #f1f5f9;
-                transition: background 0.2s;
-            }
-            .autocomplete-list li:last-child { border-bottom: none; }
-            .autocomplete-list li:hover { background-color: #f1f5f9; }
-            .autocomplete-address-sub {
-                display: block;
-                font-size: 0.75rem;
-                color: #64748b;
-                margin-top: 2px;
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
     const inCustomer = document.getElementById('inCustomer');
     if (inCustomer) {
-        inCustomer.parentNode.style.position = 'relative'; // Crucial for absolute positioning
-
-        let suggestionBox = document.getElementById('customer-suggestions');
-        if (!suggestionBox) {
-            suggestionBox = document.createElement('ul');
-            suggestionBox.id = 'customer-suggestions';
-            suggestionBox.className = 'autocomplete-list';
-            inCustomer.parentNode.appendChild(suggestionBox);
-        }
-
-        inCustomer.addEventListener('input', (e) => {
-            const val = e.target.value.toLowerCase().trim();
-            suggestionBox.innerHTML = ''; 
-            
-            if (val) clearError('inCustomer');
-
-            if (!val) {
-                suggestionBox.style.display = 'none';
-                return;
-            }
-
-            // Filter using the safely scoped global cache
-            const profiles = window.cachedProfiles || [];
-            const matches = profiles.filter(p => p.name && p.name.toLowerCase().includes(val));
-
-            if (matches.length > 0) {
-                suggestionBox.style.display = 'block';
-                matches.forEach(profile => {
-                    const li = document.createElement('li');
-                    
-                    // Regex to highlight the matching letters the user typed
-                    const regex = new RegExp(`(${val})`, "gi");
-                    const highlightedName = profile.name.replace(regex, "<strong>$1</strong>");
-                    
-                    // Display the name with the address underneath to handle identical names
-                    const addressText = (profile.address && profile.address !== 'N/A') ? profile.address : 'No Address';
-                    li.innerHTML = `${highlightedName} <span class="autocomplete-address-sub">${addressText}</span>`;
-                    
-                    li.onclick = () => {
-                        inCustomer.value = profile.name;
-                        
-                        const inAddress = document.getElementById('inAddress');
-                        const inContact = document.getElementById('inContact');
-                        
-                        if (inAddress && profile.address && profile.address !== 'N/A') {
-                            inAddress.value = profile.address;
-                        }
-                        if (inContact && profile.contact_num && profile.contact_num !== 'N/A' && profile.contact_num !== 'EMPTY') {
-                            inContact.value = formatContact(profile.contact_num);
-                        }
-                        
-                        suggestionBox.style.display = 'none';
-                        clearError('inCustomer');
-                        if (typeof updatePreview === 'function') updatePreview(); 
-                    };
-                    suggestionBox.appendChild(li);
-                });
-            } else {
-                suggestionBox.style.display = 'none';
-            }
-        });
-
-        // Global click listener to close the dropdown securely when clicking outside
-        document.addEventListener('click', (e) => {
-            if (e.target !== inCustomer && !suggestionBox.contains(e.target)) {
-                suggestionBox.style.display = 'none';
-            }
-        });
-
-        // Simplified blur logic (removed the timeout hack)
+        inCustomer.addEventListener('input', () => { if (inCustomer.value.trim()) clearError('inCustomer'); });
         inCustomer.addEventListener('blur', () => {
             const val = inCustomer.value.trim();
             if (!val) showError('inCustomer', 'Customer name is required');
@@ -769,15 +640,27 @@ window.setupFieldListeners = function() {
     }
 
     const inContact = document.getElementById('inContact');
+    
     if (inContact) {
         inContact.addEventListener('input', (e) => {
+            // Apply clean mask formatting
             e.target.value = formatContact(e.target.value);
-            if (typeof updatePreview === 'function') updatePreview();
+            
+            // Force-sync preview immediately so the receipt matches character-for-character
+            if (typeof updatePreview === 'function') {
+                updatePreview();
+            }
             clearError('inContact');
         });
+    
+        // Explicitly block non-numeric typing at keystroke level
         inContact.addEventListener('keypress', (e) => {
-            if (!/[0-9]/.test(e.key)) e.preventDefault();
+            if (!/[0-9]/.test(e.key)) {
+                e.preventDefault();
+            }
         });
+    
+        // Optional Quality of Life: Auto-fill '09' when user clicks into an empty field
         inContact.addEventListener('focus', (e) => {
             if (!e.target.value) {
                 e.target.value = '09';
@@ -785,7 +668,6 @@ window.setupFieldListeners = function() {
             }
         });
     }
-
     const inWeight = document.getElementById('inWeight');
     if (inWeight) {
         inWeight.addEventListener('input', () => clearError('inWeight'));
