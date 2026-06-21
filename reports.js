@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </label>
                     </div>
 
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                    <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));">
                         <label style="${labelStyle}">Date Established
                             <input id="expDateEst" type="text" placeholder="MM/DD/YYYY" style="${fieldStyle}">
                         </label>
@@ -423,16 +423,16 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 
         overlay.querySelector('#exportModalConfirm').addEventListener('click', async () => {
-            // ✅ GET VALUES FIRST (THIS WAS MISSING)
+            // GET VALUES FIRST 
             const month = parseInt(overlay.querySelector('#expMonth').value);
             const year  = parseInt(overlay.querySelector('#expYear').value);
         
             console.log("MONTH/YEAR:", month, year); // debug
         
-            // ✅ NOW CALL FUNCTION (correct order)
+            // NOW CALL FUNCTION 
             const aggregated = await JunkshopExport.aggregateSupabaseData(month, year);
         
-            console.log("AGGREGATED DATA:", aggregated); // 👈 debug
+            console.log("AGGREGATED DATA:", aggregated); 
             // Bundling the compiled metrics payload into options map
             const opts = {
                 month:           parseInt(overlay.querySelector('#expMonth').value),
