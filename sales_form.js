@@ -180,7 +180,7 @@ function wireModal() {
         e.target.value = value;
     });
 
-    // Remove Material from list
+    // Remove Material list
     materialsBody?.addEventListener('click', (e) => {
         const delBtn = e.target.closest('.remove-item-btn');
         if (!delBtn) return;
