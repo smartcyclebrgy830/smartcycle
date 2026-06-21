@@ -576,19 +576,29 @@ function applyFilter() {
 // EDIT PROFILE
 // RECEIPTS
 function buildCollectionReceiptHTML(tx) {
-    const itemRows = (tx.items && tx.items.length > 0)
-        ? tx.items.map(i => `
+    var itemRows = (tx.items && tx.items.length > 0)
+        ? tx.items.map(function(i) {
+            return `
             <tr>
-                <td>${Number(i.weight).toFixed(1)}</td>
-                <td>kg</td>
-                <td style="text-align:left;">${i.material || ''}</td>
-                <td>&#8369;${Number(i.rate).toFixed(2)}</td>
-                <td>&#8369;${Number(i.subtotal).toFixed(2)}</td>
-            </tr>`).join('')
+                <td style="font-size:7.5px;padding:2px 3px;border:0.5px solid #111;text-align:center;color:#111;vertical-align:top;">${Number(i.weight).toFixed(1)}</td>
+                <td style="font-size:7.5px;padding:2px 3px;border:0.5px solid #111;text-align:center;color:#111;vertical-align:top;">kg</td>
+                <td style="font-size:7.5px;padding:2px 3px;border:0.5px solid #111;text-align:left;color:#111;vertical-align:top;">${i.material || ''}</td>
+                <td style="font-size:7.5px;padding:2px 3px;border:0.5px solid #111;text-align:center;color:#111;vertical-align:top;">&#8369;${Number(i.rate).toFixed(2)}</td>
+                <td style="font-size:7.5px;padding:2px 3px;border:0.5px solid #111;text-align:center;color:#111;vertical-align:top;">&#8369;${Number(i.subtotal).toFixed(2)}</td>
+            </tr>`;
+        }).join('')
         : '';
 
-    const emptyCount = Math.max(0, 8 - (tx.items ? tx.items.length : 0));
-    const emptyRows  = Array(emptyCount).fill(`<tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>`).join('');
+    var emptyCount = Math.max(0, 8 - (tx.items ? tx.items.length : 0));
+    var emptyRows  = Array(emptyCount).fill(
+        `<tr>
+            <td style="font-size:7.5px;padding:0;border:0.5px solid #111;height:13px;"></td>
+            <td style="font-size:7.5px;padding:0;border:0.5px solid #111;height:13px;"></td>
+            <td style="font-size:7.5px;padding:0;border:0.5px solid #111;height:13px;"></td>
+            <td style="font-size:7.5px;padding:0;border:0.5px solid #111;height:13px;"></td>
+            <td style="font-size:7.5px;padding:0;border:0.5px solid #111;height:13px;"></td>
+        </tr>`
+    ).join('');
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -599,102 +609,93 @@ function buildCollectionReceiptHTML(tx) {
   @page { size: A5 landscape; margin: 6mm 8mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; font-size: 8px; color: #111; width: 95mm; max-width: 95mm; }
-  .receipt-preview { background: white; padding: 5px 8px; font-family: Arial, sans-serif; font-size: 8px; color: #111; border: 1px solid #111; }
-  .receipt-header-brand { display: flex; align-items: center; gap: 6px; padding-bottom: 5px; border-bottom: 1px solid #111; margin-bottom: 5px; }
-  .receipt-header-brand img { width: 32px; height: 32px; object-fit: contain; border-radius: 50%; flex-shrink: 0; }
-  .receipt-org-info { flex: 1; text-align: center; }
-  .receipt-org-info h3 { font-size: 8px; font-weight: 700; color: #0ea5e9; text-transform: uppercase; margin: 0 0 1px 0; letter-spacing: 0.2px; }
-  .receipt-org-info p { font-size: 7px; color: #444; margin: 1px 0; line-height: 1.3; }
-  .receipt-org-info a { color: #0ea5e9; text-decoration: underline; }
-  .receipt-meta-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 4px; gap: 10px; }
-  .receipt-meta-field { display: flex; align-items: flex-end; gap: 3px; flex: 1; }
-  .receipt-meta-field label { font-size: 8px; font-weight: 700; white-space: nowrap; color: #111; }
-  .receipt-meta-field .field-value { flex: 1; border-bottom: 0.5px solid #111; min-width: 40px; font-size: 8px; color: #111; padding-bottom: 1px; min-height: 10px; }
-  .receipt-fields-grid { display: flex; flex-direction: column; gap: 3px; margin-bottom: 5px; }
-  .receipt-field-row { display: flex; gap: 10px; }
-  .receipt-field-item { display: flex; align-items: flex-end; gap: 3px; flex: 1; }
-  .receipt-field-item label { font-size: 8px; font-weight: 700; white-space: nowrap; color: #111; }
-  .receipt-field-item .field-value { flex: 1; border-bottom: 0.5px solid #111; font-size: 8px; color: #111; padding-bottom: 1px; min-height: 10px; }
-  .receipt-table { width: 100%; border-collapse: collapse; border: 0.75px solid #111; margin-bottom: 5px; }
-  .receipt-table th { font-size: 7.5px; font-weight: 700; text-transform: uppercase; text-align: center; padding: 3px 2px; border: 0.75px solid #111; background: white; color: #111; letter-spacing: 0.2px; }
-  .receipt-table th:nth-child(3) { text-align: left; }
-  .receipt-table td { font-size: 7.5px; padding: 2px 3px; border: 0.5px solid #111; text-align: center; color: #111; vertical-align: top; }
-  .receipt-table td:nth-child(3) { text-align: left; }
-  .receipt-table .empty-row td { height: 13px; padding: 0; }
-  .receipt-total-line { text-align: right; font-size: 8.5px; font-weight: 700; color: #111; margin-bottom: 5px; padding-top: 3px; border-top: 1px solid #111; }
-  .receipt-total-line strong { color: #46B336; font-size: 9px; }
-  .receipt-signatures { display: flex; justify-content: space-between; margin-top: 6px; padding-top: 3px; }
-  .receipt-sig-block { display: flex; flex-direction: column; gap: 2px; width: 45%; }
-  .sig-label { font-size: 8px; font-weight: 700; color: #111; }
-  .sig-line { border-bottom: 0.5px solid #111; width: 100%; margin-top: 14px; }
-  .sig-sublabel { font-size: 7px; font-weight: 600; color: #111; text-align: center; margin-top: 2px; }
   @media print { body { margin: 0; } }
 </style>
 </head>
 <body>
-<div class="receipt-preview">
-  <div class="receipt-header-brand">
-    <img src="photo/tezwa_logo.jpg" alt="Logo" onerror="this.style.display='none'">
-    <div class="receipt-org-info">
-      <h3>TAGUMPAY 83ZERO WASTE ASSOCIATION</h3>
-      <p>South Nagtahan, Brgy. 830, Zone 90 District VI, Paco, Manila</p>
-      <p>Email: <a>tezwa.manila@gmail.com</a></p>
-      <p>Contact No.: 0927-286-7378</p>
+
+<div style="background:white;padding:5px 8px;font-family:Arial,sans-serif;font-size:8px;color:#111;border:1px solid #111;">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:6px;padding-bottom:5px;border-bottom:1px solid #111;margin-bottom:5px;">
+    <img src="photo/tezwa_logo.jpg" alt="Logo" onerror="this.style.display='none'" style="width:32px;height:32px;object-fit:contain;border-radius:50%;flex-shrink:0;">
+    <div style="flex:1;text-align:center;">
+      <h3 style="font-size:8px;font-weight:700;color:#0ea5e9;text-transform:uppercase;margin:0 0 1px 0;letter-spacing:0.2px;">TAGUMPAY 83ZERO WASTE ASSOCIATION</h3>
+      <p style="font-size:7px;color:#444;margin:1px 0;line-height:1.3;">South Nagtahan, Brgy. 830, Zone 90 District VI, Paco, Manila</p>
+      <p style="font-size:7px;color:#444;margin:1px 0;line-height:1.3;">Email: <a style="color:#0ea5e9;text-decoration:underline;">tezwa.manila@gmail.com</a></p>
+      <p style="font-size:7px;color:#444;margin:1px 0;line-height:1.3;">Contact No.: 0927-286-7378</p>
     </div>
   </div>
-  <div class="receipt-meta-row">
-    <div class="receipt-meta-field">
-      <label>Cash Receipt No.</label>
-      <div class="field-value">${tx.id ? String(tx.id).slice(-6).toUpperCase() : ''}</div>
+
+  <!-- Receipt No. + Date -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:4px;gap:10px;">
+    <div style="display:flex;align-items:flex-end;gap:3px;flex:1;">
+      <label style="font-size:8px;font-weight:700;white-space:nowrap;color:#111;">Cash Receipt No.</label>
+      <div style="flex:1;border-bottom:0.5px solid #111;min-width:40px;font-size:8px;color:#111;padding-bottom:1px;min-height:10px;">${tx.id ? String(tx.id).slice(-6).toUpperCase() : ''}</div>
     </div>
-    <div class="receipt-meta-field">
-      <label>Date</label>
-      <div class="field-value">${tx.date || ''}</div>
-    </div>
-  </div>
-  <div class="receipt-fields-grid">
-    <div class="receipt-field-row">
-      <div class="receipt-field-item">
-        <label>Customer</label>
-        <div class="field-value">${tx.customerName || profileName || ''}</div>
-      </div>
-      <div class="receipt-field-item">
-        <label>Contact No.</label>
-        <div class="field-value">${tx.contactNumber || ''}</div>
-      </div>
-    </div>
-    <div class="receipt-field-row">
-      <div class="receipt-field-item">
-        <label>Address</label>
-        <div class="field-value">${tx.address || ''}</div>
-      </div>
-      <div class="receipt-field-item">
-        <label>Salesman</label>
-        <div class="field-value"></div>
-      </div>
+    <div style="display:flex;align-items:flex-end;gap:3px;flex:1;">
+      <label style="font-size:8px;font-weight:700;white-space:nowrap;color:#111;">Date</label>
+      <div style="flex:1;border-bottom:0.5px solid #111;min-width:40px;font-size:8px;color:#111;padding-bottom:1px;min-height:10px;">${tx.date || ''}</div>
     </div>
   </div>
-  <table class="receipt-table">
+
+  <!-- Customer fields -->
+  <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:5px;">
+    <div style="display:flex;gap:10px;">
+      <div style="display:flex;align-items:flex-end;gap:3px;flex:1;">
+        <label style="font-size:8px;font-weight:700;white-space:nowrap;color:#111;">Customer</label>
+        <div style="flex:1;border-bottom:0.5px solid #111;font-size:8px;color:#111;padding-bottom:1px;min-height:10px;">${tx.customerName || profileName || ''}</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:3px;flex:1;">
+        <label style="font-size:8px;font-weight:700;white-space:nowrap;color:#111;">Contact No.</label>
+        <div style="flex:1;border-bottom:0.5px solid #111;font-size:8px;color:#111;padding-bottom:1px;min-height:10px;">${tx.contactNumber || ''}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <div style="display:flex;align-items:flex-end;gap:3px;flex:1;">
+        <label style="font-size:8px;font-weight:700;white-space:nowrap;color:#111;">Address</label>
+        <div style="flex:1;border-bottom:0.5px solid #111;font-size:8px;color:#111;padding-bottom:1px;min-height:10px;">${tx.address || ''}</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:3px;flex:1;">
+        <label style="font-size:8px;font-weight:700;white-space:nowrap;color:#111;">Salesman</label>
+        <div style="flex:1;border-bottom:0.5px solid #111;font-size:8px;color:#111;padding-bottom:1px;min-height:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Items table -->
+  <table style="width:100%;border-collapse:collapse;border:0.75px solid #111;margin-bottom:5px;">
     <thead>
       <tr>
-        <th>QTY</th><th>UNIT</th><th style="text-align:left;">DESCRIPTION</th><th>PRICE</th><th>AMOUNT</th>
+        <th style="font-size:7.5px;font-weight:700;text-transform:uppercase;text-align:center;padding:3px 2px;border:0.75px solid #111;background:white;color:#111;letter-spacing:0.2px;">QTY</th>
+        <th style="font-size:7.5px;font-weight:700;text-transform:uppercase;text-align:center;padding:3px 2px;border:0.75px solid #111;background:white;color:#111;letter-spacing:0.2px;">UNIT</th>
+        <th style="font-size:7.5px;font-weight:700;text-transform:uppercase;text-align:left;padding:3px 2px;border:0.75px solid #111;background:white;color:#111;letter-spacing:0.2px;">DESCRIPTION</th>
+        <th style="font-size:7.5px;font-weight:700;text-transform:uppercase;text-align:center;padding:3px 2px;border:0.75px solid #111;background:white;color:#111;letter-spacing:0.2px;">PRICE</th>
+        <th style="font-size:7.5px;font-weight:700;text-transform:uppercase;text-align:center;padding:3px 2px;border:0.75px solid #111;background:white;color:#111;letter-spacing:0.2px;">AMOUNT</th>
       </tr>
     </thead>
     <tbody>${itemRows}${emptyRows}</tbody>
   </table>
-  <div class="receipt-total-line">TOTAL: <strong>&#8369;${Number(tx.total).toFixed(2)}</strong></div>
-  <div class="receipt-signatures">
-    <div class="receipt-sig-block">
-      <span class="sig-label">Received By:</span>
-      <div class="sig-line"></div>
-      <span class="sig-sublabel">Signature Over Printed Name</span>
+
+  <!-- Total -->
+  <div style="text-align:right;font-size:8.5px;font-weight:700;color:#111;margin-bottom:5px;padding-top:3px;border-top:1px solid #111;">
+    TOTAL: <strong style="color:#46B336;font-size:9px;">&#8369;${Number(tx.total).toFixed(2)}</strong>
+  </div>
+
+  <!-- Signatures -->
+  <div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:3px;">
+    <div style="display:flex;flex-direction:column;gap:2px;width:45%;">
+      <span style="font-size:8px;font-weight:700;color:#111;">Received By:</span>
+      <div style="border-bottom:0.5px solid #111;width:100%;margin-top:14px;"></div>
+      <span style="font-size:7px;font-weight:600;color:#111;text-align:center;margin-top:2px;">Signature Over Printed Name</span>
     </div>
-    <div class="receipt-sig-block">
-      <span class="sig-label">Approved By:</span>
-      <div class="sig-line"></div>
-      <span class="sig-sublabel">Signature Over Printed Name</span>
+    <div style="display:flex;flex-direction:column;gap:2px;width:45%;">
+      <span style="font-size:8px;font-weight:700;color:#111;">Approved By:</span>
+      <div style="border-bottom:0.5px solid #111;width:100%;margin-top:14px;"></div>
+      <span style="font-size:7px;font-weight:600;color:#111;text-align:center;margin-top:2px;">Signature Over Printed Name</span>
     </div>
   </div>
+
 </div>
 </body>
 </html>`;
