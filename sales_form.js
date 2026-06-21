@@ -49,10 +49,7 @@ function renderMaterialsTable() {
     if (formTotalLine) formTotalLine.style.display = 'flex';
     if (materialsTotalEl) materialsTotalEl.innerHTML = `&#8369;${total.toFixed(2)}`;
     lucide.createIcons();
-}
-// ==========================================
-// WIRE MODAL & EVENT LISTENERS
-// ==========================================
+
 function wireModal() {
     if (isModalWired) return; // Prevent multiple event listener bindings
     isModalWired = true;
