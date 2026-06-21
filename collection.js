@@ -6,7 +6,6 @@
     }
 })();
 
-// 1. Initialize Supabase globally and create a local reference proxy to avoid ReferenceErrors
 if (!window._supabase) {
     const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
@@ -61,7 +60,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await fetchAllCollections();
 });
 
-// Enforces structural visibility for the top bar buttons based on role
 function setupAddCollectionButton() {
     const buttons = document.querySelectorAll('button');
     let addBtn = null;
