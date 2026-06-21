@@ -7,7 +7,6 @@ let isModalWired = false;
 const salesTableBody = document.getElementById('salesTableBody');
 const emptyState = document.getElementById('emptyState');
 
-
 function generateDisplayId(prefix) {
     const time = Date.now().toString().slice(-6);
     const rand = Math.floor(Math.random() * 1000);
