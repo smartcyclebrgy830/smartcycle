@@ -167,6 +167,7 @@ document.addEventListener('click', (e) => {
 
 document.addEventListener('click', function (e) {
     const inCustomer = document.getElementById('inCustomer');
+    const suggestionsBox = document.getElementById('customerSuggestions');
     if (!inCustomer.contains(e.target) && !suggestionsBox.contains(e.target)) {
         suggestionsBox.style.display = 'none';
     }
