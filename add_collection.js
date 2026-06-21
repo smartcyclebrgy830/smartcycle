@@ -1,4 +1,3 @@
-// Ensure strict tracking context variables exist safely on the global window scope
 window.editingIndex = typeof window.editingIndex !== 'undefined' ? window.editingIndex : -1;
 window.currentCategory = typeof window.currentCategory !== 'undefined' ? window.currentCategory : 'School';
 window.currentItems = window.currentItems || []; // Initializing to prevent undefined array
@@ -16,8 +15,6 @@ function toTitleCase(str) {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 }
 
-
-// GLOBAL ASSIGNMENTS & MODAL INTERACTIONS
 window.openAddModal = async () => {
     const modal = document.getElementById('addCollectionModal');
     if (!modal) return;
@@ -25,7 +22,7 @@ window.openAddModal = async () => {
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    window.editingIndex = -1; // Reset global tracker
+    window.editingIndex = -1; 
     resetForm();
 
     if (window._listenersInitialized) return;
