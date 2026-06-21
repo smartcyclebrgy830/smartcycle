@@ -166,7 +166,7 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('click', function (e) {
-    if (!customerInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+    if (!inCustomer.contains(e.target) && !suggestionsBox.contains(e.target)) {
         suggestionsBox.style.display = 'none';
     }
 });
