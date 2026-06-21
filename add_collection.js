@@ -3,7 +3,6 @@ window.currentCategory = typeof window.currentCategory !== 'undefined' ? window.
 window.currentItems = window.currentItems || []; 
 
 document.addEventListener('DOMContentLoaded', () => {
- 
 let loadedPricesCache = [];
 
 function generateDisplayId(prefix) {
