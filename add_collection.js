@@ -746,7 +746,14 @@ window.setupFieldListeners = function() {
     
             const filtered = profilesCache.filter(p =>
                 p.name.toLowerCase().includes(query)
-            ).slice(0, 5); // limit results
+            ).sort((a, b) => {
+                // Sort so that names STARTING with the query appear first
+                const aStarts = a.name.toLowerCase().startsWith(query);
+                const bStarts = b.name.toLowerCase().startsWith(query);
+                if (aStarts && !bStarts) return -1;
+                if (!aStarts && bStarts) return 1;
+                return 0;
+            }).slice(0, 5); // limit results
     
             if (!filtered.length) {
                 suggestionsBox.style.display = 'none';
