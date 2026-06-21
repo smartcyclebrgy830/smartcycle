@@ -22,7 +22,11 @@
         <form class="form-grid-modal" onsubmit="return false;">
           <div class="form-group">
             <label for="inCustomer">Customer</label>
-            <input type="text" id="inCustomer" placeholder="Ex: Barangay 830" oninput="updatePreview()" required>
+            <input type="text" id="inCustomer" placeholder="Ex: Barangay 830" required>
+          
+            <!-- ✅ ADD THIS -->
+            <div id="customerSuggestions" class="suggestions-box"></div>
+          
             <span class="field-error" id="inCustomerError"></span>
           </div>
           <div class="form-group">
