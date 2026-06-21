@@ -4,7 +4,7 @@ window.currentCategory = typeof window.currentCategory !== 'undefined' ? window.
 window.currentItems = window.currentItems || []; // Initializing to prevent undefined array
 
 document.addEventListener('DOMContentLoaded', () => {
-// Local cache to resolve names during edit mode 
+// Local cache to resolve names during edit 
 let loadedPricesCache = [];
 
 function generateDisplayId(prefix) {
