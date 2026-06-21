@@ -3,8 +3,23 @@ window.editingIndex = typeof window.editingIndex !== 'undefined' ? window.editin
 window.currentCategory = typeof window.currentCategory !== 'undefined' ? window.currentCategory : 'School';
 window.currentItems = window.currentItems || []; // Initializing to prevent undefined array
 
+let cachedProfiles = [];
 // Local cache to resolve names during edit mode if needed
 let loadedPricesCache = [];
+
+// Function to fetch existing profiles for the autocomplete
+async function fetchProfilesForAutocomplete() {
+    try {
+        const { data, error } = await _supabase
+            .from('profiles')
+            .select('id, name, address, contact_num');
+            
+        if (error) throw error;
+        cachedProfiles = data || [];
+    } catch (err) {
+        console.error("Error fetching profiles for autocomplete:", err.message);
+    }
+}
 
 function generateDisplayId(prefix) {
     return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -15,7 +30,6 @@ function toTitleCase(str) {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 }
 
-// GLOBAL ASSIGNMENTS & MODAL INTERACTIONS
 window.openAddModal = async () => {
     const modal = document.getElementById('addCollectionModal');
     if (!modal) return;
@@ -25,6 +39,9 @@ window.openAddModal = async () => {
 
     window.editingIndex = -1; // Reset global tracker
     resetForm();
+
+    // NEW ADDITION: Fetch profiles for the autocomplete dropdown
+    await fetchProfilesForAutocomplete();
 
     // Dynamically fetch and fill up material prices matching your Price List dashboard
     await loadActivePrices();
@@ -625,8 +642,68 @@ window.submitCollection = async function(e) {
 window.setupFieldListeners = function() {
     const inCustomer = document.getElementById('inCustomer');
     if (inCustomer) {
-        inCustomer.addEventListener('input', () => { if (inCustomer.value.trim()) clearError('inCustomer'); });
+        // Create the suggestion box dynamically if it doesn't exist
+        let suggestionBox = document.getElementById('customer-suggestions');
+        if (!suggestionBox) {
+            suggestionBox = document.createElement('ul');
+            suggestionBox.id = 'customer-suggestions';
+            suggestionBox.className = 'autocomplete-list';
+            
+            // Ensure the parent container can hold absolute positioning securely
+            inCustomer.parentNode.style.position = 'relative'; 
+            inCustomer.parentNode.appendChild(suggestionBox);
+        }
+
+        inCustomer.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase().trim();
+            suggestionBox.innerHTML = ''; // Clear previous suggestions
+            
+            if (val) clearError('inCustomer');
+
+            if (!val) {
+                suggestionBox.style.display = 'none';
+                return;
+            }
+
+            // Filter the cached Supabase profiles
+            const matches = cachedProfiles.filter(p => p.name.toLowerCase().includes(val));
+
+            if (matches.length > 0) {
+                suggestionBox.style.display = 'block';
+                matches.forEach(profile => {
+                    const li = document.createElement('li');
+                    li.textContent = profile.name;
+                    
+                    // Populate fields when a name is clicked
+                    li.onclick = () => {
+                        inCustomer.value = profile.name;
+                        
+                        // Auto-fill address and contact number if available
+                        const inAddress = document.getElementById('inAddress');
+                        const inContact = document.getElementById('inContact');
+                        
+                        if (inAddress && profile.address && profile.address !== 'N/A') {
+                            inAddress.value = profile.address;
+                        }
+                        if (inContact && profile.contact_num && profile.contact_num !== 'N/A' && profile.contact_num !== 'EMPTY') {
+                            inContact.value = formatContact(profile.contact_num);
+                        }
+                        
+                        suggestionBox.style.display = 'none';
+                        clearError('inCustomer');
+                        updatePreview(); // Update the receipt preview instantly
+                    };
+                    suggestionBox.appendChild(li);
+                });
+            } else {
+                suggestionBox.style.display = 'none';
+            }
+        });
+
         inCustomer.addEventListener('blur', () => {
+            // Slight delay before hiding so the user can actually click the suggestion
+            setTimeout(() => { suggestionBox.style.display = 'none'; }, 150);
+            
             const val = inCustomer.value.trim();
             if (!val) showError('inCustomer', 'Customer name is required');
             else if (val.length > 100) showError('inCustomer', 'Max 100 characters');
@@ -640,27 +717,15 @@ window.setupFieldListeners = function() {
     }
 
     const inContact = document.getElementById('inContact');
-    
     if (inContact) {
         inContact.addEventListener('input', (e) => {
-            // Apply clean mask formatting
             e.target.value = formatContact(e.target.value);
-            
-            // Force-sync preview immediately so the receipt matches character-for-character
-            if (typeof updatePreview === 'function') {
-                updatePreview();
-            }
+            if (typeof updatePreview === 'function') updatePreview();
             clearError('inContact');
         });
-    
-        // Explicitly block non-numeric typing at keystroke level
         inContact.addEventListener('keypress', (e) => {
-            if (!/[0-9]/.test(e.key)) {
-                e.preventDefault();
-            }
+            if (!/[0-9]/.test(e.key)) e.preventDefault();
         });
-    
-        // Optional Quality of Life: Auto-fill '09' when user clicks into an empty field
         inContact.addEventListener('focus', (e) => {
             if (!e.target.value) {
                 e.target.value = '09';
@@ -668,6 +733,7 @@ window.setupFieldListeners = function() {
             }
         });
     }
+
     const inWeight = document.getElementById('inWeight');
     if (inWeight) {
         inWeight.addEventListener('input', () => clearError('inWeight'));
