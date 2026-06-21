@@ -498,7 +498,6 @@ function wireModal() {
         lucide.createIcons();
     }
     // Add this inside wireModal() or as a standalone function
-    const partnerInput = document.getElementById('partnerName');
     const suggestionsBox = document.getElementById('partnerSuggestions');
     
     partnerInput?.addEventListener('input', async (e) => {
