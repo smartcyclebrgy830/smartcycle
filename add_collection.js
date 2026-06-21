@@ -692,7 +692,7 @@ window.setupFieldListeners = function() {
             // ✅ FIX: Use window._supabase to avoid cross-file reference errors
             const { data, error } = await window._supabase
              .from('profiles')
-             .select('name, address, contact_number')
+             .select('name, address, contact_num')
              .is('auth_id', null) // ✅ ADD THIS: Only fetches rows where auth_id is empty/null
              .order('name', { ascending: true });
         
@@ -727,7 +727,7 @@ window.setupFieldListeners = function() {
                  // 3. Auto-fill the data if it exists in the database
                  if (addrInput) addrInput.value = p.address || '';
                  if (contactInput) {
-                     contactInput.value = p.contact_number || '';
+                     contactInput.value = p.contact_num || '';
                      
                      // 🔥 Trigger the input event manually so your strict phone number mask applies to the auto-filled data
                      contactInput.dispatchEvent(new Event('input')); 
@@ -787,7 +787,7 @@ window.setupFieldListeners = function() {
                 // 3. Auto-fill the data if it exists in the database
                 if (addrInput) addrInput.value = p.address || '';
                 if (contactInput) {
-                    contactInput.value = p.contact_number || '';
+                    contactInput.value = p.contact_num || '';
                     
                     // 🔥 Trigger the input event manually so your strict phone number mask applies to the auto-filled data
                     contactInput.dispatchEvent(new Event('input')); 
