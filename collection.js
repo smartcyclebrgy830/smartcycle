@@ -98,6 +98,12 @@ function setupAddCollectionButton() {
                     const submitBtn = document.querySelector('.btn-submit-green');
                     if (submitBtn) submitBtn.innerHTML = '<i data-lucide="plus"></i> Submit';
                     if (typeof refreshIcons === 'function') refreshIcons();
+            
+                    // ✅ ADD THIS: Initialize the autocomplete listeners when the modal opens
+                    if (!window._listenersInitialized && typeof window.setupFieldListeners === 'function') {
+                        window.setupFieldListeners();
+                        window._listenersInitialized = true;
+                    }
                 } else {
                     console.error("Modal element #addCollectionModal not found in DOM.");
                 }
