@@ -18,6 +18,13 @@ window.logAction = async function(action, page = '') {
         if (error || !profile) return;
 
         const isViewReceipt = action.includes('Viewed receipt');
+        const isViewAction = action.includes('Viewed'); // Add this
+
+        // Add this block to block 'Viewed' actions completely
+        if (isViewAction) {
+            console.log('⛔ Skipped (view action):', action);
+            return;
+        }
         
         // SESSION CONTROL (skip for receipts)
         if (!isViewReceipt) {
