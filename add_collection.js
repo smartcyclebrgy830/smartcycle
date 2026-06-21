@@ -28,6 +28,8 @@ window.openAddModal = async () => {
     window.editingIndex = -1; // Reset global tracker
     resetForm();
 
+    if (window._listenersInitialized) return;
+    window._listenersInitialized = true;
     setupFieldListeners();
     // Dynamically fetch and fill up material prices matching your Price List dashboard
     await loadActivePrices();
@@ -168,9 +170,14 @@ document.addEventListener('click', (e) => {
 document.addEventListener('click', function (e) {
     const inCustomer = document.getElementById('inCustomer');
     const suggestionsBox = document.getElementById('customerSuggestions');
-    if (!inCustomer.contains(e.target) && !suggestionsBox.contains(e.target)) {
-        suggestionsBox.style.display = 'none';
-    }
+   if (
+       inCustomer &&
+       suggestionsBox &&
+       !inCustomer.contains(e.target) &&
+       !suggestionsBox.contains(e.target)
+   ) {
+       suggestionsBox.style.display = 'none';
+   }
 });
 
 function showError(fieldId, message) {
@@ -683,9 +690,7 @@ window.setupFieldListeners = function() {
     if (inWeight) {
         inWeight.addEventListener('input', () => clearError('inWeight'));
     }
-    const suggestionsBox = document.getElementById('customerSuggestions');
-    const inCustomer = document.getElementById('inCustomer');
-    
+    const suggestionsBox = document.getElementById('customerSuggestions');    
     if (inCustomer && suggestionsBox) {
         let profilesCache = [];
     
@@ -719,6 +724,8 @@ window.setupFieldListeners = function() {
                 div.onclick = () => {
                     inCustomer.value = p.name;
                     suggestionsBox.style.display = 'none';
+                    clearError('inCustomer');
+                    if (typeof updatePreview === 'function') updatePreview();
                 };
     
                 suggestionsBox.appendChild(div);
@@ -751,10 +758,12 @@ window.setupFieldListeners = function() {
                 div.className = 'suggestion-item';
                 div.textContent = p.name;
     
-                div.onclick = () => {
-                    inCustomer.value = p.name;
-                    suggestionsBox.style.display = 'none';
-                };
+               div.onclick = () => {
+                   inCustomer.value = p.name;
+                   suggestionsBox.style.display = 'none';
+                   clearError('inCustomer');
+                   if (typeof updatePreview === 'function') updatePreview();
+               };
     
                 suggestionsBox.appendChild(div);
             });
