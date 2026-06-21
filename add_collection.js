@@ -689,12 +689,13 @@ window.setupFieldListeners = function() {
         let profilesCache = [];
     
         async function loadProfiles() {
-            // ✅ FIX: Use window._supabase to avoid cross-file reference errors
+            // ✅ Updated: Added .eq('type', 'customer') to filter results
             const { data, error } = await window._supabase
-             .from('profiles')
-             .select('name, address, contact_num')
-             .is('auth_id', null) // ✅ ADD THIS: Only fetches rows where auth_id is empty/null
-             .order('name', { ascending: true });
+                .from('profiles')
+                .select('name, address, contact_num, type') 
+                .is('auth_id', null) 
+                .eq('type', 'customer') // Filter to only show customers
+                .order('name', { ascending: true });
         
             if (!error && data) {
                 profilesCache = data;
@@ -702,6 +703,8 @@ window.setupFieldListeners = function() {
                 if (profilesCache.length > 0) {
                     inCustomer.placeholder = `Ex: ${profilesCache[0].name}`;
                 }
+            } else if (error) {
+                console.error("Error loading profiles:", error.message);
             }
         }
     
