@@ -1,196 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <link rel="stylesheet" href="add_collection.css">
-
-<div id="addCollectionModal" class="modal-overlay" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
-  <div class="modal-container-large">
-
-    <section class="modal-left">
-      <div class="modal-logo-section">
-        <img src="photo/logo_name.png" alt="SmartCycle" width="120" onerror="this.style.display='none'">
-      </div>
-
-      <nav class="modal-tabs-small" role="tablist">
-        <button class="m-tab active" role="tab" onclick="setCategory('School', this)">School</button>
-        <button class="m-tab" role="tab" onclick="setCategory('Barangay', this)">Barangay</button>
-        <button class="m-tab" role="tab" onclick="setCategory('Walk-ins', this)">Walk-ins</button>
-      </nav>
-
-      <form class="form-grid-modal" onsubmit="return false;">
-        <div class="form-group">
-          <label for="inCustomer">Customer</label>
-          <input type="text" id="inCustomer" placeholder="Ex: Barangay 830" oninput="updatePreview()" required>
-          <span class="field-error" id="inCustomerError"></span>
+</head>
+<body>
+  <div id="addCollectionModal" class="modal-overlay" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
+    <div class="modal-container-large">
+  
+      <section class="modal-left">
+        <div class="modal-logo-section">
+          <img src="photo/logo_name.png" alt="SmartCycle" width="120" onerror="this.style.display='none'">
         </div>
-        <div class="form-group">
-          <label for="inDate">Date</label>
-          <input type="date" id="inDate" oninput="updatePreview()" required>
-          <span class="field-error" id="inDateError"></span>
+  
+        <nav class="modal-tabs-small" role="tablist">
+          <button class="m-tab active" role="tab" onclick="setCategory('School', this)">School</button>
+          <button class="m-tab" role="tab" onclick="setCategory('Barangay', this)">Barangay</button>
+          <button class="m-tab" role="tab" onclick="setCategory('Walk-ins', this)">Walk-ins</button>
+        </nav>
+  
+        <form class="form-grid-modal" onsubmit="return false;">
+          <div class="form-group">
+            <label for="inCustomer">Customer</label>
+            <input type="text" id="inCustomer" placeholder="Ex: Barangay 830" oninput="updatePreview()" required>
+            <span class="field-error" id="inCustomerError"></span>
+          </div>
+          <div class="form-group">
+            <label for="inDate">Date</label>
+            <input type="date" id="inDate" oninput="updatePreview()" required>
+            <span class="field-error" id="inDateError"></span>
+          </div>
+          <div class="form-group">
+            <label for="inAddress">Address</label>
+            <input type="text" id="inAddress" placeholder="Ex: South Nagtahan, Paco" oninput="updatePreview()">
+            <span class="field-error" id="inAddressError"></span>
+          </div>
+          <div class="form-group">
+            <label for="inContact">Contact number</label>
+            <input type="tel" id="inContact" placeholder="0912-345-6789" maxlength="13" inputmode="numeric" oninput="updatePreview()">
+            <span class="field-error" id="inContactError"></span>
+          </div>
+        </form>
+  
+        <div class="material-input-section">
+          <label for="selMaterial">Material</label>
+          <div class="material-row-input">
+            <select id="selMaterial">
+              <option value="" disabled selected>Loading materials...</option>
+            </select>
+            <input type="number" id="inWeight" placeholder="Weight (kg)" min="0.1" step="0.1">
+            <button class="btn-add-item" type="button" onclick="addItem()">
+              <i data-lucide="plus"></i>
+              <span>Add</span>
+            </button>
+          </div>
+          <span class="items-error" id="itemsError"></span>
         </div>
-        <div class="form-group">
-          <label for="inAddress">Address</label>
-          <input type="text" id="inAddress" placeholder="Ex: South Nagtahan, Paco" oninput="updatePreview()">
-          <span class="field-error" id="inAddressError"></span>
+  
+        <div class="items-table-container">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th scope="col">Material</th>
+                <th scope="col">Rate</th>
+                <th scope="col">Weight</th>
+                <th scope="col">Subtotal</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody id="itemsBody">
+              <tr>
+                <td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">No items added yet</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="form-total-line" id="formTotalLine" style="display:none;">
+            <span>Total Amount:</span>
+            <strong id="formTotal">₱0</strong>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="inContact">Contact number</label>
-          <input type="tel" id="inContact" placeholder="0912-345-6789" maxlength="13" inputmode="numeric" oninput="updatePreview()">
-          <span class="field-error" id="inContactError"></span>
-        </div>
-      </form>
-
-      <div class="material-input-section">
-        <label for="selMaterial">Material</label>
-        <div class="material-row-input">
-          <select id="selMaterial">
-            <option value="" disabled selected>Loading materials...</option>
-          </select>
-          <input type="number" id="inWeight" placeholder="Weight (kg)" min="0.1" step="0.1">
-          <button class="btn-add-item" type="button" onclick="addItem()">
-            <i data-lucide="plus"></i>
-            <span>Add</span>
+  
+        <button class="btn-preview-toggle" id="previewToggleBtn" onclick="togglePreview()">
+            <i data-lucide="eye"></i> Preview Receipt
+        </button>
+  
+        <div class="modal-footer-actions">
+          <button class="btn-cancel" type="button" onclick="closeAddModal()">
+            <i data-lucide="x"></i>
+            Cancel
+          </button>
+          <button class="btn-submit-green" type="button" onclick="submitCollection(event)">
+            <i data-lucide="check"></i>
+            Submit
           </button>
         </div>
-        <span class="items-error" id="itemsError"></span>
-      </div>
-
-      <div class="items-table-container">
-        <table class="items-table">
-          <thead>
-            <tr>
-              <th scope="col">Material</th>
-              <th scope="col">Rate</th>
-              <th scope="col">Weight</th>
-              <th scope="col">Subtotal</th>
-              <th scope="col"></th>
-            </tr>
-          </thead>
-          <tbody id="itemsBody">
-            <tr>
-              <td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">No items added yet</td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="form-total-line" id="formTotalLine" style="display:none;">
-          <span>Total Amount:</span>
-          <strong id="formTotal">₱0</strong>
+      </section>
+  
+      <aside class="modal-right">
+        <div class="back-preview-link" onclick="closePreview()">
+            <i data-lucide="arrow-left"></i> Back to Form
         </div>
-      </div>
-
-      <button class="btn-preview-toggle" id="previewToggleBtn" onclick="togglePreview()">
-          <i data-lucide="eye"></i> Preview Receipt
-      </button>
-
-      <div class="modal-footer-actions">
-        <button class="btn-cancel" type="button" onclick="closeAddModal()">
-          <i data-lucide="x"></i>
-          Cancel
-        </button>
-        <button class="btn-submit-green" type="button" onclick="submitCollection(event)">
-          <i data-lucide="check"></i>
-          Submit
-        </button>
-      </div>
-    </section>
-
-    <aside class="modal-right">
-      <div class="back-preview-link" onclick="closePreview()">
-          <i data-lucide="arrow-left"></i> Back to Form
-      </div>
-
-      <header class="preview-header">
-        <i data-lucide="eye"></i>
-        <span>PREVIEW</span>
-      </header>
-      
-      <article class="receipt-preview">
-
-        <div class="receipt-header-brand">
-          <div class="receipt-logo-placeholder">
-            <img src="photo/tezwa_logo.jpg" alt="Logo" style="width:60px;height:60px;object-fit:contain;border-radius:50%;">
-          </div>
-          <div class="receipt-org-info">
-            <h3>TAGUMPAY 83ZERO WASTE ASSOCIATION</h3>
-            <p>South Nagtahan, Brgy. 830, Zone 90 District VI, Paco, Manila</p>
-            <p>Email: <span style="color:#0ea5e9;text-decoration:underline;">tagumpay83zerowaste@gmail.com</span></p>
-            <p>Contact No.: 0927-286-7378</p>
-          </div>
-        </div>
-
-        <div class="receipt-meta-row">
-          <div class="receipt-meta-field">
-            <label>Cash Receipt No.</label>
-            <div class="field-value" id="preReceiptNo"></div>
-          </div>
-          <div class="receipt-meta-field">
-            <label>Date</label>
-            <div class="field-value" id="preDate"></div>
-          </div>
-        </div>
-
-        <div class="receipt-fields-grid">
-          <div class="receipt-field-row">
-            <div class="receipt-field-item">
-              <label>Customer</label>
-              <div class="field-value" id="preCustomer"></div>
+  
+        <header class="preview-header">
+          <i data-lucide="eye"></i>
+          <span>PREVIEW</span>
+        </header>
+        
+        <article class="receipt-preview">
+  
+          <div class="receipt-header-brand">
+            <div class="receipt-logo-placeholder">
+              <img src="photo/tezwa_logo.jpg" alt="Logo" style="width:60px;height:60px;object-fit:contain;border-radius:50%;">
             </div>
-            <div class="receipt-field-item">
-              <label>Contact No.</label>
-              <div class="field-value" id="preContact"></div>
+            <div class="receipt-org-info">
+              <h3>TAGUMPAY 83ZERO WASTE ASSOCIATION</h3>
+              <p>South Nagtahan, Brgy. 830, Zone 90 District VI, Paco, Manila</p>
+              <p>Email: <span style="color:#0ea5e9;text-decoration:underline;">tagumpay83zerowaste@gmail.com</span></p>
+              <p>Contact No.: 0927-286-7378</p>
             </div>
           </div>
-          <div class="receipt-field-row">
-            <div class="receipt-field-item">
-              <label>Address</label>
-              <div class="field-value" id="preAddress"></div>
+  
+          <div class="receipt-meta-row">
+            <div class="receipt-meta-field">
+              <label>Cash Receipt No.</label>
+              <div class="field-value" id="preReceiptNo"></div>
             </div>
-            <div class="receipt-field-item">
-              <label>Salesman</label>
-              <div class="field-value"></div>
+            <div class="receipt-meta-field">
+              <label>Date</label>
+              <div class="field-value" id="preDate"></div>
             </div>
           </div>
-        </div>
-
-        <table class="receipt-table">
-          <thead>
-            <tr>
-              <th>QTY</th>
-              <th>UNIT</th>
-              <th style="text-align:left;">DESCRIPTION</th>
-              <th>PRICE</th>
-              <th>AMOUNT</th>
-            </tr>
-          </thead>
-          <tbody id="preItemsBody">
-            <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
-            <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
-            <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
-            <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
-            <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
-            <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
-            <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
-            <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
-          </tbody>
-        </table>
-
-        <div class="receipt-total-line">
-          <span>TOTAL: </span><strong id="preTotal">₱0.00</strong>
-        </div>
-
-        <div class="receipt-signatures">
-          <div class="receipt-sig-block">
-            <span class="sig-label">Received By:</span>
-            <div class="sig-line"></div>
-            <span class="sig-sublabel">Signature Over Printed Name</span>
+  
+          <div class="receipt-fields-grid">
+            <div class="receipt-field-row">
+              <div class="receipt-field-item">
+                <label>Customer</label>
+                <div class="field-value" id="preCustomer"></div>
+              </div>
+              <div class="receipt-field-item">
+                <label>Contact No.</label>
+                <div class="field-value" id="preContact"></div>
+              </div>
+            </div>
+            <div class="receipt-field-row">
+              <div class="receipt-field-item">
+                <label>Address</label>
+                <div class="field-value" id="preAddress"></div>
+              </div>
+              <div class="receipt-field-item">
+                <label>Salesman</label>
+                <div class="field-value"></div>
+              </div>
+            </div>
           </div>
-          <div class="receipt-sig-block">
-            <span class="sig-label">Approved By:</span>
-            <div class="sig-line"></div>
-            <span class="sig-sublabel">Signature Over Printed Name</span>
+  
+          <table class="receipt-table">
+            <thead>
+              <tr>
+                <th>QTY</th>
+                <th>UNIT</th>
+                <th style="text-align:left;">DESCRIPTION</th>
+                <th>PRICE</th>
+                <th>AMOUNT</th>
+              </tr>
+            </thead>
+            <tbody id="preItemsBody">
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+          </table>
+  
+          <div class="receipt-total-line">
+            <span>TOTAL: </span><strong id="preTotal">₱0.00</strong>
           </div>
-        </div>
-
-      </article>
-    </aside>
-
+  
+          <div class="receipt-signatures">
+            <div class="receipt-sig-block">
+              <span class="sig-label">Received By:</span>
+              <div class="sig-line"></div>
+              <span class="sig-sublabel">Signature Over Printed Name</span>
+            </div>
+            <div class="receipt-sig-block">
+              <span class="sig-label">Approved By:</span>
+              <div class="sig-line"></div>
+              <span class="sig-sublabel">Signature Over Printed Name</span>
+            </div>
+          </div>
+  
+        </article>
+      </aside>
+  
+    </div>
   </div>
-</div>
-<script src="add_collection.js"></script> 
+  <script src="add_collection.js"></script> 
+</body>
+</html>
