@@ -1,7 +1,7 @@
 const SUPABASE_URL = 'https://nlybbvlhhdjjmqkzjnhx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tb_WPtZc6awrzrQrDvYUxQ_ndUpe-Au';
 
-// Use ONE global client
+// Use ONE global 
 window._supabase = window._supabase || supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 window.logAction = async function(action, page = '') {
