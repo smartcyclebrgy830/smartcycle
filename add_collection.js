@@ -5,6 +5,86 @@ window.currentItems = window.currentItems || []; // Initializing to prevent unde
 
 // Local cache to resolve names during edit mode if needed
 let loadedPricesCache = [];
+let profilesCache = [];
+let customerInput;
+let suggestionsBox;
+
+async function loadProfiles() {
+    try {
+        const { data, error } = await _supabase
+            .from('profiles')
+            .select('id, name, address, contact_num');
+
+        if (error) throw error;
+
+        profilesCache = data || [];
+    } catch (err) {
+        console.error("Error loading profiles:", err.message);
+    }
+}
+
+function initCustomerAutocomplete() {
+    customerInput.replaceWith(customerInput.cloneNode(true));
+    customerInput = document.getElementById('inCustomer');
+    suggestionsBox = document.getElementById('customerSuggestions');
+
+    if (!customerInput || !suggestionsBox) return;
+
+    // INPUT EVENT
+    customerInput.addEventListener('input', function () {
+        const query = this.value.toLowerCase().trim();
+
+        if (!query) {
+            suggestionsBox.style.display = 'none';
+            return;
+        }
+
+        const filtered = profilesCache.filter(profile =>
+            profile.name.toLowerCase().includes(query)
+        );
+
+        if (filtered.length === 0) {
+            suggestionsBox.style.display = 'none';
+            return;
+        }
+
+        suggestionsBox.innerHTML = filtered.map(profile => `
+            <div class="suggestion-item"
+                 data-name="${profile.name}"
+                 data-address="${profile.address}"
+                 data-contact="${profile.contact_num}">
+                ${profile.name}
+            </div>
+        `).join('');
+
+        suggestionsBox.style.display = 'block';
+    });
+
+    // CLICK EVENT
+    suggestionsBox.addEventListener('click', function (e) {
+        const item = e.target.closest('.suggestion-item');
+        if (!item) return;
+
+        const name = item.dataset.name;
+        const address = item.dataset.address;
+        const contact = item.dataset.contact;
+
+        document.getElementById('inCustomer').value = name;
+        document.getElementById('inAddress').value = address || '';
+        document.getElementById('inContact').value = contact || '';
+
+        suggestionsBox.style.display = 'none';
+
+        updatePreview();
+    });
+
+    // OUTSIDE CLICK
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#inCustomer')) {
+            suggestionsBox.style.display = 'none';
+        }
+    });
+}
 
 function generateDisplayId(prefix) {
     return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -16,7 +96,7 @@ function toTitleCase(str) {
 }
 
 // GLOBAL ASSIGNMENTS & MODAL INTERACTIONS
-window.openAddModal = async () => {
+window.openAddModal = async () => {    
     const modal = document.getElementById('addCollectionModal');
     if (!modal) return;
 
@@ -26,6 +106,8 @@ window.openAddModal = async () => {
     window.editingIndex = -1; // Reset global tracker
     resetForm();
 
+    await loadProfiles();
+    initCustomerAutocomplete();
     // Dynamically fetch and fill up material prices matching your Price List dashboard
     await loadActivePrices();
 
