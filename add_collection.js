@@ -3,6 +3,7 @@ window.editingIndex = typeof window.editingIndex !== 'undefined' ? window.editin
 window.currentCategory = typeof window.currentCategory !== 'undefined' ? window.currentCategory : 'School';
 window.currentItems = window.currentItems || []; // Initializing to prevent undefined array
 
+document.addEventListener('DOMContentLoaded', () => {
 // Local cache to resolve names during edit mode if needed
 let loadedPricesCache = [];
 let profilesCache = [];
@@ -29,48 +30,48 @@ function toTitleCase(str) {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 }
 
-    const customerInput = document.getElementById('inCustomer');
-    const suggestionsBox = document.getElementById('customerSuggestions');
+const customerInput = document.getElementById('inCustomer');
+const suggestionsBox = document.getElementById('customerSuggestions');
 
-    console.log(customerInput);
-    customerInput.addEventListener('input', function () {
-        const query = this.value.toLowerCase().trim();
-    
-        if (!query) {
-            suggestionsBox.style.display = 'none';
-            return;
-        }
-    
-        const filtered = profilesCache.filter(profile =>
-            profile.name.toLowerCase().includes(query)
-        );
-    
-        showSuggestions(filtered);
-    });
-    
-    function showSuggestions(list) {
-        suggestionsBox.innerHTML = '';
-    
-        if (list.length === 0) {
-            suggestionsBox.style.display = 'none';
-            return;
-        }
-    
-        list.forEach(profile => {
-            const div = document.createElement('div');
-            div.classList.add('suggestion-item');
-            div.textContent = profile.name;
-    
-            div.onclick = () => {
-                customerInput.value = profile.name;
-                suggestionsBox.style.display = 'none';
-            };
-    
-            suggestionsBox.appendChild(div);
-        });
-    
-        suggestionsBox.style.display = 'block';
+console.log(customerInput);
+customerInput.addEventListener('input', function () {
+    const query = this.value.toLowerCase().trim();
+
+    if (!query) {
+        suggestionsBox.style.display = 'none';
+        return;
     }
+
+    const filtered = profilesCache.filter(profile =>
+        profile.name.toLowerCase().includes(query)
+    );
+
+    showSuggestions(filtered);
+});
+
+function showSuggestions(list) {
+    suggestionsBox.innerHTML = '';
+
+    if (list.length === 0) {
+        suggestionsBox.style.display = 'none';
+        return;
+    }
+
+    list.forEach(profile => {
+        const div = document.createElement('div');
+        div.classList.add('suggestion-item');
+        div.textContent = profile.name;
+
+        div.onclick = () => {
+            customerInput.value = profile.name;
+            suggestionsBox.style.display = 'none';
+        };
+
+        suggestionsBox.appendChild(div);
+    });
+
+    suggestionsBox.style.display = 'block';
+}
 
 // GLOBAL ASSIGNMENTS & MODAL INTERACTIONS
 window.openAddModal = async () => {
@@ -219,6 +220,7 @@ document.addEventListener('click', (e) => {
         window.closeAddModal();
     }
 });
+
 document.addEventListener('click', function (e) {
     if (!customerInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
         suggestionsBox.style.display = 'none';
@@ -756,3 +758,4 @@ function closePreview() {
     left.style.display = 'block';
     refreshIcons();
 }
+});
