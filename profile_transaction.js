@@ -726,7 +726,7 @@ function downloadCollectionReceipt(tx) {
             const captureH = receiptEl.scrollHeight + 4;
 
             const canvas = await html2canvas(receiptEl, {
-                scale: 2,
+                scale: 3,
                 useCORS: true,
                 backgroundColor: '#ffffff',
                 width: captureW,
