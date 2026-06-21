@@ -2,33 +2,30 @@ const JunkshopExport = (() => {
 
     function parseCollectionDate(raw) {
         if (!raw) return null;
-        // Handle explicit local date format extraction safely
+        // Handle explicit local date format extraction
         const d = new Date(raw);
         return isNaN(d) ? null : d;
     }
 
-    /**
-     * Aggregates collection weights dynamically map-linked to your live database price_list
-     */
     async function aggregateSupabaseData(month, year) {
         const db = window._supabase || null;
         
         let materialsList = [];
         const result = {};
 
-        // Fallback gracefully to reading dynamic local storage schema structures if DB is offline
+        // Fallback to reading dynamic local storage schema structures if DB is offline
         if (!db || typeof db.from !== 'function') {
             console.warn("Supabase context missing. Diverting to local storage dynamic fallback schema mapping.");
             return aggregateFallbackLocalData(month, year);
         }
 
         try {
-            // 1. Fetch live active records directly from your price_list table
+            // Fetch live active records directly from price_list table
             const { data: priceList, error: priceError } = await db
                 .from('price_list')
                 .select('id, material_name')
                 .eq('status', 'Active')
-                .order('id', { ascending: true }); // Keep ordering consistent
+                .order('id', { ascending: true }); 
 
             if (priceError) throw priceError;
 
@@ -58,12 +55,12 @@ const JunkshopExport = (() => {
                 };
             });
 
-            // 2. Set up month parameters (Ensure proper 1-based padding for API queries)
+            // Set up month parameters (Ensure proper 1-based padding for API queries)
             const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
             const lastDay = new Date(year, month + 1, 0).getDate();
             const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-            // 3. Query historical records across your related collection sub-tables
+            // Query historical records across related collection sub-tables
             const { data: collections, error } = await db
                 .from('collections')
                 .select(`
@@ -79,7 +76,7 @@ const JunkshopExport = (() => {
 
             if (error) throw error;
 
-            // 4. Matrix distribution processing
+            // Matrix distribution processing
             if (collections) {
                 collections.forEach(col => {
                     const d = parseCollectionDate(col.date_collected);
@@ -240,10 +237,9 @@ const JunkshopExport = (() => {
         ctext('Data Sheet', y + 2, 10.5, 'normal');
         y += 14;
 
-        ltext('Month: ', ML, y, 10, 'normal');
-        const mw = doc.getTextWidth('Month: ');
-        hline(ML + mw, ML + mw + 140, y + 1, 0.6);
-        if (monthLabel) ltext(monthLabel, ML + mw + 2, y, 10, 'normal');
+        ctext('Month: ' + monthLabel, y, 10, 'normal');
+        const mw = doc.getTextWidth('Month: ' + monthLabel);
+        hline(W/2 - mw/2, W/2 + mw/2, y + 1, 0.6);
         y += 18;
 
         const field = (label, value, x, yy, ulLen) => {
@@ -433,7 +429,7 @@ const JunkshopExport = (() => {
             const month = opts.month ?? now.getMonth();
             const year  = opts.year ?? now.getFullYear();
     
-            // ✅ Use already computed data if available
+            // Use already computed data if available
             const { dataGrid, materialsList } =
                 opts.reportData || await aggregateSupabaseData(month, year);
     
@@ -447,7 +443,7 @@ const JunkshopExport = (() => {
             rows.push([`Address: ${opts.address || ""}`]);
             rows.push([`Month: ${month + 1}/${year}`]);
             rows.push([]); // empty row
-            // ✅ HEADER ROW
+            // HEADER ROW
             rows.push([
                 "Material",
                 "Week 1",
@@ -457,7 +453,7 @@ const JunkshopExport = (() => {
                 "Total"
             ]);
     
-            // ✅ PROCESS EACH MATERIAL
+            // PROCESS EACH MATERIAL
             materialsList.forEach(mat => {
                 const item = dataGrid[mat] || { dailyWeights: Array(32).fill(0), total: 0 };
     
@@ -485,12 +481,12 @@ const JunkshopExport = (() => {
                 ]);
             });
     
-            // ✅ CONVERT TO CSV STRING
+            // CONVERT TO CSV STRING
             const csvContent = rows
                 .map(row => row.map(val => `"${val}"`).join(","))
                 .join("\n");
     
-            // ✅ CREATE DOWNLOAD
+            // CREATE DOWNLOAD
             const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
             const url = URL.createObjectURL(blob);
     
