@@ -5,6 +5,20 @@ window.currentItems = window.currentItems || []; // Initializing to prevent unde
 
 // Local cache to resolve names during edit mode if needed
 let loadedPricesCache = [];
+let profilesCache = [];
+
+async function loadProfiles() {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('name');
+
+    if (error) {
+        console.error('Error loading profiles:', error);
+        return;
+    }
+
+    profilesCache = data || [];
+}
 
 function generateDisplayId(prefix) {
     return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -13,6 +27,48 @@ function generateDisplayId(prefix) {
 function toTitleCase(str) {
     if (!str) return '';
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+}
+
+const customerInput = document.getElementById('inCustomer');
+const suggestionsBox = document.getElementById('customerSuggestions');
+
+customerInput.addEventListener('input', function () {
+    const query = this.value.toLowerCase().trim();
+
+    if (!query) {
+        suggestionsBox.style.display = 'none';
+        return;
+    }
+
+    const filtered = profilesCache.filter(profile =>
+        profile.name.toLowerCase().includes(query)
+    );
+
+    showSuggestions(filtered);
+});
+
+function showSuggestions(list) {
+    suggestionsBox.innerHTML = '';
+
+    if (list.length === 0) {
+        suggestionsBox.style.display = 'none';
+        return;
+    }
+
+    list.forEach(profile => {
+        const div = document.createElement('div');
+        div.classList.add('suggestion-item');
+        div.textContent = profile.name;
+
+        div.onclick = () => {
+            customerInput.value = profile.name;
+            suggestionsBox.style.display = 'none';
+        };
+
+        suggestionsBox.appendChild(div);
+    });
+
+    suggestionsBox.style.display = 'block';
 }
 
 // GLOBAL ASSIGNMENTS & MODAL INTERACTIONS
@@ -25,7 +81,8 @@ window.openAddModal = async () => {
 
     window.editingIndex = -1; // Reset global tracker
     resetForm();
-
+    
+    await loadProfiles();
     // Dynamically fetch and fill up material prices matching your Price List dashboard
     await loadActivePrices();
 
@@ -159,6 +216,12 @@ document.addEventListener('click', (e) => {
     const modal = document.getElementById('addCollectionModal');
     if (modal && e.target === modal) {
         window.closeAddModal();
+    }
+});
+
+document.addEventListener('click', function (e) {
+    if (!customerInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+        suggestionsBox.style.display = 'none';
     }
 });
 
