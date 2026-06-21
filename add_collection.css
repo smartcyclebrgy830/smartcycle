@@ -723,18 +723,18 @@
 
 /* Container for the suggestions */
 .suggestions-dropdown {
-    position: absolute;
-    top: 100%; /* Positions it directly below the input */
-    left: 0;
-    width: 100%;
-    background-color: #ffffff;
-    border: 1px solid #e2e8f0; /* Matches your subtle borders */
-    border-radius: 6px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 1050; /* Ensures it sits above other modal elements */
-    margin-top: 4px;
+  position: absolute;
+  top: calc(100% + 4px); /* Pushes the box exactly below the input */
+  left: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  width: 100%;
+  max-height: 180px;
+  overflow-y: auto;
+  z-index: 9999; /* Increased to ensure it overlays the date input */
+  display: none;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); /* Adds a realistic dropdown shadow */
 }
 
 /* Individual suggestion items created by your JS */
