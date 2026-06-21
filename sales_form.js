@@ -497,40 +497,33 @@ function wireModal() {
         if (submitSaleBtn) submitSaleBtn.innerHTML = '<i data-lucide="check"></i> Submit';
         lucide.createIcons();
     }
-    // Add this inside wireModal() or as a standalone function
+    // Add these variables to your script
+    let allProfiles = [];
+    
+    // 1. Fetch profiles once when modal opens
+    async function loadProfiles() {
+        const { data } = await window._supabase.from('profiles').select('*');
+        allProfiles = data || [];
+    }
+    
+    // 2. Add event listeners inside wireModal()
     const suggestionsBox = document.getElementById('partnerSuggestions');
     
-    partnerInput?.addEventListener('input', async (e) => {
-        const query = e.target.value;
-        
-        if (query.length < 1) {
-            suggestionsBox.style.display = 'none';
-            return;
-        }
+    function showSuggestions(filter = '') {
+        const filtered = allProfiles.filter(p => 
+            p.name.toLowerCase().includes(filter.toLowerCase())
+        );
     
-        // Query Supabase for matching names
-        const { data, error } = await window._supabase
-            .from('profiles')
-            .select('name, address, contact_num')
-            .ilike('name', `%${query}%`)
-            .limit(5);
-    
-        if (error || !data || data.length === 0) {
-            suggestionsBox.style.display = 'none';
-            return;
-        }
-    
-        // Render suggestions
         suggestionsBox.innerHTML = '';
-        data.forEach(p => {
+        if (filtered.length === 0) {
+            suggestionsBox.style.display = 'none';
+            return;
+        }
+    
+        filtered.forEach(p => {
             const div = document.createElement('div');
+            div.className = 'suggestion-item';
             div.textContent = p.name;
-            div.style.padding = '8px';
-            div.style.cursor = 'pointer';
-            div.onmouseover = () => div.style.backgroundColor = '#f0f0f0';
-            div.onmouseout = () => div.style.backgroundColor = 'white';
-            
-            // When clicked, fill the inputs
             div.onclick = () => {
                 partnerInput.value = p.name;
                 document.getElementById('saleAddress').value = p.address || '';
@@ -539,13 +532,18 @@ function wireModal() {
             };
             suggestionsBox.appendChild(div);
         });
-        
         suggestionsBox.style.display = 'block';
-    });
+    }
     
-    // Close suggestions when clicking outside
+    // Show all when input is focused
+    partnerInput.addEventListener('focus', () => showSuggestions());
+    
+    // Filter as user types
+    partnerInput.addEventListener('input', (e) => showSuggestions(e.target.value));
+    
+    // Hide when clicking outside
     document.addEventListener('click', (e) => {
-        if (e.target !== partnerInput) suggestionsBox.style.display = 'none';
+        if (!partnerInput.contains(e.target)) suggestionsBox.style.display = 'none';
     });
 }
 
