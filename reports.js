@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <input id="expBrgy" type="text" value="830" style="${fieldStyle}">
                         </label>
                         <label style="${labelStyle}">Zone
-                            <input id="expZone" type="text" style="${fieldStyle}">
+                            <input id="expZone" type="number" min="0" style="${fieldStyle}">
                         </label>
                         <label style="${labelStyle}">District
                             <input id="expDistrict" type="text" style="${fieldStyle}">
@@ -402,13 +402,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
                         <label style="${labelStyle}">Date Established
-                            <input id="expDateEst" type="text" placeholder="MM/DD/YYYY" style="${fieldStyle}">
+                            <input id="expDateEst" type="date" value="${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}" style="${fieldStyle}">
                         </label>
                         <label style="${labelStyle}">Floor Area (sqm)
-                            <input id="expFloor" type="text" style="${fieldStyle}">
+                            <input id="expFloor" type="number" min="0" style="${fieldStyle}">
                         </label>
                         <label style="${labelStyle}">No. of Aide
-                            <input id="expAide" type="text" style="${fieldStyle}">
+                            <input id="expAide" type="number" min="0" style="${fieldStyle}">
                         </label>
                     </div>
                 </div>
@@ -438,6 +438,13 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.querySelector('#exportModalClose').addEventListener('click', close);
         overlay.querySelector('#exportModalCancel').addEventListener('click', close);
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+        // Strip special characters on input
+        ['expJunkshop', 'expAddress', 'expBrgy', 'expZone', 'expDistrict', 'expOwner'].forEach(function(id) {
+            overlay.querySelector('#' + id).addEventListener('input', function() {
+                this.value = this.value.replace(/[^\w\s.,\-]/g, '');
+            });
+        });
 
         overlay.querySelector('#exportModalConfirm').addEventListener('click', async () => {
             var mobile   = overlay.querySelector('#expMobile').value.trim();
@@ -483,7 +490,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 owner:           overlay.querySelector('#expOwner').value.trim(),
                 mobile:          overlay.querySelector('#expMobile').value.trim(),
                 landline:        overlay.querySelector('#expLandline').value.trim(),
-                dateEstablished: overlay.querySelector('#expDateEst').value.trim(),
+                dateEstablished: (function() {
+                    var d = overlay.querySelector('#expDateEst').value;
+                    if (!d) return '';
+                    var parts = d.split('-');
+                    return parts[1] + '/' + parts[2] + '/' + parts[0];
+                })(),
                 floorArea:       overlay.querySelector('#expFloor').value.trim(),
                 noOfAide:        overlay.querySelector('#expAide').value.trim(),
                 reportData: aggregated
