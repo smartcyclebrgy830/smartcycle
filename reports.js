@@ -447,9 +447,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         overlay.querySelector('#exportModalConfirm').addEventListener('click', async () => {
+            var errors = [];
             var mobile   = overlay.querySelector('#expMobile').value.trim();
             var landline = overlay.querySelector('#expLandline').value.trim();
-            var year     = parseInt(overlay.querySelector('#expYear').value);
+            var yearVal  = parseInt(overlay.querySelector('#expYear').value);
 
             if (mobile && !/^(09\d{2}-?\d{3}-?\d{4}|09\d{9})$/.test(mobile)) {
                 errors.push('Mobile No. must be a valid PH number (e.g. 09XX-XXX-XXXX).');
@@ -459,7 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 errors.push('Landline must be a valid format (e.g. (02) XXXX-XXXX).');
             }
 
-            if (isNaN(year) || year < 2000 || year > 2099) {
+            if (isNaN(yearVal) || yearVal < 2000 || yearVal > 2099) {
                 errors.push('Year must be between 2000 and 2099.');
             }
 
