@@ -309,6 +309,23 @@ document.addEventListener('DOMContentLoaded', () => {
         showExportModal(format);
     }
 
+    function showModalErrors(overlay, errors) {
+        var existing = overlay.querySelector('#exportModalErrors');
+        if (existing) existing.remove();
+        
+        var box = document.createElement('div');
+        box.id = 'exportModalErrors';
+        box.style.cssText = 'background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;margin-top:14px;font-size:12px;color:#b91c1c;';
+        box.innerHTML = errors.map(function(e) { return '<div>• ' + e + '</div>'; }).join('');
+
+        overlay.querySelector('#exportModalConfirm').closest('div').before(box);
+
+        overlay.querySelector('div').addEventListener('input', function() {
+            var err = overlay.querySelector('#exportModalErrors');
+            if (err) err.remove();
+        }, { once: true });
+    }
+
     function showExportModal(format) {
         document.getElementById('exportFormModal')?.remove();
 
@@ -352,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <label style="${labelStyle}">Junkshop Name
-                        <input id="expJunkshop" type="text" placeholder="e.g. TEZWA" value="TEZWA" style="${fieldStyle}">
+                        <input id="expJunkshop" type="text" value="TEZWA" readonly style="${fieldStyle}">
                     </label>
                     <label style="${labelStyle}">Address
                         <input id="expAddress" type="text" placeholder="Street, City" style="${fieldStyle}">
@@ -423,6 +440,27 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 
         overlay.querySelector('#exportModalConfirm').addEventListener('click', async () => {
+            var mobile   = overlay.querySelector('#expMobile').value.trim();
+            var landline = overlay.querySelector('#expLandline').value.trim();
+            var year     = parseInt(overlay.querySelector('#expYear').value);
+
+            if (mobile && !/^(09\d{2}-?\d{3}-?\d{4}|09\d{9})$/.test(mobile)) {
+                errors.push('Mobile No. must be a valid PH number (e.g. 09XX-XXX-XXXX).');
+            }
+
+            if (landline && !/^(\(\d{2,3}\)\s?\d{3,4}-?\d{4}|\d{7,8})$/.test(landline)) {
+                errors.push('Landline must be a valid format (e.g. (02) XXXX-XXXX).');
+            }
+
+            if (isNaN(year) || year < 2000 || year > 2099) {
+                errors.push('Year must be between 2000 and 2099.');
+            }
+
+            if (errors.length > 0) {
+                showModalErrors(overlay, errors);
+                return;
+            }
+            
             // GET VALUES FIRST 
             const month = parseInt(overlay.querySelector('#expMonth').value);
             const year  = parseInt(overlay.querySelector('#expYear').value);
