@@ -119,9 +119,10 @@ async function fetchTransactions() {
 
     const normalisedSales = (salesData || []).map(s => {
         const items = (s.sale_items || []).map(i => ({
-            material: i.price_list?.material_name || 'Unknown',
-            weight:   Number(i.weight) || 0,
-            rate:     Number(i.rate)   || 0,
+            // DITO ANG FIX: Priority sa i.material_name (kung meron)
+            material: i.material_name || (i.price_list?.material_name || 'Unknown'),
+            weight: Number(i.weight) || 0,
+            rate: Number(i.rate) || 0,
             subtotal: Number(i.amount) || 0
         }));
         const uniqueMaterials = [...new Set(items.map(i => i.material))];
@@ -142,9 +143,10 @@ async function fetchTransactions() {
 
     const normalisedCollections = (collectionsData || []).map(c => {
         const items = (c.collection_items || []).map(i => ({
-            material: i.price_list?.material_name || 'Unknown',
-            weight:   Number(i.weight)   || 0,
-            rate:     Number(i.rate)     || 0,
+            // DITO ANG FIX: Priority sa i.material_name (kung meron)
+            material: i.material_name || (i.price_list?.material_name || 'Unknown'),
+            weight: Number(i.weight) || 0,
+            rate: Number(i.rate) || 0,
             subtotal: Number(i.subtotal) || 0
         }));
         const uniqueMaterials = [...new Set(items.map(i => i.material))];
