@@ -85,13 +85,20 @@ async function fetchSales() {
             address: sale.profiles ? sale.profiles.address : '',
             contact: sale.profiles ? sale.profiles.contact_num : '',
             
-            items: items.map(i => ({
-                material_id: i.material_id, 
-                name: i.price_list ? i.price_list.material_name : 'Unknown Material',
-                weight: Number(i.weight) || 0,
-                rate: Number(i.rate) || 0,
-                subtotal: Number(i.amount) || 0
-            })),
+            // Hanapin ito sa loob ng items.map sa fetchSales()
+            items: items.map(i => {
+                // Priority 1: Kung may nakasave na pangalan direkta sa item
+                // Priority 2: Kung galing sa price_list join
+                const displayName = i.material_name || (i.price_list ? i.price_list.material_name : 'Unknown Material');
+                
+                return {
+                    material_id: i.material_id, 
+                    name: displayName, // Gagamitin na natin ang displayName
+                    weight: Number(i.weight) || 0,
+                    rate: Number(i.rate) || 0,
+                    subtotal: Number(i.amount) || 0
+                };
+            }),
             total_weight: Number(sale.total_weight) || 0,
             total_amount: Number(sale.total_amount) || 0
         };
