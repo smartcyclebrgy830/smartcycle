@@ -525,6 +525,8 @@ window.submitCollection = async function(e) {
             receipt_image: receiptImage
         };
 
+        console.log("COLLECTION PAYLOAD:", collectionPayload);
+
         // VARIABLE TO TRACK THE TARGET COLLECTION ID FOR ITEM INSERTION
         let activeCollectionId = null;
 
