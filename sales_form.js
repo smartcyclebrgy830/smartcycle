@@ -137,7 +137,7 @@ function wireModal() {
         if (matErr) matErr.textContent = '';
     
         // Push to array (Note: materialId is now null since it's manual)
-        saleMaterials.push({ materialId: null, name, rate, weight });
+       saleMaterials.push({ materialId: null, name: name, rate: rate, weight: weight });
         
         // Clear inputs
         nameEl.value = '';
@@ -377,9 +377,9 @@ function wireModal() {
                 if (deleteItemsError) throw new Error("Failed to clear old items: " + deleteItemsError.message);
             
                 const itemsToInsert = saleMaterials.map(m => ({
-                    sale_id: insertedSale.id, 
-                    material_id: m.materialId, // Ito ay magiging null na
-                    material_name: m.name,      
+                    sale_id: editingId || insertedSale.id,
+                    material_id: null, // Since manual
+                    material_name: m.name, // 👈 Siguraduhin na ang 'm.name' ay hindi undefined/null bago i-save
                     weight: m.weight,
                     rate: m.rate,
                     amount: m.rate * m.weight
@@ -447,12 +447,11 @@ function wireModal() {
                     .single();
                 
                 if (insertError) throw new Error("Failed to insert sale: " + insertError.message);
-        
-                // 🔹 DITO DAPAT I-UPDATE ANG INSERT FLOW
+                console.log(saleMaterials)
                 const itemsToInsert = saleMaterials.map(m => ({
-                    sale_id: insertedSale.id, 
-                    material_id: m.materialId, // null ito (tama lang)
-                    material_name: m.name,      // 🔹 DITO ANG KULANG (Dapat m.name)
+                    sale_id: editingId || insertedSale.id,
+                    material_id: null, // Since manual
+                    material_name: m.name, // 👈 Siguraduhin na ang 'm.name' ay hindi undefined/null bago i-save
                     weight: m.weight,
                     rate: m.rate,
                     amount: m.rate * m.weight
