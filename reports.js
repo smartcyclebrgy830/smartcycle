@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <label style="${labelStyle}">Junkshop Name
-                        <input id="expJunkshop" type="text" value="TEZWA (TAGUMPAY 83ZERO WASTE ASSOCIATION" readonly style="${fieldStyle}">
+                        <input id="expJunkshop" type="text" value="TEZWA (TAGUMPAY 83ZERO WASTE ASSOCIATION)" readonly style="${fieldStyle}">
                     </label>
                     <label style="${labelStyle}">Address
                         <input id="expAddress" type="text" value="Brgy. 830 South Nagtahan, Paco, Manila" readonly style="${fieldStyle}">
@@ -444,6 +444,33 @@ document.addEventListener('DOMContentLoaded', () => {
             overlay.querySelector('#' + id).addEventListener('input', function() {
                 this.value = this.value.replace(/[^\w\s.,\-]/g, '');
             });
+        });
+
+        // Mobile Number Format
+        overlay.querySelector('#expMobile').addEventListener('input', function() {
+            var digits = this.value.replace(/\D/g, '').slice(0, 11);
+            var formatted = digits;
+            if (digits.length > 7) {
+                formatted = digits.slice(0, 4) + '-' + digits.slice(4, 7) + '-' + digits.slice(7);
+            } else if (digits.length > 4) {
+                formatted = digits.slice(0, 4) + '-' + digits.slice(4);
+            }
+            this.value = formatted;
+        });
+
+        // Landline format
+        overlay.querySelector('#expLandline').addEventListener('input', function() {
+            var digits = this.value.replace(/\D/g, '');
+            if (digits.startsWith('02')) digits = digits.slice(2);
+            else if (digits.startsWith('0')) digits = digits.slice(1);
+            digits = digits.slice(0, 7);
+            var formatted = '(02) ';
+            if (digits.length > 3) {
+                formatted += digits.slice(0, 3) + '-' + digits.slice(3);
+            } else {
+                formatted += digits;
+            }
+            this.value = formatted;
         });
 
         overlay.querySelector('#exportModalConfirm').addEventListener('click', async () => {
