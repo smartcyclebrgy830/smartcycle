@@ -272,7 +272,8 @@ function wireModal() {
         if (!dateVal) { if (dateErr) dateErr.textContent = 'Date is required.'; hasError = true; }
         if (contactVal && !validateContact(contactVal)) { if (contactErr) contactErr.textContent = 'Use format: 09XX-XXX-XXXX'; hasError = true; }
         if (saleMaterials.length === 0) { if (matErr) matErr.textContent = 'Please add at least one material.'; hasError = true; }
-        if (!editingId && (!receiptInput.files || receiptInput.files.length === 0)) { if (receiptErr) receiptErr.textContent = 'Please attach a receipt.'; hasError = true; }
+        // == For Required Receipt ===
+        // if (!editingId && (!receiptInput.files || receiptInput.files.length === 0)) { if (receiptErr) receiptErr.textContent = 'Please attach a receipt.'; hasError = true; }
         
         if (hasError) { 
             isSubmitting = false;
