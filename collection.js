@@ -354,13 +354,9 @@ function renderTable() {
         //Receipt Icon Button
         let actionButtonsHTML = `
         <div class="receipt-dropdown-wrap">
-        <button class="icon-btn receipt-btn" onclick="toggleReceiptDropdown(event, ${actualIndex})"><i data-lucide="image"></i></button>
-            <div class="receipt-dropdown" id="rdrop-${actualIndex}" style="display:none;">
-                <button onclick="viewReceipt(${actualIndex}); closeReceiptDropdown()">Generated Receipt</button>
-                <button onclick="viewAttachedReceipt(${actualIndex}); closeReceiptDropdown()">Attached Receipt</button>
-            </div>
-       </div>
-       `;
+            <button class="icon-btn receipt-btn" onclick="toggleReceiptDropdown(event, ${actualIndex})"><i data-lucide="image"></i></button>
+        </div>
+        `;
         
         if (window.currentUserRole !== 'Moderator') {
             actionButtonsHTML += `
@@ -887,13 +883,30 @@ window.viewReceipt = function(index) {
 window.toggleReceiptDropdown = function(e, index) {
     e.stopPropagation();
     closeReceiptDropdown();
-    var drop = document.getElementById('rdrop-' + index);
-    if (drop) drop.style.display = 'block';
+
+    const btn = e.currentTarget;
+    const rect = btn.getBoundingClientRect();
+
+    const drop = document.createElement('div');
+    drop.className = 'receipt-dropdown';
+    drop.id = 'rdrop-' + index;
+    drop.innerHTML = `
+        <button onclick="viewReceipt(${index}); closeReceiptDropdown()">Generated Receipt</button>
+        <button onclick="viewAttachedReceipt(${index}); closeReceiptDropdown()">Attached Receipt</button>
+    `;
+
+    drop.style.position = 'fixed';
+    drop.style.top = (rect.bottom + 4) + 'px';
+    drop.style.left = (rect.left + rect.width / 2) + 'px';
+    drop.style.transform = 'translateX(-50%)';
+    drop.style.zIndex = '99999';
+
+    document.body.appendChild(drop);
 };
 
 window.closeReceiptDropdown = function() {
     document.querySelectorAll('.receipt-dropdown').forEach(function(d) {
-        d.style.display = 'none';
+        d.remove();
     });
 };
 
