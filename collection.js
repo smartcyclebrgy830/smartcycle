@@ -206,7 +206,8 @@ window.fetchAllCollections = async function() {
             totalWeight: mappedItems.reduce((sum, i) => sum + i.weight, 0),
             address: col.address,
             contact: col.contact_number,
-            items: mappedItems 
+            items: mappedItems,
+            receipt_image: col.receipt_image || null
         };
     });
     renderTable();
@@ -918,5 +919,15 @@ document.addEventListener('click', function() {
 window.viewAttachedReceipt = function(index) {
     var data = getFilteredCollections()[index];
     if (!data) return;
-    alert('No attached receipt for: ' + data.customer);
+
+    if (!data.receipt_image) {
+        alert('No attached receipt for: ' + data.customer);
+        return;
+    }
+
+    const win = window.open('', '_blank');
+    win.document.write(`<!DOCTYPE html><html><head><title>Receipt - ${data.customer}</title>
+        <style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1a1a1a;}
+        img{max-width:100%;max-height:100vh;object-fit:contain;border-radius:8px;}</style></head>
+        <body><img src="${data.receipt_image}" alt="Receipt for ${data.customer}"></body></html>`);
 };
