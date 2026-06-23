@@ -455,11 +455,12 @@ window.submitCollection = async function(e) {
         if (itemsErr) itemsErr.textContent = 'Please add at least one item';
         hasError = true;
     }
-    if (window.editingIndex === -1) {
-        var receiptInput = document.getElementById('receiptInput');
-        if (!receiptInput || !receiptInput.files || receiptInput.files.length === 0) {
-            var receiptErr = document.getElementById('receiptError');
-            if (receiptErr) receiptErr.textContent = 'Please attach a receipt.';
+    // === Required Attach Receipt == 
+    // if (window.editingIndex === -1) {
+        // var receiptInput = document.getElementById('receiptInput');
+        // if (!receiptInput || !receiptInput.files || receiptInput.files.length === 0) {
+            // var receiptErr = document.getElementById('receiptError');
+            // if (receiptErr) receiptErr.textContent = 'Please attach a receipt.';
             hasError = true;
         }
     }
