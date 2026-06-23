@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <label style="${labelStyle}">Junkshop Name
-                        <input id="expJunkshop" type="text" value="TEZWA" readonly style="${fieldStyle}">
+                        <input id="expJunkshop" type="text" value="TEZWA (TAGUMPAY 83ZERO WASTE ASSOCIATION" readonly style="${fieldStyle}">
                     </label>
                     <label style="${labelStyle}">Address
                         <input id="expAddress" type="text" value="Brgy. 830 South Nagtahan, Paco, Manila" readonly style="${fieldStyle}">
