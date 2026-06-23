@@ -198,9 +198,11 @@ function clearError(fieldId) {
 }
 
 function clearAllErrors() {
-    ['inCustomer', 'inDate', 'inAddress', 'inContact', 'inWeight'].forEach(clearError);
+    ['inCustomer', 'inDate', 'inAddress', 'inContact', 'inWeight', 'inSalesman'].forEach(clearError);
     const itemsErr = document.getElementById('itemsError');
     if (itemsErr) itemsErr.textContent = '';
+    var receiptErr = document.getElementById('receiptError');
+    if (receiptErr) receiptErr.textContent = ''; 
 }
 
 function validateContact(value) {
@@ -239,7 +241,7 @@ function formatContact(value) {
 }
 
 function resetForm() {
-    ['inCustomer', 'inDate', 'inAddress', 'inContact', 'inWeight'].forEach(id => {
+    ['inCustomer', 'inDate', 'inAddress', 'inContact', 'inWeight', 'inSalesman'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
@@ -265,6 +267,16 @@ function resetForm() {
         if (el) el.innerText = value;
     });
 
+    var receiptInput = document.getElementById('receiptInput');
+    var receiptPreview = document.getElementById('receiptPreview');
+    var attachReceiptBtn = document.getElementById('attachReceiptBtn');
+    var receiptFilenameLabel = document.getElementById('receiptFilenameLabel');
+    if (receiptInput) receiptInput.value = '';
+    receiptPreview?.classList.remove('visible');
+    attachReceiptBtn?.classList.remove('hidden');
+    if (receiptFilenameLabel) receiptFilenameLabel.textContent = '';
+    var receiptErr = document.getElementById('receiptError');
+    if (receiptErr) receiptErr.textContent = '';
     refreshIcons();
 }
 
@@ -280,6 +292,7 @@ window.updatePreview = function() {
     const date = document.getElementById('inDate')?.value || '---';
     const address = document.getElementById('inAddress')?.value || '---';
     const contact = document.getElementById('inContact')?.value || '---';
+    var salesman = document.getElementById('inSalesman')?.value || '---';
 
     let formattedDate = date;
     if (date !== '---') {
@@ -290,7 +303,7 @@ window.updatePreview = function() {
         });
     }
 
-    const updates = { preCustomer: customer, preDate: formattedDate, preAddress: address, preContact: contact };
+    const updates = { preCustomer: customer, preDate: formattedDate, preAddress: address, preContact: contact, preSalesman: salesman };
     Object.entries(updates).forEach(([id, value]) => {
         const el = document.getElementById(id);
         if (el) el.innerText = value;
@@ -442,6 +455,14 @@ window.submitCollection = async function(e) {
         if (itemsErr) itemsErr.textContent = 'Please add at least one item';
         hasError = true;
     }
+    if (window.editingIndex === -1) {
+        var receiptInput = document.getElementById('receiptInput');
+        if (!receiptInput || !receiptInput.files || receiptInput.files.length === 0) {
+            var receiptErr = document.getElementById('receiptError');
+            if (receiptErr) receiptErr.textContent = 'Please attach a receipt.';
+            hasError = true;
+        }
+    }
     if (hasError) return;
 
     try {
@@ -451,12 +472,35 @@ window.submitCollection = async function(e) {
         }
 
         const formattedCustomer = toTitleCase(customer);
+        
+        var salesman = document.getElementById('inSalesman')?.value.trim() || '';
+        var receiptInput = document.getElementById('receiptInput');
+        var receiptImage = null;
+
+        if (receiptInput && receiptInput.files.length > 0) {
+            var file = receiptInput.files[0];
+            var fileName = 'receipt-' + Date.now() + '-' + file.name;
+            var uploadResult = await window._supabase.storage.from('receipts').upload(fileName, file);
+            if (uploadResult.error) throw new Error('Image upload failed: ' + uploadResult.error.message);
+            var urlResult = window._supabase.storage.from('receipts').getPublicUrl(fileName);
+            receiptImage = urlResult.data.publicUrl;
+        }
+
+        if (!receiptImage && window.editingIndex !== -1) {
+            var targetedForReceipt = (typeof getFilteredCollections === 'function')
+                ? getFilteredCollections()[window.editingIndex]
+                : window.collections[window.editingIndex];
+            receiptImage = targetedForReceipt?.receipt_image || null;
+        }
+
         const collectionPayload = { 
             customer_name: formattedCustomer, 
             date_collected: date, 
             address: address || 'N/A', 
             contact_number: contact || 'N/A', 
-            type: window.currentCategory 
+            type: window.currentCategory,
+            salesman: salesman || null,
+            receipt_image: receiptImage
         };
 
         // VARIABLE TO TRACK THE TARGET COLLECTION ID FOR ITEM INSERTION
@@ -806,6 +850,38 @@ window.setupFieldListeners = function() {
             });
     
             suggestionsBox.style.display = 'block';
+        });
+    }
+
+    var attachReceiptBtn = document.getElementById('attachReceiptBtn');
+    var receiptInput = document.getElementById('receiptInput');
+    var receiptPreview = document.getElementById('receiptPreview');
+    var removeReceiptBtn = document.getElementById('removeReceiptBtn');
+    var receiptFilenameLabel = document.getElementById('receiptFilenameLabel');
+
+    if (attachReceiptBtn && receiptInput) {
+        attachReceiptBtn.addEventListener('click', function() { receiptInput.click(); });
+    }
+
+    if (receiptInput) {
+        receiptInput.addEventListener('change', function() {
+            var file = receiptInput.files[0];
+            if (!file) return;
+            var receiptErr = document.getElementById('receiptError');
+            if (receiptErr) receiptErr.textContent = '';
+            if (receiptFilenameLabel) receiptFilenameLabel.textContent = file.name;
+            receiptPreview?.classList.add('visible');
+            attachReceiptBtn?.classList.add('hidden');
+            lucide.createIcons();
+        });
+    }
+
+    if (removeReceiptBtn) {
+        removeReceiptBtn.addEventListener('click', function() {
+            if (receiptInput) receiptInput.value = '';
+            receiptPreview?.classList.remove('visible');
+            attachReceiptBtn?.classList.remove('hidden');
+            if (receiptFilenameLabel) receiptFilenameLabel.textContent = '';
         });
     }
 };
