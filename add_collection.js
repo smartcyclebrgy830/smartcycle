@@ -45,75 +45,68 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    window.editingIndex = parseInt(index, 10); 
+    window.editingIndex = parseInt(index, 10);
     clearAllErrors();
 
     await loadActivePrices();
 
     window.currentCategory = collectionHeader.type || 'School';
+
     document.querySelectorAll('.m-tab').forEach(tab => {
         const tabCategory = tab.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
         tab.classList.toggle('active', tabCategory === window.currentCategory);
     });
 
-    if (document.getElementById('inCustomer')) document.getElementById('inCustomer').value = collectionHeader.customer_name || '';
-    if (document.getElementById('inDate')) document.getElementById('inDate').value = collectionHeader.date_collected || '';
-    if (document.getElementById('inAddress')) document.getElementById('inAddress').value = collectionHeader.address || '';
-    if (document.getElementById('inContact')) document.getElementById('inContact').value = collectionHeader.contact_number || '';
+    // HEADER FIELDS
+    document.getElementById('inCustomer').value = collectionHeader.customer_name || '';
+    document.getElementById('inDate').value = collectionHeader.date_collected || '';
+    document.getElementById('inAddress').value = collectionHeader.address || '';
+    document.getElementById('inContact').value = collectionHeader.contact_number || '';
 
-    // Restore existing receipt preview
+    // RECEIPT
     const existingReceipt = collectionHeader.receipt_image || null;
     const receiptPreview = document.getElementById('receiptPreview');
     const attachReceiptBtn = document.getElementById('attachReceiptBtn');
     const receiptFilenameLabel = document.getElementById('receiptFilenameLabel');
 
     if (existingReceipt) {
-        if (receiptFilenameLabel) {
-            const urlParts = existingReceipt.split('/');
-            receiptFilenameLabel.textContent = decodeURIComponent(urlParts[urlParts.length - 1]);
-        }
+        const urlParts = existingReceipt.split('/');
+        receiptFilenameLabel.textContent = decodeURIComponent(urlParts[urlParts.length - 1]);
         receiptPreview?.classList.add('visible');
         attachReceiptBtn?.classList.add('hidden');
     } else {
         receiptPreview?.classList.remove('visible');
         attachReceiptBtn?.classList.remove('hidden');
-        if (receiptFilenameLabel) receiptFilenameLabel.textContent = '';
+        receiptFilenameLabel.textContent = '';
     }
 
-    window.currentItems = (items || []).map(item => {
-    const cachedItem = loadedPricesCache.find(
-        p => parseInt(p.id, 10) === parseInt(item.material_id, 10)
-    );
+    // ✅ FIXED ITEMS BLOCK (SAFE + NO BUGS)
+    window.currentItems = (Array.isArray(detailedItems) ? detailedItems : []).map(item => {
         const cachedItem = loadedPricesCache.find(
-            p => parseInt(p.id, 10) === materialId
+            p => Number(p.id) === Number(item.material_id)
         );
-    
-        const materialName =
-            item.price_list?.material_name ||
-            item.material_name ||
-            (cachedItem ? cachedItem.material_name : null);
-    
-    return {
-        materialId: item.material_id,
-        material_id: item.material_id,
-        material: cachedItem?.material_name || 'Unknown',
-        material_name: cachedItem?.material_name || 'Unknown',
-        rate: Number(item.rate || cachedItem?.price || 0),
-        weight: Number(item.weight || 0),
-        subtotal: Number(item.subtotal || 0)
-    };
-});
+
+        return {
+            materialId: item.material_id,
+            material_id: item.material_id,
+            material: cachedItem?.material_name || item.material_name || 'Unknown',
+            material_name: cachedItem?.material_name || item.material_name || 'Unknown',
+            rate: Number(item.rate || cachedItem?.price || 0),
+            weight: Number(item.weight || 0),
+            subtotal: Number(item.subtotal || 0)
+        };
+    });
+
     if (window.currentItems.length > 0) {
         const selMaterial = document.getElementById('selMaterial');
         if (selMaterial) {
-           selMaterial.value = window.currentItems[0].material_id; 
-           selMaterial.dispatchEvent(new Event('change'));
+            selMaterial.value = window.currentItems[0].material_id;
+            selMaterial.dispatchEvent(new Event('change'));
         }
     }
 
     const submitBtn = document.querySelector('.btn-submit-green');
     if (submitBtn) {
-        submitBtn.onclick = null;
         submitBtn.onclick = (e) => window.submitCollection(e);
         submitBtn.innerHTML = '<i data-lucide="check"></i> Update Entry';
     }
