@@ -84,17 +84,6 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     const cachedItem = loadedPricesCache.find(
         p => parseInt(p.id, 10) === parseInt(item.material_id, 10)
     );
-    return {
-        materialId: item.material_id,
-        material_id: item.material_id,
-        material: cachedItem?.material_name || 'Unknown',
-        material_name: cachedItem?.material_name || 'Unknown',
-        rate: Number(item.rate || cachedItem?.price || 0),
-        weight: Number(item.weight || 0),
-        subtotal: Number(item.subtotal || 0)
-    };
-});
-    
         const cachedItem = loadedPricesCache.find(
             p => parseInt(p.id, 10) === materialId
         );
