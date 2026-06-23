@@ -408,6 +408,43 @@ body {
   cursor: not-allowed;
 }
 
+// Receipt
+.receipt-dropdown-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+.receipt-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    z-index: 999;
+    min-width: 160px;
+    overflow: hidden;
+}
+
+.receipt-dropdown button {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    text-align: left;
+    background: none;
+    border: none;
+    font-size: 13px;
+    color: #374151;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.receipt-dropdown button:hover {
+    background: #f3f4f6;
+    color: #46B336;
+}
+
 /* MOBILE */
 @media (max-width: 768px) {
   .main-content {
