@@ -165,7 +165,7 @@ function wireModal() {
     
         let [integer, decimal] = value.split('.');
     
-        // 🔒 LIMIT INTEGER PART TO 5 DIGITS
+        // LIMIT INTEGER PART TO 5 DIGITS
         if (integer.length > 5) {
             integer = integer.slice(0, 5);
         }
@@ -198,6 +198,7 @@ function wireModal() {
     receiptInput?.addEventListener('change', () => {
         const file = receiptInput.files[0];
         if (!file) return;
+        if (receiptErr) receiptErr.textContent = '';
         if (receiptFilenameLabel) receiptFilenameLabel.textContent = file.name;
         
         const reader = new FileReader();
