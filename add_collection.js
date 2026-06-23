@@ -80,7 +80,7 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
         if (receiptFilenameLabel) receiptFilenameLabel.textContent = '';
     }
 
-    window.currentItems = (detailedItems || []).map(item => {
+    window.currentItems = (items || []).map(item => {
     const cachedItem = loadedPricesCache.find(
         p => parseInt(p.id, 10) === parseInt(item.material_id, 10)
     );
