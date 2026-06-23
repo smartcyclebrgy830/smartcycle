@@ -461,9 +461,9 @@ window.submitCollection = async function(e) {
         // if (!receiptInput || !receiptInput.files || receiptInput.files.length === 0) {
             // var receiptErr = document.getElementById('receiptError');
             // if (receiptErr) receiptErr.textContent = 'Please attach a receipt.';
-            hasError = true;
-        }
-    }
+            // hasError = true;
+        // }
+    // }
     if (hasError) return;
 
     try {
