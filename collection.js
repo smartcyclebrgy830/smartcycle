@@ -535,6 +535,7 @@ window.editEntry = function(index) {
     });
 
     window.currentItems = [...(data.items || [])];
+    window.currentReceiptImage = data.receipt_image || null; 
     if (typeof renderItems === 'function') renderItems();
 
     const submitBtn = document.querySelector('.btn-submit-green');
@@ -581,7 +582,8 @@ async function saveCollection() {
             address: address || 'N/A',
             contact_number: contact || 'N/A',
             date_collected: date,
-            type: window.currentCategory
+            type: window.currentCategory,
+            receipt_image: window.currentReceiptImage || null
         };
 
         let targetId;
