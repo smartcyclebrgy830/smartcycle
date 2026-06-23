@@ -122,25 +122,30 @@ function wireModal() {
 
     // Add Material to list
     addMaterialBtn?.addEventListener('click', () => {
-        const sel = document.getElementById('materialSelect');
-        const weightEl = document.getElementById('materialWeight');
-        if (!sel || !weightEl) return;
+        const nameEl = document.getElementById('materialNameInput');
+        const rateEl = document.getElementById('materialRateInput');
+        const weightEl = document.getElementById('materialWeightInput');
     
-        const materialId = parseInt(sel.value); 
-        const selectedOption = sel.selectedOptions[0];
-        const name = selectedOption?.dataset.name || ''; 
-        const rate = Number(selectedOption?.dataset.rate || 0);
-        const weight = parseFloat(weightEl.value) || 0;
+        const name = nameEl.value.trim();
+        const rate = parseFloat(rateEl.value);
+        const weight = parseFloat(weightEl.value);
     
-        if (!materialId || weight <= 0 || weight > 10000) {
-            if (matErr) matErr.textContent = !materialId ? 'Please select a material.' : 'Invalid weight. Enter a value between 1 and 10,000.';
+        // Validation
+        if (!name || isNaN(rate) || rate < 0 || isNaN(weight) || weight <= 0) {
+            if (matErr) matErr.textContent = 'Please enter a valid name, rate, and weight.';
             return;
         }
         if (matErr) matErr.textContent = '';
     
-        saleMaterials.push({ materialId, name, rate, weight });
+        // Push to array (Note: materialId is now null since it's manual)
+        saleMaterials.push({ materialId: null, name, rate, weight });
+        
+        // Clear inputs
+        nameEl.value = '';
+        rateEl.value = '';
         weightEl.value = '';
-        weightEl.focus();
+        nameEl.focus();
+        
         renderMaterialsTable();
     });
 
@@ -476,6 +481,16 @@ function wireModal() {
         if (dateInput) dateInput.value = '';
         if (contactInput) contactInput.value = '';
         
+        // --- ADDED: Reset the new manual input fields ---
+        const matNameInput = document.getElementById('materialNameInput');
+        const matRateInput = document.getElementById('materialRateInput');
+        const matWeightInput = document.getElementById('materialWeightInput');
+        
+        if (matNameInput) matNameInput.value = '';
+        if (matRateInput) matRateInput.value = '';
+        if (matWeightInput) matWeightInput.value = '';
+        // ------------------------------------------------
+        
         if (receiptInput) receiptInput.value = '';
         if (receiptPreviewImg) receiptPreviewImg.src = '';
         receiptPreview?.classList.remove('visible');
@@ -487,7 +502,10 @@ function wireModal() {
             t.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
         });
         
+        // Make sure to include the new inputs in your error clearing logic
+        const matNameErr = document.getElementById('materialNameError'); // If you add one
         [partnerErr, addressErr, dateErr, contactErr, matErr].forEach(el => { if (el) el.textContent = ''; });
+        
         if (submitSaleBtn) submitSaleBtn.innerHTML = '<i data-lucide="check"></i> Submit';
         lucide.createIcons();
     }
