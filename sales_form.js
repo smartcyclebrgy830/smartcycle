@@ -90,7 +90,6 @@ function wireModal() {
         editingId = null;
         resetModal();
         await loadProfiles();
-        await loadMaterialsToDropdown();
         if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
         saleModal.classList.add('show');
         document.body.style.overflow = 'hidden';
@@ -571,34 +570,6 @@ function wireModal() {
     });
 }
 
-// DATA LOAD DRIP ARCHITECTURE
-async function loadMaterialsToDropdown() {
-    const { data, error } = await window._supabase
-        .from('price_list')
-        .select('*')
-        .eq('status', 'Active') 
-        .order('material_name', { ascending: true });
-
-    if (error) {
-        console.error("Error loading materials:", error);
-        return;
-    }
-
-    const select = document.getElementById('materialSelect');
-    if (!select) return;
-
-    select.innerHTML = '<option value="">Select material</option>';
-
-    data.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item.id; 
-        option.textContent = `${item.material_name} (₱${parseFloat(item.price).toFixed(2)}/${item.unit})`;
-        option.dataset.rate = item.price; 
-        option.dataset.name = item.material_name; 
-        select.appendChild(option);
-    });
-}
-
 function renderPagination(totalCount) {
     const paginationEl = document.getElementById('pagination');
     if (paginationEl) paginationEl.innerHTML = '';
@@ -610,11 +581,7 @@ fetch('sales_form.html')
     .then(async html => { 
         document.getElementById('sale-modal-container').innerHTML = html;
         lucide.createIcons();
-        
-        wireModal();
-        
-        await loadMaterialsToDropdown(); 
-        
+        wireModal();     
         if (typeof window.renderTable === 'function') window.renderTable();
     })
     .catch((err) => {
