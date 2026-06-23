@@ -73,6 +73,7 @@ async function fetchProfile() {
 }
 
 // TRANSACTIONS
+// TRANSACTIONS
 async function fetchTransactions() {
     showLoadingRow();
 
@@ -120,7 +121,6 @@ async function fetchTransactions() {
 
     const normalisedSales = (salesData || []).map(s => {
         const items = (s.sale_items || []).map(i => ({
-            // DITO ANG FIX: Priority sa i.material_name (kung meron)
             material: i.material_name || (i.price_list?.material_name || 'Unknown'),
             weight: Number(i.weight) || 0,
             rate: Number(i.rate) || 0,
@@ -146,7 +146,8 @@ async function fetchTransactions() {
         const items = (c.collection_items || []).map(i => ({
             material: i.price_list?.material_name || 'Unknown',
             weight:   Number(i.weight)   || 0,
-            rate:     Number(i.rate)     || 0,0
+            rate:     Number(i.rate)     || 0,
+            subtotal: Number(i.subtotal) || 0 // Idinagdag ito para gumana ang total computing sa ibaba
         }));
         const uniqueMaterials = [...new Set(items.map(i => i.material))];
         return {
