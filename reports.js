@@ -372,18 +372,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         <input id="expJunkshop" type="text" value="TEZWA" readonly style="${fieldStyle}">
                     </label>
                     <label style="${labelStyle}">Address
-                        <input id="expAddress" type="text" placeholder="Street, City" style="${fieldStyle}">
+                        <input id="expAddress" type="text" value="Brgy. 830 South Nagtahan, Paco, Manila" readonly style="${fieldStyle}">
                     </label>
 
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
                         <label style="${labelStyle}">Barangay
-                            <input id="expBrgy" type="text" value="830" style="${fieldStyle}">
+                            <input id="expBrgy" type="text" value="830" readonly style="${fieldStyle}">
                         </label>
                         <label style="${labelStyle}">Zone
-                            <input id="expZone" type="number" min="0" style="${fieldStyle}">
+                            <input id="expZone" type="number" value="90" readonly style="${fieldStyle}">
                         </label>
                         <label style="${labelStyle}">District
-                            <input id="expDistrict" type="text" style="${fieldStyle}">
+                            <input id="expDistrict" type="text" value="6" readonly style="${fieldStyle}">
                         </label>
                     </div>
 
