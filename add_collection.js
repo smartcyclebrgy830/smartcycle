@@ -20,13 +20,14 @@ window.openAddModal = async () => {
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    window.editingIndex = -1; 
+    window.editingIndex = -1;
     resetForm();
 
-    if (window._listenersInitialized) return;
-    window._listenersInitialized = true;
-    setupFieldListeners();
-    // Dynamically fetch and fill up material prices matching your Price List dashboard
+    if (!window._listenersInitialized) {
+        window._listenersInitialized = true;
+        setupFieldListeners();
+    }
+
     await loadActivePrices();
 
     document.getElementById('inDate').value = new Date().toISOString().split('T')[0];
@@ -248,6 +249,13 @@ function resetForm() {
 
     clearAllErrors();
     window.currentItems = []; 
+    renderItems();
+    updatePreview();
+
+    const selMaterial = document.getElementById('selMaterial');
+    if (selMaterial) {
+    selMaterial.selectedIndex = 0;
+    }
     window.editingIndex = -1; // Reset unified global tracking reference
 
     window.currentCategory = 'School';
