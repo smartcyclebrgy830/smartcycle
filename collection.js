@@ -159,14 +159,15 @@ window.fetchAllCollections = async function() {
     const { data, error } = await _supabase
         .from('collections')
         .select(`
-            *, 
-            collection_items (
-                *,
-                price_list:material_id (
-                    material_name
-                )
-            )
-        `)
+    *, 
+    collection_items (
+        *,
+        price_list:material_id (
+            material_name
+        )
+    ),
+    salesman
+`)
         .order('date_collected', { ascending: false })
         .order('id', { ascending: false });
 
