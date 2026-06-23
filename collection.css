@@ -411,18 +411,19 @@ body {
 // Receipt
 .receipt-dropdown-wrap {
     position: relative;
-    display: inline-block;
+    display: inline-flex;
 }
 
 .receipt-dropdown {
     position: absolute;
-    top: 100%;
-    right: 0;
+    top: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
     background: white;
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-    z-index: 999;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    z-index: 9999;
     min-width: 160px;
     overflow: hidden;
 }
@@ -434,10 +435,15 @@ body {
     text-align: left;
     background: none;
     border: none;
+    border-bottom: 1px solid #f3f4f6;
     font-size: 13px;
     color: #374151;
     cursor: pointer;
     font-family: inherit;
+}
+
+.receipt-dropdown button:last-child {
+    border-bottom: none;
 }
 
 .receipt-dropdown button:hover {
