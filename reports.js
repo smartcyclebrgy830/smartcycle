@@ -463,9 +463,11 @@ document.addEventListener('DOMContentLoaded', () => {
             var digits = this.value.replace(/\D/g, '');
             if (digits.startsWith('02')) digits = digits.slice(2);
             else if (digits.startsWith('0')) digits = digits.slice(1);
-            digits = digits.slice(0, 7);
+            digits = digits.slice(0, 8);
             var formatted = '(02) ';
-            if (digits.length > 3) {
+            if (digits.length > 4) {
+                formatted += digits.slice(0, 4) + '-' + digits.slice(4);
+            } else if (digits.length > 3) {
                 formatted += digits.slice(0, 3) + '-' + digits.slice(3);
             } else {
                 formatted += digits;
@@ -483,7 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 errors.push('Mobile No. must be a valid PH number (e.g. 09XX-XXX-XXXX).');
             }
 
-            if (landline && !/^(\(\d{2,3}\)\s?\d{3,4}-?\d{4}|\d{7,8})$/.test(landline)) {
+            if (landline && !/^\(02\)\s\d{3,4}-\d{4}$/.test(landline)) {
                 errors.push('Landline must be a valid format (e.g. (02) XXXX-XXXX).');
             }
 
