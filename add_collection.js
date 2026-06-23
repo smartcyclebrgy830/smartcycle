@@ -62,6 +62,25 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     if (document.getElementById('inAddress')) document.getElementById('inAddress').value = collectionHeader.address || '';
     if (document.getElementById('inContact')) document.getElementById('inContact').value = collectionHeader.contact_number || '';
 
+    // Restore existing receipt preview
+    const existingReceipt = collectionHeader.receipt_image || null;
+    const receiptPreview = document.getElementById('receiptPreview');
+    const attachReceiptBtn = document.getElementById('attachReceiptBtn');
+    const receiptFilenameLabel = document.getElementById('receiptFilenameLabel');
+
+    if (existingReceipt) {
+        if (receiptFilenameLabel) {
+            const urlParts = existingReceipt.split('/');
+            receiptFilenameLabel.textContent = decodeURIComponent(urlParts[urlParts.length - 1]);
+        }
+        receiptPreview?.classList.add('visible');
+        attachReceiptBtn?.classList.add('hidden');
+    } else {
+        receiptPreview?.classList.remove('visible');
+        attachReceiptBtn?.classList.remove('hidden');
+        if (receiptFilenameLabel) receiptFilenameLabel.textContent = '';
+    }
+
     window.currentItems = (items || []).map(item => {
     const cachedItem = loadedPricesCache.find(
         p => parseInt(p.id, 10) === parseInt(item.material_id, 10)
