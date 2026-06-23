@@ -41,6 +41,11 @@
             <input type="tel" id="inContact" placeholder="0912-345-6789" maxlength="13" inputmode="numeric" oninput="updatePreview()">
             <span class="field-error" id="inContactError"></span>
           </div>
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="inSalesman">Salesman</label>
+            <input type="text" id="inSalesman" placeholder="Enter salesman name" oninput="updatePreview()">
+            <span class="field-error" id="inSalesmanError"></span>
+          </div>
         </form>
   
         <div class="material-input-section">
@@ -79,6 +84,28 @@
             <span>Total Amount:</span>
             <strong id="formTotal">₱0</strong>
           </div>
+        </div>
+
+        <!-- Receipt Attach -->
+        <div class="sale-receipt-section">
+          <label class="receipt-label">
+            <i data-lucide="paperclip"></i>
+            Attach Receipt <span style="color:#e74c3c; font-weight:400;">*</span>
+          </label>
+          <div class="receipt-dropzone" id="attachReceiptBtn">
+            <i data-lucide="cloud-upload"></i>
+            <p>Click to upload or drag & drop</p>
+            <span>JPG & PNG supported</span>
+          </div>
+          <div class="receipt-file-confirm" id="receiptPreview">
+            <i data-lucide="file-check"></i>
+            <span class="receipt-file-name" id="receiptFilenameLabel"></span>
+            <button class="remove-receipt-confirm" id="removeReceiptBtn" type="button">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+          <input type="file" id="receiptInput" accept="image/*,.pdf" hidden>
+          <span class="field-error" id="receiptError"></span>
         </div>
   
         <button class="btn-preview-toggle" id="previewToggleBtn" onclick="togglePreview()">
@@ -150,7 +177,7 @@
               </div>
               <div class="receipt-field-item">
                 <label>Salesman</label>
-                <div class="field-value"></div>
+                <div class="field-value" id="preSalesman"></div>
               </div>
             </div>
           </div>
