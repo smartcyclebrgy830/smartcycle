@@ -448,9 +448,11 @@ function wireModal() {
                 
                 if (insertError) throw new Error("Failed to insert sale: " + insertError.message);
         
+                // 🔹 DITO DAPAT I-UPDATE ANG INSERT FLOW
                 const itemsToInsert = saleMaterials.map(m => ({
                     sale_id: insertedSale.id, 
-                    material_id: m.materialId, 
+                    material_id: m.materialId, // null ito (tama lang)
+                    material_name: m.name,      // 🔹 DITO ANG KULANG (Dapat m.name)
                     weight: m.weight,
                     rate: m.rate,
                     amount: m.rate * m.weight
