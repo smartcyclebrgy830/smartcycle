@@ -377,8 +377,9 @@ function wireModal() {
                 if (deleteItemsError) throw new Error("Failed to clear old items: " + deleteItemsError.message);
             
                 const itemsToInsert = saleMaterials.map(m => ({
-                    sale_id: editingId,
-                    material_id: m.materialId, 
+                    sale_id: insertedSale.id, 
+                    material_id: m.materialId, // Ito ay magiging null na
+                    material_name: m.name,      
                     weight: m.weight,
                     rate: m.rate,
                     amount: m.rate * m.weight
