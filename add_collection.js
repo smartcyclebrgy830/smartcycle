@@ -14,6 +14,8 @@ function toTitleCase(str) {
 }
 
 window.openAddModal = async () => {
+    console.log("OPEN ADD MODAL");
+
     const modal = document.getElementById('addCollectionModal');
     if (!modal) return;
 
@@ -242,6 +244,8 @@ function formatContact(value) {
 }
 
 function resetForm() {
+    console.log("RESET FORM CALLED");
+
     ['inCustomer', 'inDate', 'inAddress', 'inContact', 'inWeight', 'inSalesman'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
@@ -249,6 +253,15 @@ function resetForm() {
 
     clearAllErrors();
     window.currentItems = []; 
+    console.log("Salesman before:", document.getElementById('inSalesman')?.value);
+
+const salesman = document.getElementById('inSalesman');
+if (salesman) salesman.value = '';
+
+const material = document.getElementById('selMaterial');
+if (material) material.selectedIndex = 0;
+
+console.log("Salesman after:", document.getElementById('inSalesman')?.value);
     renderItems();
     updatePreview();
 
