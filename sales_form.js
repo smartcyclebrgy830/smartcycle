@@ -79,6 +79,7 @@ function wireModal() {
     const dateErr = document.getElementById('saleDateError');
     const contactErr = document.getElementById('saleContactError');
     const matErr = document.getElementById('materialsError');
+    var receiptErr = document.getElementById('receiptError');
 
     let isSubmitting = false;
 
@@ -226,7 +227,7 @@ function wireModal() {
     contactInput?.addEventListener('input', (e) => {
         let digits = e.target.value.replace(/\D/g, '');
     
-        // 🔒 FORCE "09" prefix
+        // FORCE "09" prefix
         if (!digits.startsWith('09')) {
             digits = '09' + digits.replace(/^0+/, ''); // avoid multiple 0s
         }
@@ -234,7 +235,7 @@ function wireModal() {
         // Limit to 11 digits total
         digits = digits.slice(0, 11);
     
-        // 🎯 FORMAT: 09XX-XXX-XXXX
+        // FORMAT: 09XX-XXX-XXXX
         let formatted = digits;
     
         if (digits.length > 4 && digits.length <= 7) {
@@ -253,7 +254,6 @@ function wireModal() {
     contactInput?.addEventListener('input', () => { if (contactErr) contactErr.textContent = ''; });
 
     // Submit / Update Operations
-// Submit / Update Operations
     submitSaleBtn?.addEventListener('click', async () => {
         if (isSubmitting) return; 
         isSubmitting = true;
@@ -264,13 +264,14 @@ function wireModal() {
         const contactVal = contactInput?.value.trim();
 
         // Clear all old errors
-        [partnerErr, addressErr, dateErr, contactErr, matErr].forEach(el => { if (el) el.textContent = ''; });
+        [partnerErr, addressErr, dateErr, contactErr, matErr, receiptErr].forEach(el => { if (el) el.textContent = ''; });
 
         let hasError = false;
         if (!partnerVal) { if (partnerErr) partnerErr.textContent = 'Partner name is required.'; hasError = true; }
         if (!dateVal) { if (dateErr) dateErr.textContent = 'Date is required.'; hasError = true; }
         if (contactVal && !validateContact(contactVal)) { if (contactErr) contactErr.textContent = 'Use format: 09XX-XXX-XXXX'; hasError = true; }
         if (saleMaterials.length === 0) { if (matErr) matErr.textContent = 'Please add at least one material.'; hasError = true; }
+        if (!editingId && (!receiptInput.files || receiptInput.files.length === 0)) { if (receiptErr) receiptErr.textContent = 'Please attach a receipt.'; hasError = true; }
         
         if (hasError) { 
             isSubmitting = false;
@@ -280,7 +281,7 @@ function wireModal() {
         const activeTab = saleModal.querySelector('.m-tab.active');
         const type = activeTab?.getAttribute('data-type') || 'organization';
 
-        // NEW LOGIC: Determine Profile Type for Sales (Organization/Junkshop = Partner)
+        // Determine Profile Type for Sales (Organization/Junkshop = Partner)
         let determinedProfileType = 'customer';
         const typeLower = type.toLowerCase();
         if (typeLower === 'organization' || typeLower === 'junkshop') {
@@ -317,7 +318,7 @@ function wireModal() {
         
             receiptImage = publicUrlData.publicUrl;
         }
-        // ✅ KEEP EXISTING IMAGE WHEN EDITING AND NO NEW FILE
+        // KEEP EXISTING IMAGE WHEN EDITING AND NO NEW FILE
         if (!receiptImage && editingId) {
             const { data: existingSale } = await window._supabase
                 .from('sales')
@@ -338,9 +339,7 @@ function wireModal() {
         
         try {
             if (editingId) {
-                // ==========================================
                 // UPDATE FLOW 
-                // ==========================================
                 const { data: currentSale, error: fetchSaleError } = await window._supabase
                     .from('sales')
                     .select('partner_id')
@@ -383,9 +382,7 @@ function wireModal() {
                 if (insertItemsError) throw new Error("Failed to insert items: " + insertItemsError.message);
                 await window.logAction(`Updated sale for ${partnerVal}`, 'Sales');
             } else {
-                // ==========================================
                 // INSERT FLOW
-                // ==========================================
                 const displayId = generateDisplayId('S');
                 let profileId = null;
                 
@@ -495,28 +492,28 @@ function wireModal() {
     // Add these variables to your script
     let allProfiles = [];
     
-    // 1. Fetch profiles once when modal opens
+    // Fetch profiles once when modal opens
     async function loadProfiles() {
         const { data } = await window._supabase.from('profiles').select('*');
         allProfiles = data || [];
     }
     
-    // 2. Add event listeners inside wireModal()
+    // Add event listeners inside wireModal()
     const suggestionsBox = document.getElementById('partnerSuggestions');
     
     function showSuggestions(filter = '') {
-        // 1. Sort alphabetically
+        // Sort alphabetically
         const sortedProfiles = [...allProfiles].sort((a, b) => 
             a.name.localeCompare(b.name)
         );
     
-        // 2. Filter by type 'partner' and search text
+        // Filter by type 'partner' and search text
         const filtered = sortedProfiles.filter(p => 
             p.type === 'partner' && 
             p.name.toLowerCase().includes(filter.toLowerCase())
         );
     
-        // 3. Limit to first 5 items
+        // Limit to first 5 items
         const limitedList = filtered.slice(0, 5);
     
         suggestionsBox.innerHTML = '';
@@ -554,9 +551,7 @@ function wireModal() {
     });
 }
 
-// ==========================================
 // DATA LOAD DRIP ARCHITECTURE
-// ==========================================
 async function loadMaterialsToDropdown() {
     const { data, error } = await window._supabase
         .from('price_list')
@@ -607,9 +602,7 @@ fetch('sales_form.html')
         if (typeof window.renderTable === 'function') window.renderTable();
     });
 
-// ==========================================
 // EDIT MODAL TRIGGER ENGINE
-// ==========================================
 async function openEditModal(id) {
     if (typeof fetchSales !== 'function') return;
     const allSales = await fetchSales();
