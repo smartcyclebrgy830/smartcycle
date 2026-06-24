@@ -258,11 +258,11 @@ const JunkshopExport = (() => {
         y += 14;
 
         field('Owner: ', opts.owner || '', ML, y, 110);
-        field('Mobile No. : ', opts.mobile || '', ML + 207, y, 80);
-        field('Landline: ', opts.landline || '', ML + 350, y, 75);
-        field('Date Established: ', opts.dateEstablished || '2021', ML + 480, y, 60);
-        field('Floor Area: ', opts.floorArea || '120sqm', ML + 612, y, 45);
-        field('No. of Aide: ', opts.noOfAide || '6', ML + 694, y, 40);
+        field('Mobile No. : ', opts.mobile || '', ML + 190, y, 80);
+        field('Landline: ', opts.landline || '', ML + 320, y, 75);
+        field('Date Established: ', opts.dateEstablished || '', ML + 450, y, 70);
+        field('Floor Area: ', opts.floorArea || '', ML + 620, y, 50);
+        field('No. of Aide: ', opts.noOfAide || '', ML + 720, y, 45);
         y += 12;
 
         hline(ML, W - MR, y, 2);
