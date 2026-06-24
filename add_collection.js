@@ -14,24 +14,20 @@ function toTitleCase(str) {
 }
 
 window.openAddModal = async () => {
-    console.log("OPEN ADD MODAL");
-
     const modal = document.getElementById('addCollectionModal');
     if (!modal) return;
 
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    window.editingIndex = -1;
+    window.editingIndex = -1; 
     resetForm();
 
-    if (!window._listenersInitialized) {
-        window._listenersInitialized = true;
-        setupFieldListeners();
-    }
-
+    if (window._listenersInitialized) return;
+    window._listenersInitialized = true;
+    setupFieldListeners();
+    // Dynamically fetch and fill up material prices matching your Price List dashboard
     await loadActivePrices();
-    renderItems();
 
     document.getElementById('inDate').value = new Date().toISOString().split('T')[0];
     updatePreview();
@@ -40,17 +36,17 @@ window.openAddModal = async () => {
 
 window.openEditModal = async (index, collectionHeader, detailedItems) => {
     const modal = document.getElementById('addCollectionModal');
-
     if (!modal) return;
+
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
-    window.editingIndex = parseInt(index, 10); 
 
+    window.editingIndex = parseInt(index, 10); 
     clearAllErrors();
+
     await loadActivePrices();
 
     window.currentCategory = collectionHeader.type || 'School';
-
     document.querySelectorAll('.m-tab').forEach(tab => {
         const tabCategory = tab.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
         tab.classList.toggle('active', tabCategory === window.currentCategory);
@@ -61,55 +57,28 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     if (document.getElementById('inAddress')) document.getElementById('inAddress').value = collectionHeader.address || '';
     if (document.getElementById('inContact')) document.getElementById('inContact').value = collectionHeader.contact_number || '';
 
-    // Restore existing receipt preview
-
-    const existingReceipt = collectionHeader.receipt_image || null;
-    const receiptPreview = document.getElementById('receiptPreview');
-    const attachReceiptBtn = document.getElementById('attachReceiptBtn');
-    const receiptFilenameLabel = document.getElementById('receiptFilenameLabel');
-
-    if (existingReceipt) {
-        if (receiptFilenameLabel) {
-            const urlParts = existingReceipt.split('/');
-            receiptFilenameLabel.textContent = decodeURIComponent(urlParts[urlParts.length - 1]);
-        }
-        receiptPreview?.classList.add('visible');
-        attachReceiptBtn?.classList.add('hidden');
-    } else {
-        receiptPreview?.classList.remove('visible');
-        attachReceiptBtn?.classList.remove('hidden');
-        if (receiptFilenameLabel) receiptFilenameLabel.textContent = '';
-    }
-    window.currentItems = (items || []).map(item => {
-    const cachedItem = loadedPricesCache.find(
-        p => parseInt(p.id, 10) === parseInt(item.material_id, 10)
-
-    );
+    window.currentItems = (detailedItems || []).map(item => {
+        const materialId = parseInt(item.material_id || item.price_list?.id, 10);
+    
         const cachedItem = loadedPricesCache.find(
             p => parseInt(p.id, 10) === materialId
-
         );
-
+    
         const materialName =
-
             item.price_list?.material_name ||
-
             item.material_name ||
-
             (cachedItem ? cachedItem.material_name : null);
-
-    return {
-
-        materialId: item.material_id,
-        material_id: item.material_id,
-        material: cachedItem?.material_name || 'Unknown',
-        material_name: cachedItem?.material_name || 'Unknown',
-        rate: Number(item.rate || cachedItem?.price || 0),
-        weight: Number(item.weight || 0),
-        subtotal: Number(item.subtotal || 0)
-    };
-});
-
+    
+        return {
+            materialId: materialId,
+            material_id: materialId,
+            material: materialName || 'Unknown',
+            material_name: materialName || 'Unknown',
+            rate: Number(item.rate ?? cachedItem?.price ?? 0),
+            weight: Number(item.weight || 0),
+            subtotal: Number(item.subtotal || 0)
+        };
+    });
     if (window.currentItems.length > 0) {
         const selMaterial = document.getElementById('selMaterial');
         if (selMaterial) {
@@ -124,12 +93,10 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
         submitBtn.onclick = (e) => window.submitCollection(e);
         submitBtn.innerHTML = '<i data-lucide="check"></i> Update Entry';
     }
+
     updatePreview();
-
     renderItems();
-
     setTimeout(refreshIcons, 100);
-
 };
 
 async function loadActivePrices() {
@@ -274,8 +241,6 @@ function formatContact(value) {
 }
 
 function resetForm() {
-    console.log("RESET FORM CALLED");
-
     ['inCustomer', 'inDate', 'inAddress', 'inContact', 'inWeight', 'inSalesman'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
@@ -283,22 +248,6 @@ function resetForm() {
 
     clearAllErrors();
     window.currentItems = []; 
-    console.log("Salesman before:", document.getElementById('inSalesman')?.value);
-
-const salesman = document.getElementById('inSalesman');
-if (salesman) salesman.value = '';
-
-const material = document.getElementById('selMaterial');
-if (material) material.selectedIndex = 0;
-
-console.log("Salesman after:", document.getElementById('inSalesman')?.value);
-    renderItems();
-    updatePreview();
-
-    const selMaterial = document.getElementById('selMaterial');
-    if (selMaterial) {
-    selMaterial.selectedIndex = 0;
-    }
     window.editingIndex = -1; // Reset unified global tracking reference
 
     window.currentCategory = 'School';
@@ -554,8 +503,6 @@ window.submitCollection = async function(e) {
             salesman: salesman || null,
             receipt_image: receiptImage
         };
-
-        console.log("COLLECTION PAYLOAD:", collectionPayload);
 
         // VARIABLE TO TRACK THE TARGET COLLECTION ID FOR ITEM INSERTION
         let activeCollectionId = null;
@@ -960,3 +907,4 @@ function closePreview() {
     refreshIcons();
 }
 });
+                
