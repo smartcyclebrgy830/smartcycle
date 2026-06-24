@@ -50,8 +50,9 @@ function renderMaterialsTable() {
     if (materialsTotalEl) materialsTotalEl.innerHTML = `&#8369;${total.toFixed(2)}`;
     lucide.createIcons();
 }
+
 function wireModal() {
-    if (isModalWired) return; // Prevent multiple even 
+    if (isModalWired) return; // Prevent multiple events 
     isModalWired = true;
     
     const saleModal = document.getElementById('saleModal');
@@ -60,62 +61,63 @@ function wireModal() {
     const submitSaleBtn = document.getElementById('submitSaleBtn');
     const addMaterialBtn = document.getElementById('addMaterialBtn');
     const rateInput = document.getElementById('materialRateInput');
-const weightInput = document.getElementById('materialWeightInput');
+    const weightInput = document.getElementById('materialWeightInput');
     const materialNameInput = document.getElementById('materialNameInput');
 
-function limitNumberInput(input) {
-    if (!input) return;
+    function limitNumberInput(input) {
+        if (!input) return;
 
-    input.addEventListener('input', function () {
-        let value = this.value;
+        input.addEventListener('input', function () {
+            let value = this.value;
 
-        // tanggal e,E,+,-
-        value = value.replace(/[eE+-]/g, '');
+            // tanggal e,E,+,-
+            value = value.replace(/[eE+-]/g, '');
 
-        let [whole, decimal] = value.split('.');
+            let [whole, decimal] = value.split('.');
 
-        // max 5 digits before decimal
-        if (whole) {
-            whole = whole.slice(0, 5);
-        }
+            // max 5 digits before decimal
+            if (whole) {
+                whole = whole.slice(0, 5);
+            }
 
-        if (decimal !== undefined) {
-            decimal = decimal.slice(0, 2);
-            value = `${whole}.${decimal}`;
-        } else {
-            value = whole;
-        }
+            if (decimal !== undefined) {
+                decimal = decimal.slice(0, 2);
+                value = `${whole}.${decimal}`;
+            } else {
+                value = whole;
+            }
 
-        this.value = value;
-    });
+            this.value = value;
+        });
 
-    input.addEventListener('keydown', function(e) {
-        if (['e', 'E', '+', '-'].includes(e.key)) {
-            e.preventDefault();
-        }
-    });
-}
+        input.addEventListener('keydown', function(e) {
+            if (['e', 'E', '+', '-'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+    }
 
-limitNumberInput(rateInput);
-limitNumberInput(weightInput);
+    limitNumberInput(rateInput);
+    limitNumberInput(weightInput);
+
     function limitMaterialName(input) {
-    if (!input) return;
+        if (!input) return;
 
-    input.addEventListener('input', function () {
-        // Letters and spaces only
-        let value = this.value.replace(/[^a-zA-Z\s]/g, '');
+        input.addEventListener('input', function () {
+            // Letters and spaces only
+            let value = this.value.replace(/[^a-zA-Z\s]/g, '');
 
-        // Remove multiple spaces
-        value = value.replace(/\s+/g, ' ');
+            // Remove multiple spaces
+            value = value.replace(/\s+/g, ' ');
 
-        // Max 30 character
-        value = value.slice(0, 30);
+            // Max 30 character
+            value = value.slice(0, 30);
 
-        this.value = value;
-    });
-}
+            this.value = value;
+        });
+    }
 
-limitMaterialName(materialNameInput);
+    limitMaterialName(materialNameInput);
     const materialsBody = document.getElementById('materialsBody');
     const attachReceiptBtn = document.getElementById('attachReceiptBtn');
     const receiptInput = document.getElementById('receiptInput');
@@ -194,7 +196,7 @@ limitMaterialName(materialNameInput);
         if (matErr) matErr.textContent = '';
     
         // Push to array (Note: materialId is now null since it's manual)
-       saleMaterials.push({ materialId: null, name: name, rate: rate, weight: weight });
+        saleMaterials.push({ materialId: null, name: name, rate: rate, weight: weight });
         
         // Clear inputs
         nameEl.value = '';
@@ -204,7 +206,6 @@ limitMaterialName(materialNameInput);
         
         renderMaterialsTable();
     });
-
 
     // Remove Material list
     materialsBody?.addEventListener('click', (e) => {
@@ -247,14 +248,25 @@ limitMaterialName(materialNameInput);
     // Contact Formatting and Validation
     function validateContact(value) {
         if (!value) return true;
-        return /^09\d{9}$/.test(value.replace(/[-\s]/g, ''));
+        const cleanVal = value.trim().toUpperCase();
+        if (cleanVal === 'N/A') return true; // Allow explicit N/A
+        return /^09\d{9}$/.test(cleanVal.replace(/[-\s]/g, ''));
     }
 
     contactInput?.addEventListener('input', (e) => {
-        let digits = e.target.value.replace(/\D/g, '');
+        let rawValue = e.target.value;
+        
+        // If user is trying to type 'N/A', bypass the strict 09 format filter
+        if (rawValue.toUpperCase().startsWith('N')) {
+            // Keep what they type but clamp it to max 3 chars ("N/A")
+            e.target.value = rawValue.slice(0, 3);
+            return;
+        }
+
+        let digits = rawValue.replace(/\D/g, '');
     
-        // FORCE "09" prefix
-        if (!digits.startsWith('09')) {
+        // FORCE "09" prefix for standard numbers
+        if (digits.length > 0 && !digits.startsWith('09')) {
             digits = '09' + digits.replace(/^0+/, ''); // avoid multiple 0s
         }
     
@@ -295,10 +307,8 @@ limitMaterialName(materialNameInput);
         let hasError = false;
         if (!partnerVal) { if (partnerErr) partnerErr.textContent = 'Partner name is required.'; hasError = true; }
         if (!dateVal) { if (dateErr) dateErr.textContent = 'Date is required.'; hasError = true; }
-        if (contactVal && !validateContact(contactVal)) { if (contactErr) contactErr.textContent = 'Use format: 09XX-XXX-XXXX'; hasError = true; }
+        if (contactVal && !validateContact(contactVal)) { if (contactErr) contactErr.textContent = 'Use format: 09XX-XXX-XXXX or N/A'; hasError = true; }
         if (saleMaterials.length === 0) { if (matErr) matErr.textContent = 'Please add at least one material.'; hasError = true; }
-        // == For Required Receipt ===
-        // if (!editingId && (!receiptInput.files || receiptInput.files.length === 0)) { if (receiptErr) receiptErr.textContent = 'Please attach a receipt.'; hasError = true; }
         
         if (hasError) { 
             isSubmitting = false;
@@ -308,14 +318,12 @@ limitMaterialName(materialNameInput);
         const activeTab = saleModal.querySelector('.m-tab.active');
         const type = activeTab?.getAttribute('data-type') || 'organization';
 
-        // Determine Profile Type for Sales (Organization/Junkshop = Partner)
         let determinedProfileType = 'customer';
         const typeLower = type.toLowerCase();
         if (typeLower === 'organization' || typeLower === 'junkshop') {
             determinedProfileType = 'partner';
         }
 
-        // Format Date (YYYY-MM-DD) for database compatibility since sales.date is a Date field type
         const saleDateFormatted = dateVal; 
 
         let totalAmount = 0;
@@ -326,7 +334,6 @@ limitMaterialName(materialNameInput);
 
         if (receiptInput.files.length > 0) {
             const file = receiptInput.files[0];
-        
             const fileName = `receipt-${Date.now()}-${file.name}`;
         
             const { data, error } = await window._supabase
@@ -345,7 +352,7 @@ limitMaterialName(materialNameInput);
         
             receiptImage = publicUrlData.publicUrl;
         }
-        // KEEP EXISTING IMAGE WHEN EDITING AND NO NEW FILE
+        
         if (!receiptImage && editingId) {
             const { data: existingSale } = await window._supabase
                 .from('sales')
@@ -383,11 +390,10 @@ limitMaterialName(materialNameInput);
                             category: type,
                             address: addressVal || 'N/A',
                             contact_num: contactVal || 'N/A',
-                            type: determinedProfileType // Sync type based on category
+                            type: determinedProfileType 
                         })
                         .eq('id', currentSale.partner_id);
                         
-                    // Catch the error here if the update fails
                     if (profileUpdateError) throw new Error("Failed to update profile: " + profileUpdateError.message);
                 }
 
@@ -398,9 +404,9 @@ limitMaterialName(materialNameInput);
                 if (deleteItemsError) throw new Error("Failed to clear old items: " + deleteItemsError.message);
             
                 const itemsToInsert = saleMaterials.map(m => ({
-                    sale_id: editingId || insertedSale.id,
-                    material_id: null, // Since manual
-                    material_name: m.name, // 👈 Siguraduhin na ang 'm.name' ay hindi undefined/null bago i-save
+                    sale_id: editingId,
+                    material_id: null,
+                    material_name: m.name, 
                     weight: m.weight,
                     rate: m.rate,
                     amount: m.rate * m.weight
@@ -420,7 +426,6 @@ limitMaterialName(materialNameInput);
                     .ilike('name', partnerVal)
                     .maybeSingle();
                 
-                // Allow non-existent rows, but catch actual DB errors
                 if (fetchError && fetchError.code !== 'PGRST116') {
                     throw new Error("Error checking for existing profile: " + fetchError.message);
                 }
@@ -434,11 +439,10 @@ limitMaterialName(materialNameInput);
                             category: type,
                             address: addressVal || 'N/A', 
                             contact_num: contactVal || 'N/A',
-                            type: determinedProfileType // Sync type based on category
+                            type: determinedProfileType 
                         })
                         .eq('id', profileId);
                         
-                    // Catch the error here so old NULL values don't quietly remain
                     if (profileUpdateError) throw new Error("Failed to update existing profile: " + profileUpdateError.message);
                 } else {
                     const { data: newProfile, error: profileError } = await window._supabase
@@ -468,11 +472,11 @@ limitMaterialName(materialNameInput);
                     .single();
                 
                 if (insertError) throw new Error("Failed to insert sale: " + insertError.message);
-                console.log(saleMaterials)
+                
                 const itemsToInsert = saleMaterials.map(m => ({
-                    sale_id: editingId || insertedSale.id,
-                    material_id: null, // Since manual
-                    material_name: m.name, // 👈 Siguraduhin na ang 'm.name' ay hindi undefined/null bago i-save
+                    sale_id: insertedSale.id,
+                    material_id: null, 
+                    material_name: m.name, 
                     weight: m.weight,
                     rate: m.rate,
                     amount: m.rate * m.weight
@@ -489,11 +493,12 @@ limitMaterialName(materialNameInput);
             closeModal();
             if (typeof window.renderTable === 'function') await window.renderTable();
         } catch (dbError) {
-            alert(dbError.message); // This will surface exactly why 'type' isn't writing
+            alert(dbError.message); 
         } finally {
             isSubmitting = false; 
         }
     });
+
     // Reset Modal Elements Window
     function resetModal() {
         saleMaterials = [];
@@ -503,7 +508,6 @@ limitMaterialName(materialNameInput);
         if (dateInput) dateInput.value = '';
         if (contactInput) contactInput.value = '';
         
-        // --- ADDED: Reset the new manual input fields ---
         const matNameInput = document.getElementById('materialNameInput');
         const matRateInput = document.getElementById('materialRateInput');
         const matWeightInput = document.getElementById('materialWeightInput');
@@ -511,7 +515,6 @@ limitMaterialName(materialNameInput);
         if (matNameInput) matNameInput.value = '';
         if (matRateInput) matRateInput.value = '';
         if (matWeightInput) matWeightInput.value = '';
-        // ------------------------------------------------
         
         if (receiptInput) receiptInput.value = '';
         if (receiptPreviewImg) receiptPreviewImg.src = '';
@@ -524,38 +527,31 @@ limitMaterialName(materialNameInput);
             t.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
         });
         
-        // Make sure to include the new inputs in your error clearing logic
-        const matNameErr = document.getElementById('materialNameError'); // If you add one
         [partnerErr, addressErr, dateErr, contactErr, matErr].forEach(el => { if (el) el.textContent = ''; });
         
         if (submitSaleBtn) submitSaleBtn.innerHTML = '<i data-lucide="check"></i> Submit';
         lucide.createIcons();
     }
-    // Add these variables to your script
+
     let allProfiles = [];
     
-    // Fetch profiles once when modal opens
     async function loadProfiles() {
         const { data } = await window._supabase.from('profiles').select('*');
         allProfiles = data || [];
     }
     
-    // Add event listeners inside wireModal()
     const suggestionsBox = document.getElementById('partnerSuggestions');
     
     function showSuggestions(filter = '') {
-        // Sort alphabetically
         const sortedProfiles = [...allProfiles].sort((a, b) => 
             a.name.localeCompare(b.name)
         );
     
-        // Filter by type 'partner' and search text
         const filtered = sortedProfiles.filter(p => 
             p.type === 'partner' && 
             p.name.toLowerCase().includes(filter.toLowerCase())
         );
     
-        // Limit to first 5 items
         const limitedList = filtered.slice(0, 5);
     
         suggestionsBox.innerHTML = '';
@@ -581,13 +577,9 @@ limitMaterialName(materialNameInput);
         suggestionsBox.style.display = 'block';
     }
     
-    // Show all when input is focused
-    partnerInput.addEventListener('focus', () => showSuggestions());
-    
-    // Filter as user types
+    partnerInput.addEventListener('focus', () => showSuggestions(partnerInput.value));
     partnerInput.addEventListener('input', (e) => showSuggestions(e.target.value));
     
-    // Hide when clicking outside
     document.addEventListener('click', (e) => {
         if (!partnerInput.contains(e.target)) suggestionsBox.style.display = 'none';
     });
@@ -622,10 +614,9 @@ async function openEditModal(id) {
 
     editingId = id;
     
-    // Inside openEditModal(id) in your sales_form.js:
     saleMaterials = (sale.items || []).map(item => ({
         materialId: item.material_id, 
-        name: item.name, // 🔹 Match the transformed name property directly
+        name: item.name, 
         rate: item.rate,
         weight: item.weight
     }));
@@ -636,8 +627,9 @@ async function openEditModal(id) {
     document.getElementById('partnerName').value = sale.partner || '';
     document.getElementById('saleAddress').value = sale.address || '';
     
-   function formatContactForInput(num) {
+    function formatContactForInput(num) {
         if (!num) return '';
+        if (num.trim().toUpperCase() === 'N/A') return 'N/A'; // Do not format N/A as digits
         const digits = num.replace(/\D/g, '').slice(0, 11);
     
         if (digits.length <= 4) return digits;
@@ -648,7 +640,6 @@ async function openEditModal(id) {
     document.getElementById('saleContact').value = formatContactForInput(sale.contact);
 
     if (sale.date) {
-        // splits "2026-05-25T23:39:58" down to "2026-05-25"
         document.getElementById('saleDate').value = sale.date.split('T')[0];
     }
 
