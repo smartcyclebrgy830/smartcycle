@@ -28,7 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     
         const { data, error } = await window._supabase
-
             .from('profiles')
             .select('type')
             .eq('auth_id', user.id)
@@ -47,17 +46,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const exportSection = document.getElementById('exportSection');
     
         if (currentUserRole === 'Moderator') {
-            // Hide EVERYTHING (label + button)
             if (exportSection) exportSection.style.display = 'none';
     
-            // Extr
             document.querySelectorAll('.btn-export').forEach(btn => {
                 btn.style.display = 'none';
             });
         }
     
         if (currentUserRole === 'Admin' || currentUserRole === 'Super Admin') {
-            if (exportSection) exportSection.style.display = 'block'; // or block depending on your layout
+            if (exportSection) exportSection.style.display = 'block';
         }
     }
 
@@ -151,13 +148,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedStart = null;
     let selectedEnd = null;
     
-    // Global variable cache to store current data state safely
     let processedReportSummary = {}; 
 
+    // FIX: Clamped default monthly view end date to day 28
     const initDates = () => {
         const today = new Date();
         selectedStart = new Date(today.getFullYear(), today.getMonth(), 1);
-        selectedEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        selectedEnd = new Date(today.getFullYear(), today.getMonth(), 28);
     };
     initDates();
 
@@ -196,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!data || data.length === 0) {
                 if (tableBody) tableBody.innerHTML = '';
                 if (emptyState) emptyState.style.display = 'flex';
-                processedReportSummary = {}; // flush cache
+                processedReportSummary = {}; 
                 return;
             }
         
@@ -216,23 +213,21 @@ document.addEventListener('DOMContentLoaded', () => {
         tableBody.innerHTML = ''; 
         const startRange = new Date(startRangeDate.getFullYear(), startRangeDate.getMonth(), startRangeDate.getDate());
         
-        // Reset our calculation engine
         processedReportSummary = {}; 
-        // Inside renderReportTable(transactions, startRangeDate)
+        
         transactions.forEach(tx => {
             if (!tx.transaction_date) return;
             const parts = tx.transaction_date.split('T')[0].split('-');
             const txDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
             
-            // Get the actual day of the month (1-31)
             const dayOfMonth = txDate.getDate();
             
-            // NEW: Ignore dates greater than 28
+            // Strictly exclude anything beyond Day 28
             if (dayOfMonth > 28) return; 
             
             const name = tx.material_name || "Unknown Material";
             
-            // Calculate week mapping
+            // Clean weekly buckets mapped exactly 1-28
             let weekKey = 'week1';
             if (dayOfMonth >= 8 && dayOfMonth <= 14) weekKey = 'week2';
             else if (dayOfMonth >= 15 && dayOfMonth <= 21) weekKey = 'week3';
@@ -409,14 +404,12 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.querySelector('#exportModalCancel').addEventListener('click', close);
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 
-        // Strip special characters on input
         ['expJunkshop', 'expAddress', 'expBrgy', 'expZone', 'expDistrict', 'expOwner'].forEach(function(id) {
             overlay.querySelector('#' + id).addEventListener('input', function() {
                 this.value = this.value.replace(/[^\w\s.,\-]/g, '');
             });
         });
 
-        // Mobile Number Format
         overlay.querySelector('#expMobile').addEventListener('input', function() {
             var digits = this.value.replace(/\D/g, '').slice(0, 11);
             var formatted = digits;
@@ -428,7 +421,6 @@ document.addEventListener('DOMContentLoaded', () => {
             this.value = formatted;
         });
 
-        // Landline format
         overlay.querySelector('#expLandline').addEventListener('input', function() {
             var digits = this.value.replace(/\D/g, '');
             if (digits.startsWith('02')) digits = digits.slice(2);
@@ -468,17 +460,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            // GET VALUES FIRST 
             const month = parseInt(overlay.querySelector('#expMonth').value);
             const year  = parseInt(overlay.querySelector('#expYear').value);
         
-            console.log("MONTH/YEAR:", month, year); // debug
+            console.log("MONTH/YEAR:", month, year); 
         
-            // NOW CALL FUNCTION 
             const aggregated = await JunkshopExport.aggregateSupabaseData(month, year);
         
             console.log("AGGREGATED DATA:", aggregated); 
-            // Bundling the compiled metrics payload into options map
             const opts = {
                 month:           parseInt(overlay.querySelector('#expMonth').value),
                 year:            parseInt(overlay.querySelector('#expYear').value),
@@ -500,9 +489,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 noOfAide:        overlay.querySelector('#expAide').value.trim(),
                 reportData: aggregated
             };
-            // LOG EXPORT ACTION
+
             if (currentUserRole === 'Admin' || currentUserRole === 'Super Admin') {
-                const exportType = format.toUpperCase(); // PDF or CSV
+                const exportType = format.toUpperCase(); 
                 await window.logAction(`Exported ${exportType} report for ${opts.junkshopName}`);
             }
 
@@ -670,10 +659,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     selectedEnd = new Date(y);
                     break;
                 }
+                // FIX: Clamped quick range calculations to stop precisely on the 28th
                 case 'this-month': {
                     selectedStart = new Date(today.getFullYear(), today.getMonth(), 1);
-                    selectedEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                        break;
+                    selectedEnd = new Date(today.getFullYear(), today.getMonth(), 28);
+                    break;
                 }
                 case 'last-week': {
                     const end = new Date(today);
@@ -684,9 +674,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     selectedEnd = end;
                     break;
                 }
+                // FIX: Clamped quick range calculations to stop precisely on the 28th
                 case 'last-month': {
                     selectedStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                    selectedEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+                    selectedEnd = new Date(today.getFullYear(), today.getMonth() - 1, 28);
                     break;
                 }
                 case 'last-quarter': {
@@ -702,7 +693,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 6. INITIAL RUN SEQUENCE
     getUserRole()
     rebuildAllCalendars();
     fetchAndRenderReportData(formatDateToSQL(selectedStart), formatDateToSQL(selectedEnd));
