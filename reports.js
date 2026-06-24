@@ -219,25 +219,30 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reset our calculation engine
         processedReportSummary = {}; 
     
+        // Inside renderReportTable(transactions, startRangeDate)
         transactions.forEach(tx => {
             if (!tx.transaction_date) return;
             const parts = tx.transaction_date.split('T')[0].split('-');
             const txDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
             
+            // Get the actual day of the month (1-31)
+            const dayOfMonth = txDate.getDate();
+        
+            // CRITICAL: Skip data for days 29, 30, and 31
+            if (dayOfMonth > 28) return; 
+        
             const name = tx.material_name || "Unknown Material";
-            const diffTime = txDate.getTime() - startRange.getTime();
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
             
-            // Map cleanly to columns 
+            // Calculate week mapping based on the day (1-28)
             let weekKey = 'week1';
-            if (diffDays > 7 && diffDays <= 14) weekKey = 'week2';
-            else if (diffDays > 14 && diffDays <= 21) weekKey = 'week3';
-            else if (diffDays > 21) weekKey = 'week4';
-    
+            if (dayOfMonth > 7 && dayOfMonth <= 14) weekKey = 'week2';
+            else if (dayOfMonth > 14 && dayOfMonth <= 21) weekKey = 'week3';
+            else if (dayOfMonth > 21 && dayOfMonth <= 28) weekKey = 'week4';
+        
             if (!processedReportSummary[name]) {
                 processedReportSummary[name] = { week1: 0, week2: 0, week3: 0, week4: 0, total: 0 };
             }
-    
+        
             const currentWeight = parseFloat(tx.weight || 0);
             processedReportSummary[name][weekKey] += currentWeight;
             processedReportSummary[name].total += currentWeight;
