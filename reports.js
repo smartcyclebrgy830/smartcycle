@@ -455,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 errors.push('Mobile No. must be a valid PH number (e.g. 09XX-XXX-XXXX).');
             }
 
-            if (landline && landline !== '(02) ' && !/^\(02\)\s\d{3,4}-\d{4}$/.test(landline)) {
+            if (landline && landline !== '(02) ' && !/^\(02\)\s\d{3}-\d{4}$/.test(landline)) {
                 errors.push('Landline must be a valid format (e.g. (02) XXXX-XXXX).');
             }
 
