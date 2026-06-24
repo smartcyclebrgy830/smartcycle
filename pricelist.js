@@ -227,9 +227,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 'Added material',
                 `Added "${material}" (Unit: ${unit}, Price: ₱${parseFloat(price).toFixed(2)})`
             );
-            allRows.push(data[0]);
-            currentPage = Math.ceil(allRows.length / itemsPerPage); // jump to the page where the new item lands
-            renderPage();
+            allItems.push(data[0]);
+            renderTable(); // Note: ensure renderTable() exists or use loadPriceList()
+
+            // === ADD NATIVE ALERT HERE ===
+            alert(`Success! "${material}" has been added to the price list.`);
         }
     
         closeModal();
