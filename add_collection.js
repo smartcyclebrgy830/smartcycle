@@ -26,11 +26,14 @@ window.openAddModal = async () => {
     window.editingIndex = -1; 
     resetForm();
 
-    if (window._listenersInitialized) return;
-    window._listenersInitialized = true;
-    setupFieldListeners();
-    // Dynamically fetch and fill up material prices matching your Price List dashboard
+    // 1. ALWAYS pull the latest live prices from Supabase on every open
     await loadActivePrices();
+
+    // 2. ONLY protect setupFieldListeners from being attached multiple times
+    if (!window._listenersInitialized) {
+        window._listenersInitialized = true;
+        setupFieldListeners();
+    }
 
     document.getElementById('inDate').value = new Date().toISOString().split('T')[0];
     updatePreview();
@@ -325,8 +328,8 @@ window.addItem = function() {
     let materialName = selectedOption?.dataset.name || cachedItem?.material_name;
     
     if (!materialName && selectedOption) {
-        // Splits text at '(' or '-' and trims whitespace to isolate just the name string
-        materialName = selectedOption.textContent.split(/[(-]/)[0].trim();
+        // Splits safely by isolating the rate suffix string " - ₱..."
+        materialName = selectedOption.textContent.split(' - ₱')[0].trim();
     }
 
     if (isNaN(materialId)) {
