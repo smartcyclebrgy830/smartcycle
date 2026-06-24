@@ -56,6 +56,7 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
     if (document.getElementById('inDate')) document.getElementById('inDate').value = collectionHeader.date_collected || '';
     if (document.getElementById('inAddress')) document.getElementById('inAddress').value = collectionHeader.address || '';
     if (document.getElementById('inContact')) document.getElementById('inContact').value = collectionHeader.contact_number || '';
+    if (document.getElementById('inSalesman')) document.getElementById('inSalesman').value = collectionHeader.salesman || '';
 
     window.currentItems = (detailedItems || []).map(item => {
         const materialId = parseInt(item.material_id || item.price_list?.id, 10);
