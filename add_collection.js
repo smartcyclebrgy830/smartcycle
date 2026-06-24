@@ -14,29 +14,32 @@ function toTitleCase(str) {
 }
 
 window.openAddModal = async () => {
-    window.editingIndex = -1; // reset
-    window.currentItems = []; // clear
+    window.editingIndex = -1; // reset unified global reference cleanly first
+    window.currentItems = []; // clear staging array
+    
+    // Reset form elements & visuals instantly
     resetForm();
+    
     const modal = document.getElementById('addCollectionModal');
     if (!modal) return;
 
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    window.editingIndex = -1; 
-    resetForm();
-
-    // 1. ALWAYS pull the latest live prices from Supabase on every open
+    // 1. Pull latest live prices from Supabase
     await loadActivePrices();
 
-    // 2. ONLY protect setupFieldListeners from being attached multiple times
+    // 2. Only protect setupFieldListeners from being attached multiple times
     if (!window._listenersInitialized) {
         window._listenersInitialized = true;
         setupFieldListeners();
     }
 
     document.getElementById('inDate').value = new Date().toISOString().split('T')[0];
+    
+    // Explicitly run renders to clean up UI strings cleanly
     updatePreview();
+    renderItems(); 
     setTimeout(refreshIcons, 100);
 };
     
@@ -104,11 +107,10 @@ async function loadActivePrices() {
     if (!selMaterial) return;
 
     try {
-        // Corrected target table to 'price_list' and selected the correct columns matching
         const { data: prices, error } = await _supabase
             .from('price_list')
             .select('id, material_name, price, status')
-            .eq('status', 'Active'); // Ensures only Active rows are pulled
+            .eq('status', 'Active'); 
 
         if (error) throw error;
 
@@ -124,24 +126,26 @@ async function loadActivePrices() {
             selMaterial.innerHTML = '<option value="" disabled>No active materials found</option>';
         }
     } catch (err) {
-        console.error("Error fetching live price rates from database:", err.message);
+        console.error("Error fetching live price rates from database, using cached fallback profiles:", err.message);
         
-        // Updated hardcoded fallback IDs to precisely match your actual Supabase table IDs
-        loadedPricesCache = [
-            { id: 4, material_name: "Plastic", price: 6 },
-            { id: 5, material_name: "Bakal", price: 13 },
-            { id: 6, material_name: "Paper Assorted", price: 8 },
-            { id: 7, material_name: "Yero", price: 7 },
-            { id: 8, material_name: "PET Assorted", price: 5 }
-        ];
-        
-        selMaterial.innerHTML = `
-            <option value="4" data-name="Plastic" data-rate="6" selected>Plastic - ₱6/kg</option>
-            <option value="5" data-name="Bakal" data-rate="13">Bakal - ₱13/kg</option>
-            <option value="6" data-name="Paper Assorted" data-rate="8">Paper Assorted - ₱8/kg</option>
-            <option value="7" data-name="Yero" data-rate="7">Yero - ₱7/kg</option>
-            <option value="8" data-name="PET Assorted" data-rate="5">PET Assorted - ₱5/kg</option>
-        `;
+        // Check if we already have cache items before wiping out with fallback list
+        if (!loadedPricesCache || loadedPricesCache.length === 0) {
+            loadedPricesCache = [
+                { id: 4, material_name: "Plastic", price: 6 },
+                { id: 5, material_name: "Bakal", price: 13 },
+                { id: 6, material_name: "Paper Assorted", price: 8 },
+                { id: 7, material_name: "Yero", price: 7 },
+                { id: 8, material_name: "PET Assorted", price: 5 }
+            ];
+            
+            selMaterial.innerHTML = `
+                <option value="4" data-name="Plastic" data-rate="6" selected>Plastic - ₱6/kg</option>
+                <option value="5" data-name="Bakal" data-rate="13">Bakal - ₱13/kg</option>
+                <option value="6" data-name="Paper Assorted" data-rate="8">Paper Assorted - ₱8/kg</option>
+                <option value="7" data-name="Yero" data-rate="7">Yero - ₱7/kg</option>
+                <option value="8" data-name="PET Assorted" data-rate="5">PET Assorted - ₱5/kg</option>
+            `;
+        }
     }
 }
 
@@ -248,8 +252,11 @@ function resetForm() {
 
     clearAllErrors();
     window.currentItems = []; 
-    window.editingIndex = -1; // Reset unified global tracking reference
+    window.editingIndex = -1; 
+    
+    // Re-render clear empty state tables immediately
     renderItems();
+    
     window.currentCategory = 'School';
     document.querySelectorAll('.m-tab').forEach((tab, idx) => {
         tab.classList.toggle('active', idx === 0);
@@ -261,7 +268,17 @@ function resetForm() {
         submitBtn.innerHTML = '<i data-lucide="check"></i> Submit';
     }
 
-    const previewFields = { preCustomer: '---', preDate: '---', preAddress: '---', preContact: '---', preTotal: '₱0' };
+    // Explicit clear targets inside the layout DOM
+    const previewFields = { 
+        preCustomer: '---', 
+        preDate: '---', 
+        preAddress: '---', 
+        preContact: '---', 
+        preSalesman: '---', 
+        preTotal: '₱0.00',
+        preTotalLine: '₱0.00'
+    };
+    
     Object.entries(previewFields).forEach(([id, value]) => {
         const el = document.getElementById(id);
         if (el) el.innerText = value;
@@ -275,8 +292,7 @@ function resetForm() {
     receiptPreview?.classList.remove('visible');
     attachReceiptBtn?.classList.remove('hidden');
     if (receiptFilenameLabel) receiptFilenameLabel.textContent = '';
-    var receiptErr = document.getElementById('receiptError');
-    if (receiptErr) receiptErr.textContent = '';
+    
     refreshIcons();
 }
 
