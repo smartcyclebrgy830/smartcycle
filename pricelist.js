@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 ])
                 .select();
-    
+        
             if (error) {
                 alert('Insert failed: ' + error.message);
                 return;
@@ -227,13 +227,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 'Added material',
                 `Added "${material}" (Unit: ${unit}, Price: ₱${parseFloat(price).toFixed(2)})`
             );
-            allItems.push(data[0]);
-            renderTable(); // Note: ensure renderTable() exists or use loadPriceList()
-
+            
+            // FIX: Change 'allItems' to 'allRows' so it matches your state variable name
+            allRows.push(data[0]); 
+            
+            // Note: ensure renderTable() exists or use loadPriceList()
+            // FIX: Your code uses renderPage() instead of renderTable()
+            renderPage(); 
+        
             // === ADD NATIVE ALERT HERE ===
             alert(`Success! "${material}" has been added to the price list.`);
         }
-    
+        
         closeModal();
         checkEmptyState();
     });
