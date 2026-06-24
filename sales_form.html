@@ -45,8 +45,21 @@
         <label>Material & Rate</label>
         <div class="material-row-input" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px;">
           <input type="text" id="materialNameInput" placeholder="Material Name" maxlength="30">
-          <input type="text" id="materialRateInput" placeholder="Rate (₱)" min="0" step="0.01">
-          <input type="text" id="materialWeightInput" placeholder="Weight (kg)" min="0.1" step="0.1">
+          <input
+    type="number"
+    id="materialRateInput"
+    placeholder="Rate (₱)"
+    min="0"
+    max="99999"
+    step="0.01">
+
+<input
+    type="number"
+    id="materialWeightInput"
+    placeholder="Weight (kg)"
+    min="0"
+    max="99999"
+    step="0.01">
           <button class="btn-add-item" type="button" id="addMaterialBtn">
             <i data-lucide="plus"></i> Add
           </button>
