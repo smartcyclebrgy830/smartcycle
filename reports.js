@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Hide EVERYTHING (label + button)
             if (exportSection) exportSection.style.display = 'none';
     
-            // Extra safety
+            // Extr
             document.querySelectorAll('.btn-export').forEach(btn => {
                 btn.style.display = 'none';
             });
