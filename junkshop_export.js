@@ -332,7 +332,16 @@ const JunkshopExport = (() => {
 
             // 1. Draw the Recyclable Material Name column
             box(ML, ry, colMat, rh3);
-            doc.setFont('times', 'bold'); doc.setFontSize(8);
+            doc.setFont('times', 'bold');
+            
+            // Shrink font size until the name fits inside colMat (minus padding)
+            const maxNameWidth = colMat - 6; // 4pt left padding + a little breathing room
+            let nameFontSize = 8;
+            doc.setFontSize(nameFontSize);
+            while (doc.getTextWidth(mat) > maxNameWidth && nameFontSize > 5) {
+                nameFontSize -= 0.5;
+                doc.setFontSize(nameFontSize);
+            }
             doc.text(mat, ML + 4, ry + rh3 - 4);
 
             // 2. Reset X-coordinate to start drawing the 28 days
