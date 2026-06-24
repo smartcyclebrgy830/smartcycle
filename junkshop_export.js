@@ -344,15 +344,18 @@ const JunkshopExport = (() => {
             const item = dataGrid[mat] || { dailyWeights: Array(32).fill(0), total: 0 };
             
             // 1. Draw the Recyclable Material Name column
-            box(ML, ry, colMat, rh3);
+            const ri = rowInfo[materialsList.indexOf(mat)];
+                    box(ML, ry, colMat, ri.rowH);
             doc.setFont('times', 'bold'); doc.setFontSize(8);
-            doc.text(mat, ML + 4, ry + rh3 - 4);
+            ri.nameLines.forEach((line, li) => {
+                doc.text(line, ML + 4, ry + 10 + (li * lineH));
+            });
             
             // 2. Reset X-coordinate to start drawing the 28 days
             wx = ML + colMat;
             
             for (let i = 0; i < 28; i++) {
-                box(wx, ry, dayW, rh3);
+                box(wx, ry, dayW, ri.rowH);
                 let dayNumber = i + 1;
                 let wt = item.dailyWeights[dayNumber] || 0;
                 let displayStr = wt > 0 ? wt.toFixed(1) : '-';
@@ -363,7 +366,7 @@ const JunkshopExport = (() => {
             }
             
             // 3. Draw the Monthly Totals Column right at the end of Day 28
-            box(totX, ry, colTotal, rh3);
+            box(totX, ry, colTotal, ri.rowH);
             if (item.total > 0) {
                 doc.setFont('times', 'bold'); doc.setFontSize(8);
                 doc.text(item.total.toFixed(1), totX + colTotal / 2, ry + rh3 - 4, { align: 'center' });
@@ -373,7 +376,7 @@ const JunkshopExport = (() => {
             }
             
             // Move down to the next row coordinate
-            ry += rh3;
+            ry += ri.rowH;
         });
     
         y = ry + 16;
