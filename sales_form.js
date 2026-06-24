@@ -67,17 +67,17 @@ function limitNumberInput(input) {
     if (!input) return;
 
     input.addEventListener('input', function () {
-        let value = this.value.replace(/[^0-9.]/g, '');
+        let value = this.value;
 
-        const parts = value.split('.');
-        if (parts.length > 2) {
-            value = parts[0] + '.' + parts.slice(1).join('');
-        }
+        // tanggal e,E,+,-
+        value = value.replace(/[eE+-]/g, '');
 
         let [whole, decimal] = value.split('.');
 
-        // max 5 digits
-        whole = whole.slice(0, 5);
+        // max 5 digits before decimal
+        if (whole) {
+            whole = whole.slice(0, 5);
+        }
 
         if (decimal !== undefined) {
             decimal = decimal.slice(0, 2);
@@ -89,6 +89,12 @@ function limitNumberInput(input) {
         this.value = value;
     });
 
+    input.addEventListener('keydown', function(e) {
+        if (['e', 'E', '+', '-'].includes(e.key)) {
+            e.preventDefault();
+        }
+    });
+}
     input.addEventListener('keydown', function(e) {
         if (['e', 'E', '+', '-'].includes(e.key)) {
             e.preventDefault();
