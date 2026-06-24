@@ -281,9 +281,22 @@ const JunkshopExport = (() => {
 
         const rh0 = 16, rh1 = 14, rh2 = 11, rh3 = 13;
         const nMat = materialsList.length;
-        const tableH = rh0 + rh1 + rh2 + (nMat + 2) * rh3;
+        
+        // Pre-calculate wrapped name lines + row height for every material, since
+        // long names may need more vertical space than the default rh3
+        doc.setFont('times', 'bold'); doc.setFontSize(8);
+        const maxNameWidth = colMat - 8;
+        const lineH = 8;
+        const rowInfo = materialsList.map(mat => {
+            const nameLines = doc.splitTextToSize(mat, maxNameWidth);
+            const rowH = Math.max(rh3, nameLines.length * lineH + 4);
+            return { nameLines, rowH };
+        });
+        
+        const dataRowsH = rowInfo.reduce((sum, r) => sum + r.rowH, 0);
+        const tableH = rh0 + rh1 + rh2 + dataRowsH + (2 * rh3); // +2 rh3 keeps space for the trailing rows below the data (totals/footer rows)
         const tableTop = y;
-
+        
         doc.setDrawColor(0,0,0);
         doc.setLineWidth(0.8);
         doc.rect(ML, tableTop, usableW, tableH, 'S');
@@ -329,38 +342,26 @@ const JunkshopExport = (() => {
         // Render Data Rows dynamically from price_list active items
         materialsList.forEach(mat => {
             const item = dataGrid[mat] || { dailyWeights: Array(32).fill(0), total: 0 };
-
+            
             // 1. Draw the Recyclable Material Name column
             box(ML, ry, colMat, rh3);
-            doc.setFont('times', 'bold');
-            
-            // Shrink font size until the name fits inside colMat (minus padding)
-            const maxNameWidth = colMat - 6; // 4pt left padding + a little breathing room
-            let nameFontSize = 8;
-            doc.setFontSize(nameFontSize);
-            while (doc.getTextWidth(mat) > maxNameWidth && nameFontSize > 5) {
-                nameFontSize -= 0.5;
-                doc.setFontSize(nameFontSize);
-            }
+            doc.setFont('times', 'bold'); doc.setFontSize(8);
             doc.text(mat, ML + 4, ry + rh3 - 4);
-
+            
             // 2. Reset X-coordinate to start drawing the 28 days
             wx = ML + colMat;
             
-            // Loop sequentially across exactly 28 grid columns (4 Weeks * 7 Days)
             for (let i = 0; i < 28; i++) {
                 box(wx, ry, dayW, rh3);
-                
                 let dayNumber = i + 1;
                 let wt = item.dailyWeights[dayNumber] || 0;
                 let displayStr = wt > 0 ? wt.toFixed(1) : '-';
-
                 doc.setFontSize(7);
                 doc.setFont('times', 'normal');
                 doc.text(displayStr, wx + dayW / 2, ry + rh3 - 4, { align: 'center' });
-                wx += dayW; // Advances exactly to the next day column
+                wx += dayW;
             }
-
+            
             // 3. Draw the Monthly Totals Column right at the end of Day 28
             box(totX, ry, colTotal, rh3);
             if (item.total > 0) {
@@ -370,13 +371,11 @@ const JunkshopExport = (() => {
                 doc.setFont('times', 'normal'); doc.setFontSize(8);
                 doc.text('-', totX + colTotal / 2, ry + rh3 - 4, { align: 'center' });
             }
-
+            
             // Move down to the next row coordinate
             ry += rh3;
         });
-
-        // The rogue loop that was out here drawing extra boxes has been completely removed.
-
+    
         y = ry + 16;
 
         ltext('Certified by:', ML, y, 9, 'bold');
