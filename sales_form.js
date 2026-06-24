@@ -108,7 +108,7 @@ limitNumberInput(weightInput);
         // Remove multiple spaces
         value = value.replace(/\s+/g, ' ');
 
-        // Max 30 characters
+        // Max 30 character
         value = value.slice(0, 30);
 
         this.value = value;
