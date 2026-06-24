@@ -251,7 +251,7 @@ const JunkshopExport = (() => {
         };
 
         field('Junkshop Name: ', opts.junkshopName || 'TEZWA', ML, y, 180);
-        field('Address: ', opts.address || 'BRGY. 830 SOUTH NAGTAHAN, PACO, MANILA', ML + 280, y, 170);
+        field('Address: ', opts.address || 'BRGY. 830 SOUTH NAGTAHAN, PACO, MANILA', ML + 390, y, 170);
         field('Brgy: ', opts.barangay || '830', ML + 520, y, 55);
         field('Zone: ', opts.zone || '90', ML + 600, y, 35);
         field('District: ', opts.district || '6', ML + 660, y, 60);
