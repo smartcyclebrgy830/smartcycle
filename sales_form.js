@@ -61,6 +61,7 @@ function wireModal() {
     const addMaterialBtn = document.getElementById('addMaterialBtn');
     const rateInput = document.getElementById('materialRateInput');
 const weightInput = document.getElementById('materialWeightInput');
+    const materialNameInput = document.getElementById('materialNameInput');
 
 function limitNumberInput(input) {
     if (!input) return;
@@ -97,6 +98,24 @@ function limitNumberInput(input) {
 
 limitNumberInput(rateInput);
 limitNumberInput(weightInput);
+    function limitMaterialName(input) {
+    if (!input) return;
+
+    input.addEventListener('input', function () {
+        // Letters and spaces only
+        let value = this.value.replace(/[^a-zA-Z\s]/g, '');
+
+        // Remove multiple spaces
+        value = value.replace(/\s+/g, ' ');
+
+        // Max 30 characters
+        value = value.slice(0, 30);
+
+        this.value = value;
+    });
+}
+
+limitMaterialName(materialNameInput);
     const materialsBody = document.getElementById('materialsBody');
     const attachReceiptBtn = document.getElementById('attachReceiptBtn');
     const receiptInput = document.getElementById('receiptInput');
