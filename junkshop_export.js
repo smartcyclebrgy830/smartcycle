@@ -82,6 +82,7 @@ const JunkshopExport = (() => {
                     if (!d) return;
 
                     const dayOfMonth = d.getDate(); // Explicit day (1 to 31)
+                    if (dayOfMonth > 28) return;
 
                     (col.collection_items || []).forEach(item => {
                         const matchedMaterialName = materialMap[item.material_id] || 'Others';
@@ -137,6 +138,7 @@ const JunkshopExport = (() => {
             const d = parseCollectionDate(col.date || col.date_collected);
             if (!d || d.getMonth() !== month || d.getFullYear() !== year) return;
             const dayOfMonth = d.getDate();
+            if (dayOfMonth > 28) return;
 
             (col.items || col.collection_items || []).forEach(item => {
                 const mat = item.material || 'Others';
@@ -342,20 +344,18 @@ const JunkshopExport = (() => {
                 let displayStr = '-';
                 doc.setFontSize(7);
 
-                if (dayNumber < 28) {
-                    // Standard Days 1 to 27 map exactly to structural column grids
+                for (let i = 0; i < 28; i++) {
+                    box(wx, ry, dayW, rh3);
+                    
+                    let dayNumber = i + 1;
                     let wt = item.dailyWeights[dayNumber] || 0;
-                    displayStr = wt > 0 ? wt.toFixed(1) : '-';
-                } else {
-                    // Visual column D7 on Week 4 handles accumulation summary of trailing days (28-31)
-                    let totalEndWeights = 0;
-                    for (let d = 28; d <= 31; d++) {
-                        totalEndWeights += item.dailyWeights[d] || 0;
-                    }
-                    displayStr = totalEndWeights > 0 ? totalEndWeights.toFixed(1) : '-';
+                    let displayStr = wt > 0 ? wt.toFixed(1) : '-';
+    
+                    doc.setFontSize(7);
+                    doc.setFont('times', 'normal');
+                    doc.text(displayStr, wx + dayW / 2, ry + rh3 - 4, { align: 'center' });
+                    wx += dayW;
                 }
-
-                doc.setFont('times', 'normal');
                 doc.text(displayStr, wx + dayW / 2, ry + rh3 - 4, { align: 'center' });
                 wx += dayW;
             }
@@ -372,20 +372,6 @@ const JunkshopExport = (() => {
 
             ry += rh3;
         });
-
-        // Loop sequentially across the 28 grid table column nodes (4 Weeks * 7 Days)
-        for (let i = 0; i < 28; i++) {
-            box(wx, ry, dayW, rh3);
-            
-            let dayNumber = i + 1; // Maps exactly from Day 1 to Day 28
-            let wt = item.dailyWeights[dayNumber] || 0;
-            let displayStr = wt > 0 ? wt.toFixed(1) : '-';
-
-            doc.setFontSize(7);
-            doc.setFont('times', 'normal');
-            doc.text(displayStr, wx + dayW / 2, ry + rh3 - 4, { align: 'center' });
-            wx += dayW;
-        }
 
         y = ry + 16;
 
@@ -470,8 +456,8 @@ const JunkshopExport = (() => {
                 // Week 3 (15–21)
                 for (let d = 15; d <= 21; d++) w3 += item.dailyWeights[d] || 0;
     
-                // Week 4 (22–31)
-                for (let d = 22; d <= 31; d++) w4 += item.dailyWeights[d] || 0;
+                // Week 4 (22–28)
+                for (let d = 22; d <= 28; d++) w4 += item.dailyWeights[d] || 0;
     
                 rows.push([
                     mat,
