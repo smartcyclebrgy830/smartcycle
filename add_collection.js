@@ -14,8 +14,8 @@ function toTitleCase(str) {
 }
 
 window.openAddModal = async () => {
-    window.editingIndex = -1; // Force reset
-    window.currentItems = []; // Force clear
+    window.editingIndex = -1; // reset
+    window.currentItems = []; // clear
     resetForm();
     const modal = document.getElementById('addCollectionModal');
     if (!modal) return;
