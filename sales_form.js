@@ -59,6 +59,44 @@ function wireModal() {
     const cancelSaleBtn = document.getElementById('cancelSaleBtn');
     const submitSaleBtn = document.getElementById('submitSaleBtn');
     const addMaterialBtn = document.getElementById('addMaterialBtn');
+    const rateInput = document.getElementById('materialRateInput');
+const weightInput = document.getElementById('materialWeightInput');
+
+function limitNumberInput(input) {
+    if (!input) return;
+
+    input.addEventListener('input', function () {
+        let value = this.value.replace(/[^0-9.]/g, '');
+
+        const parts = value.split('.');
+        if (parts.length > 2) {
+            value = parts[0] + '.' + parts.slice(1).join('');
+        }
+
+        let [whole, decimal] = value.split('.');
+
+        // max 5 digits
+        whole = whole.slice(0, 5);
+
+        if (decimal !== undefined) {
+            decimal = decimal.slice(0, 2);
+            value = `${whole}.${decimal}`;
+        } else {
+            value = whole;
+        }
+
+        this.value = value;
+    });
+
+    input.addEventListener('keydown', function(e) {
+        if (['e', 'E', '+', '-'].includes(e.key)) {
+            e.preventDefault();
+        }
+    });
+}
+
+limitNumberInput(rateInput);
+limitNumberInput(weightInput);
     const materialsBody = document.getElementById('materialsBody');
     const attachReceiptBtn = document.getElementById('attachReceiptBtn');
     const receiptInput = document.getElementById('receiptInput');
@@ -148,42 +186,6 @@ function wireModal() {
         renderMaterialsTable();
     });
 
-    // Enter key shortcuts
-    document.getElementById('materialWeight')?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); addMaterialBtn?.click(); }
-    });
-
-    const weightInput = document.getElementById('materialWeight');
-
-    weightInput?.addEventListener('input', (e) => {
-        let value = e.target.value;
-    
-        // Allow only numbers and decimal
-        value = value.replace(/[^0-9.]/g, '');
-    
-        // Prevent multiple decimals
-        const parts = value.split('.');
-        if (parts.length > 2) {
-            value = parts[0] + '.' + parts[1];
-        }
-    
-        let [integer, decimal] = value.split('.');
-    
-        // LIMIT INTEGER PART TO 5 DIGITS
-        if (integer.length > 5) {
-            integer = integer.slice(0, 5);
-        }
-    
-        // Optional: limit decimal to 2 places
-        if (decimal) {
-            decimal = decimal.slice(0, 2);
-            value = `${integer}.${decimal}`;
-        } else {
-            value = integer;
-        }
-    
-        e.target.value = value;
-    });
 
     // Remove Material list
     materialsBody?.addEventListener('click', (e) => {
