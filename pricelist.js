@@ -363,7 +363,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 'Deleted material',
                 `Deleted "${name}" (ID: ${id})`
             );
-            row.remove();
             allRows = allRows.filter(r => String(r.id) !== String(id));
             checkEmptyState();
         });
