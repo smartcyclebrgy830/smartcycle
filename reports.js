@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let processedReportSummary = {}; 
 
-    // FIX: Clamped default monthly view end date to day 28
+    // Clamped default monthly view end date to day 28
     const initDates = () => {
         const today = new Date();
         selectedStart = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -217,9 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         transactions.forEach(tx => {
             if (!tx.transaction_date) return;
-            const parts = tx.transaction_date.split('T')[0].split('-');
-            const txDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
             
+            // FIX: Parse ISO string into browser's local timezone (Philippine Time) 
+            // instead of string-splitting raw UTC date parts
+            const txDate = new Date(tx.transaction_date);
             const dayOfMonth = txDate.getDate();
             
             // Strictly exclude anything beyond Day 28
@@ -659,7 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     selectedEnd = new Date(y);
                     break;
                 }
-                // FIX: Clamped quick range calculations to stop precisely on the 28th
+                // Clamped quick range calculations to stop precisely on the 28th
                 case 'this-month': {
                     selectedStart = new Date(today.getFullYear(), today.getMonth(), 1);
                     selectedEnd = new Date(today.getFullYear(), today.getMonth(), 28);
@@ -674,7 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     selectedEnd = end;
                     break;
                 }
-                // FIX: Clamped quick range calculations to stop precisely on the 28th
+                // Clamped quick range calculations to stop precisely on the 28th
                 case 'last-month': {
                     selectedStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
                     selectedEnd = new Date(today.getFullYear(), today.getMonth() - 1, 28);
