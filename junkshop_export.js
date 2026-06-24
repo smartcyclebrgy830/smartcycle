@@ -373,16 +373,18 @@ const JunkshopExport = (() => {
             ry += rh3;
         });
 
-        // Bottom manual observation buffer lines
-        for (let i = 0; i < 2; i++) {
-            box(ML, ry, colMat, rh3);
-            wx = ML + colMat;
-            for (let d = 0; d < 28; d++) { 
-                box(wx, ry, dayW, rh3); 
-                wx += dayW; 
-            }
-            box(totX, ry, colTotal, rh3);
-            ry += rh3;
+        // Loop sequentially across the 28 grid table column nodes (4 Weeks * 7 Days)
+        for (let i = 0; i < 28; i++) {
+            box(wx, ry, dayW, rh3);
+            
+            let dayNumber = i + 1; // Maps exactly from Day 1 to Day 28
+            let wt = item.dailyWeights[dayNumber] || 0;
+            let displayStr = wt > 0 ? wt.toFixed(1) : '-';
+
+            doc.setFontSize(7);
+            doc.setFont('times', 'normal');
+            doc.text(displayStr, wx + dayW / 2, ry + rh3 - 4, { align: 'center' });
+            wx += dayW;
         }
 
         y = ry + 16;
