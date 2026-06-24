@@ -54,6 +54,9 @@ async function initRoleControl() {
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    var allItems = [];
+    var currentPage = 1;
+    var itemsPerPage = 10;
     let editRow = null;
     let currentSearch = '';
 
@@ -224,7 +227,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 'Added material',
                 `Added "${material}" (Unit: ${unit}, Price: ₱${parseFloat(price).toFixed(2)})`
             );
-            renderRow(data[0]);
+            allItems.push(data[0]);
+            renderTable();
         }
     
         closeModal();
