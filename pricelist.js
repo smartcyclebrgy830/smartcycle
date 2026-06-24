@@ -54,11 +54,11 @@ async function initRoleControl() {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    var allItems = [];
-    var currentPage = 1;
-    var itemsPerPage = 10;
     let editRow = null;
     let currentSearch = '';
+    let allRows = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
 
     const addItemBtn        = document.getElementById('addItemBtn');
     const modalOverlay      = document.getElementById('itemModalOverlay');
@@ -227,6 +227,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 'Added material',
                 `Added "${material}" (Unit: ${unit}, Price: ₱${parseFloat(price).toFixed(2)})`
             );
+            renderRow(data[0]);
+            allRows.push(data[0]);
             allItems.push(data[0]);
             renderTable();
         }
@@ -361,25 +363,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 `Deleted "${name}" (ID: ${id})`
             );
             row.remove();
+            allRows = allRows.filter(r => String(r.id) !== String(id));
             checkEmptyState();
         });
     }
 
     // ITEM COUNT
-    function updateItemCount() {
+    function updateItemCount(count) {
         const countEl = document.getElementById('itemCount');
         if (!countEl) return;
-        const total = document.querySelectorAll('#priceTableBody tr').length;
+        const total = count !== undefined ? count : allRows.length;
         countEl.textContent = total === 1 ? '1 material' : `${total} materials`;
     }
-
-    // EMPTY STATE
+    
     function checkEmptyState() {
-        const tbody = document.getElementById('priceTableBody');
-        const empty = document.getElementById('emptyState');
-        if (!empty) return;
-        empty.style.display = tbody.children.length === 0 ? 'flex' : 'none';
-        updateItemCount();
+        renderPage();
     }
 
 
@@ -388,38 +386,101 @@ document.addEventListener('DOMContentLoaded', () => {
             .from('price_list')
             .select('*')
             .order('id', { ascending: true });
-    
-        if (error) {
-            console.error('Error loading data:', error);
-            return;
-        }
-    
-        const tableBody = document.getElementById('priceTableBody');
-        tableBody.innerHTML = '';
-    
-        data.forEach(item => {
-            renderRow(item);
-        });
-    
-        checkEmptyState();
+        
+        if (error) { console.error('Error loading data:', error); return; }
+        
+        allRows = data;
+        currentPage = 1;
+        renderPage();
     }
 
     // SEARCH
     function applySearch() {
-        const rows = document.querySelectorAll('#priceTableBody tr');
-        let visibleCount = 0;
-        rows.forEach(row => {
-            const text = row.cells[0].textContent.toLowerCase();
-            const match = !currentSearch || text.includes(currentSearch);
-            row.style.display = match ? '' : 'none';
-            if (match) visibleCount++;
-        });
-        const empty = document.getElementById('emptyState');
-        if (empty) {
-            const totalRows = document.querySelectorAll('#priceTableBody tr').length;
-            empty.style.display = (totalRows === 0 || (currentSearch && visibleCount === 0)) ? 'flex' : 'none';
-        }
+        currentPage = 1;
+        renderPage();
     }
+
+    function getFilteredRows() {
+        if (!currentSearch) return allRows;
+        return allRows.filter(item =>
+            item.material_name.toLowerCase().includes(currentSearch)
+        );
+    }
+    
+    function renderPage() {
+        const tableBody = document.getElementById('priceTableBody');
+        tableBody.innerHTML = '';
+        
+        const filtered = getFilteredRows();
+        const totalPages = Math.ceil(filtered.length / itemsPerPage);
+        const startIdx = (currentPage - 1) * itemsPerPage;
+        const pageItems = filtered.slice(startIdx, startIdx + itemsPerPage);
+        
+        pageItems.forEach(item => renderRow(item));
+        
+        const empty = document.getElementById('emptyState');
+        if (empty) empty.style.display = filtered.length === 0 ? 'flex' : 'none';
+        
+        updateItemCount(filtered.length);
+        updatePagination(totalPages);
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    
+    function updatePagination(totalPages) {
+        const pagination = document.querySelector('.pagination');
+        if (!pagination) return;
+        
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+            pagination.style.display = 'none';
+            return;
+        }
+        
+        pagination.style.display = 'flex';
+        
+        let html = `
+        <button class="page-btn" onclick="pricelistChangePage('prev')" aria-label="Previous page" ${currentPage === 1 ? 'disabled' : ''}>
+            <i data-lucide="chevron-left"></i>
+        </button>
+        <button class="page-btn ${currentPage === 1 ? 'active' : ''}" onclick="pricelistGoToPage(1)">1</button>
+        `;
+        
+        if (currentPage > 3) html += `<span class="page-btn" style="cursor:default;border:none;">...</span>`;
+        
+        for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+            html += `<button class="page-btn ${currentPage === i ? 'active' : ''}" onclick="pricelistGoToPage(${i})">${i}</button>`;
+        }
+        
+        if (currentPage < totalPages - 2) html += `<span class="page-btn" style="cursor:default;border:none;">...</span>`;
+        
+        if (totalPages > 1) {
+            html += `<button class="page-btn ${currentPage === totalPages ? 'active' : ''}" onclick="pricelistGoToPage(${totalPages})">${totalPages}</button>`;
+        }
+        
+        html += `
+        <button class="page-btn" onclick="pricelistChangePage('next')" aria-label="Next page" ${currentPage === totalPages ? 'disabled' : ''}>
+            <i data-lucide="chevron-right"></i>
+        </button>
+        `;
+        
+        pagination.innerHTML = html;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    
+    window.pricelistGoToPage = function(page) {
+        currentPage = page;
+        renderPage();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    
+    window.pricelistChangePage = function(direction) {
+        const totalPages = Math.ceil(getFilteredRows().length / itemsPerPage);
+        if (direction === 'prev' && currentPage > 1) currentPage--;
+        if (direction === 'next' && currentPage < totalPages) currentPage++;
+        renderPage();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
