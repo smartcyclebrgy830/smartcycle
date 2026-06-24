@@ -33,7 +33,8 @@ window.openAddModal = async () => {
     updatePreview();
     setTimeout(refreshIcons, 100);
 };
-
+console.log("HEADER:", collectionHeader);
+console.log("DETAILS:", detailedItems);
 window.openEditModal = async (index, collectionHeader, detailedItems) => {
     const modal = document.getElementById('addCollectionModal');
     if (!modal) return;
