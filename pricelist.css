@@ -487,6 +487,51 @@ body {
     min-width: 180px;
 }
 
+/* Pagination */
+.pagination {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    padding: 18px 0 4px;
+}
+
+.page-btn {
+    background: #fff;
+    border: 1px solid #e6eef6;
+    padding: 8px 13px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #344054;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+}
+
+.page-btn i {
+    width: 16px;
+    height: 16px;
+}
+
+.page-btn.active {
+    background: #46B336;
+    color: #fff;
+    border-color: transparent;
+    font-weight: 600;
+}
+
+.page-btn:hover:not(.active):not(:disabled) {
+    background: #f2f4f7;
+}
+
+.page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 /* MOBILE */
 @media (max-width: 768px) {
     .main-content {
