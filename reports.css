@@ -226,8 +226,7 @@ body {
 }
 
 /* ── Popovers ── */
-.date-filter,
-.category-filter {
+.date-filter {
     position: relative;
 }
 
@@ -399,44 +398,6 @@ body {
 
 .calendar-grid tbody td button.other-month { color: #D1D5DB; }
 .calendar-grid tbody td button:disabled { opacity: 0.3; cursor: not-allowed; }
-
-/* Category popover */
-.category-popover {
-    min-width: 180px;
-    padding: 8px;
-}
-
-.popover-content {
-    display: flex;
-    flex-direction: column;
-}
-
-.checkbox-item {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: background 0.2s ease;
-    gap: 10px;
-    font-family: 'Inter', sans-serif;
-}
-
-.checkbox-item:hover { background: #f3f4f6; }
-
-.checkbox-item input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    accent-color: #46B336;
-    flex-shrink: 0;
-}
-
-.checkbox-item span {
-    font-size: 14px;
-    font-weight: 500;
-    color: #374151;
-}
 
 /* Card */
 .card {
