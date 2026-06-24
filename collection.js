@@ -879,6 +879,13 @@ window.viewReceipt = function(index) {
 // For Image Receipt Choices
 window.toggleReceiptDropdown = function(e, index) {
     e.stopPropagation();
+
+    const existingDrop = document.getElementById('rdrop-' + index);
+    if (existingDrop) {
+        closeReceiptDropdown();
+        return;
+    }
+    
     closeReceiptDropdown();
 
     const btn = e.currentTarget;
