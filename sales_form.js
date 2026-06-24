@@ -95,12 +95,6 @@ function limitNumberInput(input) {
         }
     });
 }
-    input.addEventListener('keydown', function(e) {
-        if (['e', 'E', '+', '-'].includes(e.key)) {
-            e.preventDefault();
-        }
-    });
-}
 
 limitNumberInput(rateInput);
 limitNumberInput(weightInput);
