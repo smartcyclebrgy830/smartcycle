@@ -330,37 +330,29 @@ const JunkshopExport = (() => {
         materialsList.forEach(mat => {
             const item = dataGrid[mat] || { dailyWeights: Array(32).fill(0), total: 0 };
 
+            // 1. Draw the Recyclable Material Name column
             box(ML, ry, colMat, rh3);
             doc.setFont('times', 'bold'); doc.setFontSize(8);
             doc.text(mat, ML + 4, ry + rh3 - 4);
 
+            // 2. Reset X-coordinate to start drawing the 28 days
             wx = ML + colMat;
             
-            // Loop sequentially across the 28 grid table column nodes (4 Weeks * 7 Days)
+            // Loop sequentially across exactly 28 grid columns (4 Weeks * 7 Days)
             for (let i = 0; i < 28; i++) {
                 box(wx, ry, dayW, rh3);
                 
                 let dayNumber = i + 1;
-                let displayStr = '-';
-                doc.setFontSize(7);
+                let wt = item.dailyWeights[dayNumber] || 0;
+                let displayStr = wt > 0 ? wt.toFixed(1) : '-';
 
-                for (let i = 0; i < 28; i++) {
-                    box(wx, ry, dayW, rh3);
-                    
-                    let dayNumber = i + 1;
-                    let wt = item.dailyWeights[dayNumber] || 0;
-                    let displayStr = wt > 0 ? wt.toFixed(1) : '-';
-    
-                    doc.setFontSize(7);
-                    doc.setFont('times', 'normal');
-                    doc.text(displayStr, wx + dayW / 2, ry + rh3 - 4, { align: 'center' });
-                    wx += dayW;
-                }
+                doc.setFontSize(7);
+                doc.setFont('times', 'normal');
                 doc.text(displayStr, wx + dayW / 2, ry + rh3 - 4, { align: 'center' });
-                wx += dayW;
+                wx += dayW; // Advances exactly to the next day column
             }
 
-            // Output Monthly Totals Column
+            // 3. Draw the Monthly Totals Column right at the end of Day 28
             box(totX, ry, colTotal, rh3);
             if (item.total > 0) {
                 doc.setFont('times', 'bold'); doc.setFontSize(8);
@@ -370,8 +362,11 @@ const JunkshopExport = (() => {
                 doc.text('-', totX + colTotal / 2, ry + rh3 - 4, { align: 'center' });
             }
 
+            // Move down to the next row coordinate
             ry += rh3;
         });
+
+        // The rogue loop that was out here drawing extra boxes has been completely removed.
 
         y = ry + 16;
 
