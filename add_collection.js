@@ -14,10 +14,12 @@ function toTitleCase(str) {
 }
 
 window.openAddModal = async () => {
-    window.editingIndex = -1; // reset unified global reference cleanly first
-    window.currentItems = []; // clear staging array
-    
-    // Reset form elements & visuals instantly
+    // 1. Force state variables to reset instantly
+    window.editingIndex = -1; 
+    window.currentItems = []; 
+    window.currentCategory = 'School';
+
+    // 2. Clear inputs and empty table containers IMMEDIATELY before fetching data
     resetForm();
     
     const modal = document.getElementById('addCollectionModal');
@@ -26,18 +28,24 @@ window.openAddModal = async () => {
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    // 1. Pull latest live prices from Supabase
+    // 3. Update preview displays back to original clean placeholders
+    updatePreview();
+    renderItems();
+
+    // 4. Now handle database calls asynchronously without trapping UI render states
     await loadActivePrices();
 
-    // 2. Only protect setupFieldListeners from being attached multiple times
     if (!window._listenersInitialized) {
         window._listenersInitialized = true;
         setupFieldListeners();
     }
 
-    document.getElementById('inDate').value = new Date().toISOString().split('T')[0];
+    const dateEl = document.getElementById('inDate');
+    if (dateEl) {
+        dateEl.value = new Date().toISOString().split('T')[0];
+    }
     
-    // Explicitly run renders to clean up UI strings cleanly
+    // Final sync sync-up pass
     updatePreview();
     renderItems(); 
     setTimeout(refreshIcons, 100);
@@ -245,38 +253,40 @@ function formatContact(value) {
 }
 
 function resetForm() {
+    // Clear all text inputs cleanly
     ['inCustomer', 'inDate', 'inAddress', 'inContact', 'inWeight', 'inSalesman'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
 
     clearAllErrors();
-    window.currentItems = []; 
-    window.editingIndex = -1; 
     
-    // Re-render clear empty state tables immediately
-    renderItems();
-    
-    window.currentCategory = 'School';
+    // Explicitly reset select dropdown list back to the first item option index
+    const selMaterial = document.getElementById('selMaterial');
+    if (selMaterial) {
+        selMaterial.selectedIndex = 0;
+    }
+
+    // Set styling indicators back to category tabs default state
     document.querySelectorAll('.m-tab').forEach((tab, idx) => {
         tab.classList.toggle('active', idx === 0);
     });
 
+    // Reset Submit Action Button Label & Handler Target
     const submitBtn = document.querySelector('.btn-submit-green');
     if (submitBtn) {
         submitBtn.onclick = (e) => window.submitCollection(e);
         submitBtn.innerHTML = '<i data-lucide="check"></i> Submit';
     }
 
-    // Explicit clear targets inside the layout DOM
+    // Direct clean out text markers inside the cash receipt visual markup wrapper
     const previewFields = { 
         preCustomer: '---', 
         preDate: '---', 
         preAddress: '---', 
         preContact: '---', 
         preSalesman: '---', 
-        preTotal: '₱0.00',
-        preTotalLine: '₱0.00'
+        preTotal: '₱0.00' 
     };
     
     Object.entries(previewFields).forEach(([id, value]) => {
@@ -284,16 +294,37 @@ function resetForm() {
         if (el) el.innerText = value;
     });
 
-    var receiptInput = document.getElementById('receiptInput');
-    var receiptPreview = document.getElementById('receiptPreview');
-    var attachReceiptBtn = document.getElementById('attachReceiptBtn');
-    var receiptFilenameLabel = document.getElementById('receiptFilenameLabel');
+    // Clear out standard image file drag drop storage previews
+    const receiptInput = document.getElementById('receiptInput');
+    const receiptPreview = document.getElementById('receiptPreview');
+    const attachReceiptBtn = document.getElementById('attachReceiptBtn');
+    const receiptFilenameLabel = document.getElementById('receiptFilenameLabel');
+    
     if (receiptInput) receiptInput.value = '';
-    receiptPreview?.classList.remove('visible');
-    attachReceiptBtn?.classList.remove('hidden');
+    if (receiptPreview) receiptPreview.classList.remove('visible');
+    if (attachReceiptBtn) attachReceiptBtn.classList.remove('hidden');
     if (receiptFilenameLabel) receiptFilenameLabel.textContent = '';
     
-    refreshIcons();
+    const receiptErr = document.getElementById('receiptError');
+    if (receiptErr) receiptErr.textContent = '';
+
+    // Wipe UI tables clean right away
+    const itemsBody = document.getElementById('itemsBody');
+    const preItemsBody = document.getElementById('preItemsBody');
+    if (itemsBody) itemsBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #94a3b8; padding: 20px;">No items added yet</td></tr>';
+    if (preItemsBody) preItemsBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #94a3b8; padding: 20px;">No items</td></tr>';
+
+    const formTotalLine = document.getElementById('formTotalLine');
+    if (formTotalLine) formTotalLine.style.display = 'none';
+
+    // Append standard empty rows structure to match look template
+    if (preItemsBody) {
+        for (let i = 0; i < 8; i++) {
+            preItemsBody.innerHTML += '<tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>';
+        }
+    }
+    
+    if (typeof refreshIcons === 'function') refreshIcons();
 }
 
 window.setCategory = (category, btn) => {
