@@ -14,6 +14,9 @@ function toTitleCase(str) {
 }
 
 window.openAddModal = async () => {
+    window.editingIndex = -1; // Force reset
+    window.currentItems = []; // Force clear
+    resetForm();
     const modal = document.getElementById('addCollectionModal');
     if (!modal) return;
 
@@ -80,13 +83,6 @@ window.openEditModal = async (index, collectionHeader, detailedItems) => {
             subtotal: Number(item.subtotal || 0)
         };
     });
-    if (window.currentItems.length > 0) {
-        const selMaterial = document.getElementById('selMaterial');
-        if (selMaterial) {
-           selMaterial.value = window.currentItems[0].material_id; 
-           selMaterial.dispatchEvent(new Event('change'));
-        }
-    }
 
     const submitBtn = document.querySelector('.btn-submit-green');
     if (submitBtn) {
@@ -250,7 +246,7 @@ function resetForm() {
     clearAllErrors();
     window.currentItems = []; 
     window.editingIndex = -1; // Reset unified global tracking reference
-
+    renderItems();
     window.currentCategory = 'School';
     document.querySelectorAll('.m-tab').forEach((tab, idx) => {
         tab.classList.toggle('active', idx === 0);
