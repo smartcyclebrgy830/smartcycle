@@ -124,36 +124,39 @@ async function loadActivePrices() {
 
         if (prices && prices.length > 0) {
             loadedPricesCache = prices; 
-            selMaterial.innerHTML = prices.map((item, idx) => {
+            
+            // Fix 1: Prepend a clean disabled default option so it doesn't default to the first material entry
+            let optionsHtml = '<option value="" disabled selected>Select a material...</option>';
+            optionsHtml += prices.map((item) => {
                 const rate = Math.round(item.price); 
-                return `<option value="${item.id}" data-name="${item.material_name}" data-rate="${rate}" ${idx === 0 ? 'selected' : ''}>
+                return `<option value="${item.id}" data-name="${item.material_name}" data-rate="${rate}">
                     ${item.material_name} - ₱${rate}/kg
                 </option>`;
             }).join('');
+            
+            selMaterial.innerHTML = optionsHtml;
         } else {
-            selMaterial.innerHTML = '<option value="" disabled>No active materials found</option>';
+            selMaterial.innerHTML = '<option value="" disabled selected>No active materials found</option>';
         }
     } catch (err) {
-        console.error("Error fetching live price rates from database, using cached fallback profiles:", err.message);
+        console.error("Error fetching live price rates from database:", err.message);
         
-        // Check if we already have cache items before wiping out with fallback list
-        if (!loadedPricesCache || loadedPricesCache.length === 0) {
-            loadedPricesCache = [
-                { id: 4, material_name: "Plastic", price: 6 },
-                { id: 5, material_name: "Bakal", price: 13 },
-                { id: 6, material_name: "Paper Assorted", price: 8 },
-                { id: 7, material_name: "Yero", price: 7 },
-                { id: 8, material_name: "PET Assorted", price: 5 }
-            ];
-            
-            selMaterial.innerHTML = `
-                <option value="4" data-name="Plastic" data-rate="6" selected>Plastic - ₱6/kg</option>
-                <option value="5" data-name="Bakal" data-rate="13">Bakal - ₱13/kg</option>
-                <option value="6" data-name="Paper Assorted" data-rate="8">Paper Assorted - ₱8/kg</option>
-                <option value="7" data-name="Yero" data-rate="7">Yero - ₱7/kg</option>
-                <option value="8" data-name="PET Assorted" data-rate="5">PET Assorted - ₱5/kg</option>
-            `;
-        }
+        loadedPricesCache = [
+            { id: 4, material_name: "Plastic", price: 6 },
+            { id: 5, material_name: "Bakal", price: 13 },
+            { id: 6, material_name: "Paper Assorted", price: 8 },
+            { id: 7, material_name: "Yero", price: 7 },
+            { id: 8, material_name: "PET Assorted", price: 5 }
+        ];
+        
+        selMaterial.innerHTML = `
+            <option value="" disabled selected>Select a material...</option>
+            <option value="4" data-name="Plastic" data-rate="6">Plastic - ₱6/kg</option>
+            <option value="5" data-name="Bakal" data-rate="13">Bakal - ₱13/kg</option>
+            <option value="6" data-name="Paper Assorted" data-rate="8">Paper Assorted - ₱8/kg</option>
+            <option value="7" data-name="Yero" data-rate="7">Yero - ₱7/kg</option>
+            <option value="8" data-name="PET Assorted" data-rate="5">PET Assorted - ₱5/kg</option>
+        `;
     }
 }
 
@@ -420,8 +423,8 @@ function renderItems() {
     let previewRowsHtml = '';
 
     if (window.currentItems.length === 0) {
-        itemsBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #94a3b8; padding: 20px;">No items added yet</td></tr>';
-        preItemsBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #94a3b8; padding: 20px;">No items</td></tr>';
+        mainRowsHtml = '<tr><td colspan="5" style="text-align:center; color: #94a3b8; padding: 20px;">No items added yet</td></tr>';
+        previewRowsHtml = '<tr><td colspan="5" style="text-align:center; color: #94a3b8; padding: 20px;">No items</td></tr>';
         if (formTotalLine) formTotalLine.style.display = 'none';
     } else {
         window.currentItems.forEach((item, index) => {
@@ -448,26 +451,30 @@ function renderItems() {
                   <td style="text-align:center;">₱${item.subtotal.toFixed(2)}</td>
                 </tr>`;
         });
+        if (formTotalLine) formTotalLine.style.display = 'flex';
     }
 
-    itemsBody.innerHTML = mainRowsHtml || '<tr><td colspan="5" style="text-align:center; color: #94a3b8; padding: 20px;">No items added yet</td></tr>';
-    preItemsBody.innerHTML = previewRowsHtml || '<tr><td colspan="5" style="text-align:center; color: #94a3b8; padding: 20px;">No items</td></tr>';
+    // Fix 2: Strictly overwrite the inner HTML completely before attaching fillers
+    itemsBody.innerHTML = mainRowsHtml;
+    preItemsBody.innerHTML = previewRowsHtml;
 
     if (window.currentItems.length > 0 && formTotalLine) {
-        formTotalLine.style.display = 'flex';
         const formTotalEl = document.getElementById('formTotal');
         if (formTotalEl) formTotalEl.innerText = `₱${total.toFixed(2)}`;
     }
 
+    // Now append the static blank blueprint spaces safely
     const emptyRowsNeeded = Math.max(0, 8 - window.currentItems.length);
+    let emptyRowsHtml = '';
     for (let i = 0; i < emptyRowsNeeded; i++) {
-        preItemsBody.innerHTML += '<tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>';
+        emptyRowsHtml += '<tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>';
     }
+    preItemsBody.innerHTML += emptyRowsHtml;
 
     const preTotalEl = document.getElementById('preTotal');
     if (preTotalEl) preTotalEl.innerText = `₱${total.toFixed(2)}`;
 
-    refreshIcons();
+    if (typeof refreshIcons === 'function') refreshIcons();
 }
 
 window.removeItem = (index) => {
