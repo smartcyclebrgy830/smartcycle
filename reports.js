@@ -227,16 +227,16 @@ document.addEventListener('DOMContentLoaded', () => {
             // Get the actual day of the month (1-31)
             const dayOfMonth = txDate.getDate();
             
-            // REMOVED: if (dayOfMonth > 28) return; 
-            // We no longer skip these days. Instead, we include them in week 4.
-        
+            // NEW: Ignore dates greater than 28
+            if (dayOfMonth > 28) return; 
+            
             const name = tx.material_name || "Unknown Material";
             
             // Calculate week mapping
             let weekKey = 'week1';
             if (dayOfMonth >= 8 && dayOfMonth <= 14) weekKey = 'week2';
             else if (dayOfMonth >= 15 && dayOfMonth <= 21) weekKey = 'week3';
-            else if (dayOfMonth >= 22) weekKey = 'week4'; // All days from 22 to 31 now fall into week 4
+            else if (dayOfMonth >= 22 && dayOfMonth <= 28) weekKey = 'week4';
             
             if (!processedReportSummary[name]) {
                 processedReportSummary[name] = { week1: 0, week2: 0, week3: 0, week4: 0, total: 0 };
