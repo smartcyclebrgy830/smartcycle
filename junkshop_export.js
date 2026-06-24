@@ -250,17 +250,17 @@ const JunkshopExport = (() => {
             hline(x + lw + 1, x + lw + 1 + ulLen, yy + 1.5, 0.5);
         };
 
-        field('Junkshop Name: ', opts.junkshopName || 'TEZWA', ML, y, 180);
+        field('Junkshop Name: ', opts.junkshopName || 'TEZWA', ML, y, 210);
         field('Address: ', opts.address || 'BRGY. 830 SOUTH NAGTAHAN, PACO, MANILA', ML + 310, y, 170);
-        field('Brgy: ', opts.barangay || '830', ML + 520, y, 55);
-        field('Zone: ', opts.zone || '90', ML + 600, y, 35);
-        field('District: ', opts.district || '6', ML + 660, y, 60);
+        field('Brgy: ', opts.barangay || '830', ML + 540, y, 55);
+        field('Zone: ', opts.zone || '90', ML + 640, y, 35);
+        field('District: ', opts.district || '6', ML + 700, y, 60);
         y += 14;
 
         field('Owner: ', opts.owner || '', ML, y, 110);
-        field('Mobile No. : ', opts.mobile || '', ML + 190, y, 80);
-        field('Landline: ', opts.landline || '', ML + 320, y, 75);
-        field('Date Established: ', opts.dateEstablished || '', ML + 450, y, 70);
+        field('Mobile No. : ', opts.mobile || '', ML + 170, y, 80);
+        field('Landline: ', opts.landline || '', ML + 340, y, 75);
+        field('Date Established: ', opts.dateEstablished || '', ML + 470, y, 70);
         field('Floor Area: ', opts.floorArea || '', ML + 620, y, 50);
         field('No. of Aide: ', opts.noOfAide || '', ML + 720, y, 45);
         y += 12;
