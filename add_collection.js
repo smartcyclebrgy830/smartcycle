@@ -118,7 +118,7 @@ async function loadActivePrices() {
         const { data: prices, error } = await _supabase
             .from('price_list')
             .select('id, material_name, price, status')
-            .eq('status', 'Active'); 
+            .ilike('status', 'active') 
 
         if (error) throw error;
 
