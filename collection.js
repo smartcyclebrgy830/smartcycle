@@ -497,6 +497,8 @@ function setupSearch() {
 }
 
 window.editEntry = function(index) {
+    closeReceiptDropdown();
+    
     if (window.currentUserRole === 'Moderator') {
         alert("Access Denied: Moderators do not have edit capabilities.");
         return;
