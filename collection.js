@@ -207,6 +207,7 @@ window.fetchAllCollections = async function() {
             address: col.address,
             contact: col.contact_number,
             items: mappedItems,
+            salesman: col.salesman || '',
             receipt_image: col.receipt_image || null
         };
     });
@@ -513,6 +514,7 @@ window.editEntry = function(index) {
     if (document.getElementById('inCustomer')) document.getElementById('inCustomer').value = data.customer_name || data.customer || '';
     if (document.getElementById('inAddress')) document.getElementById('inAddress').value = data.address || '';
     if (document.getElementById('inContact')) document.getElementById('inContact').value = data.contact_number || data.contact || '';
+    if (document.getElementById('inSalesman')) document.getElementById('inSalesman').value = data.salesman || '';
 
     const dateInput = document.getElementById('inDate');
     if (dateInput) {
@@ -855,7 +857,7 @@ window.viewReceipt = function(index) {
         </div>
         <div class="field-row">
           <div class="field-item"><label>Address</label><div class="field-value">${data.address || ''}</div></div>
-          <div class="field-item"><label>Salesman</label><div class="field-value"></div></div>
+          <div class="field-item"><label>Salesman</label><div class="field-value">${data.salesman || ''}</div></div>
         </div>
         <table>
           <thead>
