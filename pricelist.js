@@ -227,10 +227,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 'Added material',
                 `Added "${material}" (Unit: ${unit}, Price: ₱${parseFloat(price).toFixed(2)})`
             );
-            renderRow(data[0]);
             allRows.push(data[0]);
-            allItems.push(data[0]);
-            renderTable();
+            currentPage = Math.ceil(allRows.length / itemsPerPage); // jump to the page where the new item lands
+            renderPage();
         }
     
         closeModal();
