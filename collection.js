@@ -503,53 +503,44 @@ window.editEntry = function(index) {
     }
 
     const parsedIndex = parseInt(index, 10);
-    window.editingIndex = parsedIndex;
-    
     const filteredList = getFilteredCollections();
-    const data = filteredList[parsedIndex]; 
-    
-    const modal = document.getElementById('addCollectionModal');
-    if (!modal) return;
+    const data = filteredList[parsedIndex];
+    if (!data) return;
 
-    if (document.getElementById('inCustomer')) document.getElementById('inCustomer').value = data.customer_name || data.customer || '';
-    if (document.getElementById('inAddress')) document.getElementById('inAddress').value = data.address || '';
-    if (document.getElementById('inContact')) document.getElementById('inContact').value = data.contact_number || data.contact || '';
-    if (document.getElementById('inSalesman')) document.getElementById('inSalesman').value = data.salesman || '';
-
-    const dateInput = document.getElementById('inDate');
-    if (dateInput) {
-        let dateVal = data.date_collected || data.date; 
-        if (dateVal && dateVal !== 'N/A') {
-            if (dateVal.includes('-') && dateVal.split('-')[0].length !== 4) {
-                const [m, d, y] = dateVal.split('-');
-                dateVal = `${y}-${m}-${d}`;
-            }
-            dateInput.value = dateVal;
-        } else {
-            dateInput.value = new Date().toISOString().split('T')[0];
+    // Normalize date from MM-DD-YYYY back to YYYY-MM-DD for the form
+    let dateVal = data.date_collected || data.date;
+    if (dateVal && dateVal !== 'N/A') {
+        if (dateVal.includes('-') && dateVal.split('-')[0].length !== 4) {
+            const [m, d, y] = dateVal.split('-');
+            dateVal = `${y}-${m}-${d}`;
         }
+    } else {
+        dateVal = new Date().toISOString().split('T')[0];
     }
 
-    window.currentCategory = data.type || 'School';
-    document.querySelectorAll('.m-tab').forEach(tab => {
-        const isMatch = tab.innerText.trim().toLowerCase() === window.currentCategory.toLowerCase();
-        tab.classList.toggle('active', isMatch);
-    });
+    // Build the collectionHeader object openEditModal expects
+    const collectionHeader = {
+        customer_name: data.customer || '',
+        date_collected: dateVal,
+        address: data.address || '',
+        contact_number: data.contact || '',
+        salesman: data.salesman || '',
+        type: data.category || 'School'
+    };
 
-    window.currentItems = [...(data.items || [])];
-    window.currentReceiptImage = data.receipt_image || null; 
-    if (typeof renderItems === 'function') renderItems();
+    // Build detailedItems — material_id must be present for dropdown pre-selection
+    const detailedItems = (data.items || []).map(item => ({
+        material_id: item.material_id,
+        material_name: item.material,
+        rate: item.rate,
+        weight: item.weight,
+        subtotal: item.subtotal
+    }));
 
-    const submitBtn = document.querySelector('.btn-submit-green');
-    if (submitBtn) {
-        submitBtn.innerHTML = '<i data-lucide="check"></i> Update';
+    // Hand off to openEditModal which handles loadActivePrices + renderItems
+    if (typeof window.openEditModal === 'function') {
+        window.openEditModal(parsedIndex, collectionHeader, detailedItems);
     }
-
-    modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-
-    if (typeof updatePreview === 'function') updatePreview();
-    if (typeof refreshIcons === 'function') setTimeout(refreshIcons, 50);
 };
 
 async function saveCollection() {
