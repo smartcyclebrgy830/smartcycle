@@ -592,4 +592,16 @@ body {
         width: 100%;
         min-width: unset;
     }
+
+    .pagination {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 12px 0;
+    }
+
+    .page-btn {
+        min-width: 32px;
+        height: 32px;
+        font-size: 13px;
+    }
 }
