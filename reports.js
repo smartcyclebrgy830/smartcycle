@@ -726,6 +726,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     selectedEnd = new Date(y);
                     break;
                 }
+                case 'this-month': {
+                    selectedStart = new Date(today.getFullYear(), today.getMonth(), 1);
+                    selectedEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                        break;
+                }
                 case 'last-week': {
                     const end = new Date(today);
                     end.setDate(today.getDate() - today.getDay() - 1);
