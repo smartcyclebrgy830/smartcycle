@@ -61,10 +61,6 @@ body::before {
     justify-content: space-between;
 }
 
-.form-top {
-    text-align: center; 
-}
-
 .form-top .logo{
     margin-bottom: 8px
 }
@@ -234,6 +230,8 @@ input.valid:focus {
 .logo-image {
     max-width: 150px;
     height: auto;
+    display: block;
+    margin: 0 auto;
 }
 
 small[role="alert"] {
