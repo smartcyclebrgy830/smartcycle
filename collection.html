@@ -34,9 +34,52 @@
             <button class="tab" role="tab" data-filter="walk-ins" onclick="filterByCategory('walk-ins', this)">Walk-ins</button>
           </div>
 
-          <div class="search-input">
-            <i data-lucide="search" style="width: 18px; height: 18px; color: #94a3b8;"></i>
-            <input type="text" id="collectionSearch" placeholder="Search Customer Name" aria-label="Search collections">
+          <div class="toolbar-right">
+            <div class="search-input">
+              <i data-lucide="search" style="width: 18px; height: 18px; color: #94a3b8;"></i>
+              <input type="text" id="collectionSearch" placeholder="Search Customer Name" aria-label="Search collections">
+            </div>
+            <div class="materials-dropdown-wrap">
+              <button class="materials-btn" id="materialsBtn">
+                <i data-lucide="package"></i>
+              </button>
+              <div class="materials-panel" id="materialsPanel">
+                <div class="filter-checklist" id="materialChecklist">
+                  <span class="filter-checklist-loading">Loading...</span>
+                </div>
+                <button class="filter-clear-btn materials-clear-btn" id="clearMaterials">
+                  <i data-lucide="x"></i>
+                  Clear
+                </button>
+              </div>
+            </div>
+            <button class="filter-btn" id="filterBtn">
+              <i data-lucide="sliders-horizontal"></i>
+            </button>
+            <div class="filter-panel" id="filterPanel">
+              <div class="filter-row">
+                <div class="filter-group">
+                  <label class="filter-label">Sort by Customer</label>
+                  <select class="filter-select" id="sortCustomer">
+                    <option value="">Default</option>
+                    <option value="asc">A → Z</option>
+                    <option value="desc">Z → A</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label class="filter-label">Date From</label>
+                  <input type="date" class="filter-select" id="dateFrom">
+                </div>
+                <div class="filter-group">
+                  <label class="filter-label">Date To</label>
+                  <input type="date" class="filter-select" id="dateTo">
+                </div>
+                <button class="filter-clear-btn" id="clearFilter">
+                  <i data-lucide="x"></i>
+                  Clear
+                </button>
+              </div>
+            </div>
           </div>
         </nav>
 
