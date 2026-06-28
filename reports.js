@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const initDates = () => {
         const today = new Date();
         selectedStart = new Date(today.getFullYear(), today.getMonth(), 1);
-        selectedEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        selectedEnd = new Date(today.getFullYear(), today.getMonth(), 28);
     };
     initDates();
 
@@ -222,8 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Inside renderReportTable(transactions, startRangeDate)
         transactions.forEach(tx => {
             if (!tx.transaction_date) return;
-            const parts = tx.transaction_date.split('T')[0].split('-');
-            const txDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            const txDate = new Date(tx.transaction_date);
             
             // Get the actual day of the month (1-31)
             const dayOfMonth = txDate.getDate();
@@ -673,8 +672,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 case 'this-month': {
                     selectedStart = new Date(today.getFullYear(), today.getMonth(), 1);
-                    selectedEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                        break;
+                    selectedEnd = new Date(today.getFullYear(), today.getMonth() - 1, 28);
+                    break;
                 }
                 case 'last-week': {
                     const end = new Date(today);
