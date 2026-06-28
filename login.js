@@ -171,7 +171,15 @@ document.getElementById('loginForm').addEventListener('submit', async function (
         sessionStorage.setItem('userName', profileData.name);
         sessionStorage.setItem('userRole', profileData.type); 
         sessionStorage.setItem('userId', profileData.display_id); 
-    
+
+        // After successful login, check if remember me is checked
+        const rememberMe = document.getElementById('rememberMe').checked;
+        if (rememberMe) {
+            localStorage.setItem('rememberedEmail', email);
+        } else {
+            localStorage.removeItem('rememberedEmail');
+        }
+            
         successModal.showModal();
     
         setTimeout(() => {
@@ -192,13 +200,6 @@ document.getElementById('loginForm').addEventListener('submit', async function (
     }
 });
 
-// After successful login, check if remember me is checked
-const rememberMe = document.getElementById('rememberMe').checked;
-if (rememberMe) {
-    localStorage.setItem('rememberedEmail', email);
-} else {
-    localStorage.removeItem('rememberedEmail');
-}
 
 // On page load, prefill email if remembered
 window.addEventListener('load', () => {
