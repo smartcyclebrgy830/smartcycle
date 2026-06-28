@@ -146,6 +146,28 @@ input.valid:focus {
     color: #666;
 }
 
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.remember-me label {
+    font-size: 14px;
+    font-weight: 400;
+    color: #344054;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+.remember-me input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #46B336;
+}
+
 .login-button {
     width: 100%;
     padding: 14px;
@@ -220,7 +242,7 @@ input.valid:focus {
 }
 
 .logo {
-    margin-bottom: 16px;
+    margin-bottom: 24px;
     text-align: center;
 }
 
