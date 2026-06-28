@@ -61,6 +61,10 @@ body::before {
     justify-content: space-between;
 }
 
+.form-top {
+    text-align: center; 
+}
+
 .form-top .logo{
     margin-bottom: 8px
 }
