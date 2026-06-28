@@ -32,9 +32,52 @@
                         <span class="tab" role="tab" aria-selected="false" data-filter="junkshop">Junkshop</span>
                     </div>
 
-                    <div class="search-input" role="search">
-                        <i data-lucide="search" width="18" height="18" aria-hidden="true"></i>
-                        <input type="text" id="salesSearch" placeholder="Search Partner Name" aria-label="Search sales">
+                    <div class="toolbar-right">
+                        <div class="search-input" role="search">
+                            <i data-lucide="search" width="18" height="18" aria-hidden="true"></i>
+                            <input type="text" id="salesSearch" placeholder="Search Partner Name" aria-label="Search sales">
+                        </div>
+                        <div class="materials-dropdown-wrap">
+                            <button class="materials-btn" id="materialsBtn" title="Materials Filter">
+                                <i data-lucide="package"></i>
+                            </button>
+                            <div class="materials-panel" id="materialsPanel">
+                                <div class="filter-checklist" id="materialChecklist">
+                                    <span class="filter-checklist-loading">Loading...</span>
+                                </div>
+                                <button class="filter-clear-btn materials-clear-btn" id="clearMaterials">
+                                    <i data-lucide="x"></i>
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+                        <button class="filter-btn" id="filterBtn" title="Sort & Date Filter">
+                            <i data-lucide="sliders-horizontal"></i>
+                        </button>
+                        <div class="filter-panel" id="filterPanel">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label class="filter-label">Sort by Partner</label>
+                                    <select class="filter-select" id="sortPartner">
+                                        <option value="">Default</option>
+                                        <option value="asc">A → Z</option>
+                                        <option value="desc">Z → A</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label class="filter-label">Date From</label>
+                                    <input type="date" class="filter-select" id="dateFrom">
+                                </div>
+                                <div class="filter-group">
+                                    <label class="filter-label">Date To</label>
+                                    <input type="date" class="filter-select" id="dateTo">
+                                </div>
+                                <button class="filter-clear-btn" id="clearFilter">
+                                    <i data-lucide="x"></i>
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
