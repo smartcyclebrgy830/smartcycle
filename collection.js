@@ -50,14 +50,139 @@ window.editingIndex = -1;
 let currentPage = 1;
 let currentFilter = 'all';
 let currentSearch = '';
+let selectedMaterials = new Set();
+let currentSort = '';
+let dateFrom = '';
+let dateTo = '';
 const itemsPerPage = 10;
 
+async function loadMaterialChecklist() {
+    const checklist = document.getElementById('materialChecklist');
+    if (!checklist) return;
+    try {
+        const { data: materials, error } = await _supabase
+            .from('price_list')
+            .select('material_name')
+            .order('material_name', { ascending: true });
+        if (error) throw error;
+
+        checklist.innerHTML = '';
+        if (!materials || materials.length === 0) {
+            checklist.innerHTML = '<span class="filter-checklist-loading">No materials found</span>';
+            return;
+        }
+        materials.forEach(item => {
+            const label = document.createElement('label');
+            label.innerHTML = `<input type="checkbox" value="${item.material_name}" class="material-checkbox"> ${item.material_name}`;
+            checklist.appendChild(label);
+        });
+        checklist.querySelectorAll('.material-checkbox').forEach(cb => {
+            cb.addEventListener('change', () => {
+                selectedMaterials.clear();
+                checklist.querySelectorAll('.material-checkbox:checked').forEach(c => selectedMaterials.add(c.value));
+                updateFilterBtnState();
+                currentPage = 1;
+                renderTable();
+            });
+        });
+    } catch (err) {
+        console.error('Failed to load material checklist:', err);
+        checklist.innerHTML = '<span class="filter-checklist-loading">Failed to load</span>';
+    }
+}
+
+function updateFilterBtnState() {
+    const filterBtn    = document.getElementById('filterBtn');
+    const materialsBtn = document.getElementById('materialsBtn');
+    if (filterBtn) filterBtn.classList.toggle('active', !!(currentSort || dateFrom || dateTo));
+    if (materialsBtn) materialsBtn.classList.toggle('active', selectedMaterials.size > 0);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
-    await detectUserRole(); // wait for role first
+    await detectUserRole();
     loadModalHTML();
     setupSearch();
     setupAddCollectionButton();
     await fetchAllCollections();
+    await loadMaterialChecklist();
+
+    const materialsBtn   = document.getElementById('materialsBtn');
+    const materialsPanel = document.getElementById('materialsPanel');
+    if (materialsBtn && materialsPanel) {
+        materialsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            materialsPanel.classList.toggle('open');
+            materialsBtn.classList.toggle('open');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        });
+    }
+
+    const filterBtn   = document.getElementById('filterBtn');
+    const filterPanel = document.getElementById('filterPanel');
+    if (filterBtn && filterPanel) {
+        filterBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            filterPanel.classList.toggle('open');
+            filterBtn.classList.toggle('open');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (materialsBtn && materialsPanel) {
+            if (!materialsPanel.contains(e.target) && e.target !== materialsBtn) {
+                materialsPanel.classList.remove('open');
+                materialsBtn.classList.remove('open');
+            }
+        }
+        if (filterBtn && filterPanel) {
+            if (!filterPanel.contains(e.target) && e.target !== filterBtn) {
+                filterPanel.classList.remove('open');
+                filterBtn.classList.remove('open');
+            }
+        }
+    });
+
+    document.getElementById('sortCustomer')?.addEventListener('change', (e) => {
+        currentSort = e.target.value;
+        updateFilterBtnState();
+        currentPage = 1;
+        renderTable();
+    });
+
+    document.getElementById('dateFrom')?.addEventListener('change', (e) => {
+        dateFrom = e.target.value;
+        updateFilterBtnState();
+        currentPage = 1;
+        renderTable();
+    });
+
+    document.getElementById('dateTo')?.addEventListener('change', (e) => {
+        dateTo = e.target.value;
+        updateFilterBtnState();
+        currentPage = 1;
+        renderTable();
+    });
+
+    document.getElementById('clearMaterials')?.addEventListener('click', () => {
+        selectedMaterials.clear();
+        document.querySelectorAll('.material-checkbox').forEach(cb => cb.checked = false);
+        updateFilterBtnState();
+        currentPage = 1;
+        renderTable();
+    });
+
+    document.getElementById('clearFilter')?.addEventListener('click', () => {
+        currentSort = '';
+        dateFrom = '';
+        dateTo = '';
+        document.getElementById('sortCustomer').value = '';
+        document.getElementById('dateFrom').value = '';
+        document.getElementById('dateTo').value = '';
+        updateFilterBtnState();
+        currentPage = 1;
+        renderTable();
+    });
 });
 
 function setupAddCollectionButton() {
@@ -217,7 +342,6 @@ window.fetchAllCollections = async function() {
 function getFilteredCollections() {
     let data = window.collections;
 
-    // 🔹 Filter by category
     if (currentFilter !== 'all') {
         data = data.filter(col =>
             col.category &&
@@ -225,13 +349,35 @@ function getFilteredCollections() {
         );
     }
 
-    // 🔹 Filter by CUSTOMER NAME ONLY
     if (currentSearch) {
         data = data.filter(col =>
             col.customer &&
             col.customer.toLowerCase().replace(/\s+/g, ' ')
                 .includes(currentSearch.replace(/\s+/g, ' '))
         );
+    }
+
+    if (selectedMaterials.size > 0) {
+        data = data.filter(col =>
+            col.items && col.items.some(item => selectedMaterials.has(item.material))
+        );
+    }
+
+    if (dateFrom || dateTo) {
+        data = data.filter(col => {
+            if (!col.date || col.date === 'N/A') return false;
+            const parts = col.date.split('-');
+            const iso = parts.length === 3 ? `${parts[2]}-${parts[0]}-${parts[1]}` : col.date;
+            if (dateFrom && iso < dateFrom) return false;
+            if (dateTo   && iso > dateTo)   return false;
+            return true;
+        });
+    }
+
+    if (currentSort === 'asc') {
+        data = [...data].sort((a, b) => (a.customer || '').localeCompare(b.customer || ''));
+    } else if (currentSort === 'desc') {
+        data = [...data].sort((a, b) => (b.customer || '').localeCompare(a.customer || ''));
     }
 
     return data;
