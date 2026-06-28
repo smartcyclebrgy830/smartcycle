@@ -102,24 +102,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const dateBtn = document.getElementById('dateBtn');
     const datePopover = document.getElementById('datePopover');
+    const categoryBtn = document.getElementById('categoryBtn');
+    const categoryPopover = document.getElementById('categoryPopover');
 
     const dateBtnMobile = document.getElementById('dateBtnMobile');
     const datePopoverMobile = document.getElementById('datePopoverMobile');
+    const categoryBtnMobile = document.getElementById('categoryBtnMobile');
+    const categoryPopoverMobile = document.getElementById('categoryPopoverMobile');
 
     registerPair(dateBtn, datePopover);
+    registerPair(categoryBtn, categoryPopover);
     registerPair(dateBtnMobile, datePopoverMobile);
+    registerPair(categoryBtnMobile, categoryPopoverMobile);
 
     dateBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
         togglePopover(dateBtn, datePopover, [
-            { b: dateBtnMobile, p: datePopoverMobile }
+            { b: categoryBtn, p: categoryPopover },
+            { b: dateBtnMobile, p: datePopoverMobile },
+            { b: categoryBtnMobile, p: categoryPopoverMobile }
+        ]);
+    });
+
+    categoryBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        togglePopover(categoryBtn, categoryPopover, [
+            { b: dateBtn, p: datePopover },
+            { b: dateBtnMobile, p: datePopoverMobile },
+            { b: categoryBtnMobile, p: categoryPopoverMobile }
         ]);
     });
 
     dateBtnMobile?.addEventListener('click', (e) => {
         e.stopPropagation();
         togglePopover(dateBtnMobile, datePopoverMobile, [
-            { b: dateBtn, p: datePopover }
+            { b: dateBtn, p: datePopover },
+            { b: categoryBtn, p: categoryPopover },
+            { b: categoryBtnMobile, p: categoryPopoverMobile }
+        ]);
+    });
+
+    categoryBtnMobile?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        togglePopover(categoryBtnMobile, categoryPopoverMobile, [
+            { b: dateBtn, p: datePopover },
+            { b: categoryBtn, p: categoryPopover },
+            { b: dateBtnMobile, p: datePopoverMobile }
         ]);
     });
 
@@ -150,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // STATE MANAGEMENT & DATA COUPLING ENGINE
     let selectedStart = null;
     let selectedEnd = null;
+    let activeCategories = ['collections', 'sales'];
     
     // Global variable cache to store current data state safely
     let processedReportSummary = {}; 
@@ -202,7 +231,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
             if (emptyState) emptyState.style.display = 'none';
         
-            renderReportTable(data, selectedStart);
+             const filteredData = data.filter(item => {
+                if (!item.type) return true; 
+                return activeCategories.includes(item.type.toLowerCase());
+            });
+        
+            renderReportTable(filteredData, selectedStart);
         
         } catch (err) {
             console.error("Error handling interface rendering workflow:", err);
@@ -527,6 +561,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+        // CALENDAR & INTERFACE LOGIC SYNC
+    const allCheckboxes = document.querySelectorAll('.category-popover input[type="checkbox"], .popover-content input[type="checkbox"]');
+
+    allCheckboxes.forEach(cb => {
+        if (activeCategories.includes(cb.value.toLowerCase())) {
+            cb.checked = true;
+        }
+
+        cb.addEventListener('change', (e) => {
+            const changedValue = e.target.value;
+            const isChecked = e.target.checked;
+
+            allCheckboxes.forEach(item => {
+                if (item.value === changedValue) {
+                    item.checked = isChecked;
+                }
+            });
+
+            activeCategories = [
+                ...new Set([...allCheckboxes].filter(c => c.checked).map(c => c.value.toLowerCase()))
+            ];
+            
+            fetchAndRenderReportData(formatDateToSQL(selectedStart), formatDateToSQL(selectedEnd));
+        });
+    });
+    
     function buildCalendar(tbodyId, year, month, labelId) {
         const tbody = document.getElementById(tbodyId);
         const label = document.getElementById(labelId);
