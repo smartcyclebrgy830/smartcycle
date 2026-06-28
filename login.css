@@ -58,7 +58,7 @@ body::before {
     padding: 60px 50px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    gap: 16px;
 }
 
 .form-top .logo{
@@ -223,7 +223,7 @@ input.valid:focus {
 }
 
 .logo {
-    margin-bottom: auto;
+    margin-bottom: 10px;
     text-align: center;
 }
 
