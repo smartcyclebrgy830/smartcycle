@@ -191,3 +191,20 @@ document.getElementById('loginForm').addEventListener('submit', async function (
         loginButton.classList.remove('loading');
     }
 });
+
+// After successful login, check if remember me is checked
+const rememberMe = document.getElementById('rememberMe').checked;
+if (rememberMe) {
+    localStorage.setItem('rememberedEmail', email);
+} else {
+    localStorage.removeItem('rememberedEmail');
+}
+
+// On page load, prefill email if remembered
+window.addEventListener('load', () => {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    if (savedEmail) {
+        document.getElementById('email').value = savedEmail;
+        document.getElementById('rememberMe').checked = true;
+    }
+});
