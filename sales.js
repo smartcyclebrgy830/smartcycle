@@ -494,25 +494,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         const checklist = document.getElementById('materialChecklist');
         if (!checklist) return;
         try {
-            const { data: materials, error } = await window._supabase
-                .from('sales_items')
-                .select('material_name')
-                .order('material_name', { ascending: true });
-            if (error) throw error;
-
-            // Remove duplicates
             const seen = new Set();
-            const unique = materials?.filter(m => {
-                if (!m.material_name || seen.has(m.material_name)) return false;
-                seen.add(m.material_name);
-                return true;
-            }) ?? [];
+            const unique = [];
+            state.sales.forEach(sale => {
+                (sale.items || []).forEach(item => {
+                    if (item.name && !seen.has(item.name)) {
+                        seen.add(item.name);
+                        unique.push({ material_name: item.name });
+                    }
+                });
+            });
+            
+            unique.sort((a, b) => a.material_name.localeCompare(b.material_name));
 
             checklist.innerHTML = '';
             if (unique.length === 0) {
                 checklist.innerHTML = '<span class="filter-checklist-loading">No materials found</span>';
                 return;
             }
+            
             unique.forEach(item => {
                 const label = document.createElement('label');
                 label.innerHTML = `<input type="checkbox" value="${item.material_name}" class="material-checkbox"> ${item.material_name}`;
