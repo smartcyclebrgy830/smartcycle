@@ -17,6 +17,7 @@ let currentUserRole = null;
 let currentTab = 'all';
 const ITEMS_PER_PAGE = 10;
 let currentPage = 1; 
+let currentSort = '';
 
 // Initialize Lucide icons
 lucide.createIcons();
@@ -436,15 +437,28 @@ function filterContacts(tab) {
 }
 
 function getFilteredRows() {
-    const rows = Array.from(document.querySelectorAll('#contactsTableBody tr:not(.empty-state-row)'));
-    return rows.filter(row => {
+    const tableBody = document.getElementById('contactsTableBody');
+    let rows = Array.from(tableBody.querySelectorAll('tr:not(.empty-state-row)'));
+
+    rows = rows.filter(row => {
         if (row.getAttribute('data-search-hidden') === 'true') return false;
         const category = row.getAttribute('data-category');
         if (currentTab === 'all') return true;
         if (currentTab === 'collections') return ['walk-ins', 'school', 'barangay', 'customer'].includes(category);
-        if (currentTab === 'sales') return ['junkshop', 'organization', 'partner' ].includes(category);
+        if (currentTab === 'sales') return ['junkshop', 'organization', 'partner'].includes(category);
         return true;
     });
+
+    if (currentSort === 'asc' || currentSort === 'desc') {
+        rows.sort((a, b) => {
+            const nameA = (a.querySelector('.customer-cell span')?.textContent || '').toLowerCase();
+            const nameB = (b.querySelector('.customer-cell span')?.textContent || '').toLowerCase();
+            return currentSort === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+        });
+        rows.forEach(row => tableBody.appendChild(row));
+    }
+
+    return rows;
 }
 
 function applyPagination() {
@@ -570,6 +584,41 @@ document.addEventListener('DOMContentLoaded', async() => {
     await fetchProfilesFromSupabase(); 
     initializeTabSwitching();
     initializeSearch();
+
+    // Filter panel toggle
+    const filterBtn   = document.getElementById('filterBtn');
+    const filterPanel = document.getElementById('filterPanel');
+    if (filterBtn && filterPanel) {
+        filterBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            filterPanel.classList.toggle('open');
+            filterBtn.classList.toggle('open');
+            lucide.createIcons();
+        });
+        document.addEventListener('click', (e) => {
+            if (!filterPanel.contains(e.target) && e.target !== filterBtn) {
+                filterPanel.classList.remove('open');
+                filterBtn.classList.remove('open');
+            }
+        });
+    }
+
+    // Sort by name
+    document.getElementById('sortName')?.addEventListener('change', (e) => {
+        currentSort = e.target.value;
+        filterBtn?.classList.toggle('active', !!currentSort);
+        currentPage = 1;
+        applyPagination();
+    });
+
+    // Clear filter
+    document.getElementById('clearFilter')?.addEventListener('click', () => {
+        currentSort = '';
+        document.getElementById('sortName').value = '';
+        filterBtn?.classList.remove('active');
+        currentPage = 1;
+        applyPagination();
+    });
 
     const contactInput = document.getElementById('editContact');
     if (contactInput) {
