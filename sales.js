@@ -315,14 +315,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else if (action === 'delete') {
                 if (!canModify) return alert('Unauthorized');
                 window.showDeleteModal(id);
-            } else if (action === 'view-receipt' && sale.receipt_image) {
-                // ✅ LOG VIEW RECEIPT (ALL ROLES INCLUDING MODERATOR)
-                window.logAction(`Viewed receipt for ${sale.partner}`, 'Sales')
-                const win = window.open('', '_blank');
-                win.document.write(`<!DOCTYPE html><html><head><title>Receipt - ${sale.partner}</title>
-                    <style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1a1a1a;}
-                    img{max-width:100%;max-height:100vh;object-fit:contain;border-radius:8px;}</style></head>
-                    <body><img src="${sale.receipt_image}" alt="Receipt for ${sale.partner}"></body></html>`);
+            } else if (action === 'view-receipt') {
+                if (!sale.receipt_image) {
+                    alert('No receipt image attached.');
+                } else {
+                    // ✅ LOG VIEW RECEIPT (ALL ROLES INCLUDING MODERATOR)
+                    window.logAction(`Viewed receipt for ${sale.partner}`, 'Sales')
+                    const win = window.open('', '_blank');
+                    win.document.write(`<!DOCTYPE html><html><head><title>Receipt - ${sale.partner}</title>
+                        <style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1a1a1a;}
+                        img{max-width:100%;max-height:100vh;object-fit:contain;border-radius:8px;}</style></head>
+                        <body><img src="${sale.receipt_image}" alt="Receipt for ${sale.partner}"></body></html>`);
+                }
             }
             return;
         }
