@@ -711,6 +711,7 @@ body {
         width: 100%;
         justify-content: flex-end;
         margin-bottom: 0;
+        padding-bottom: 12px;
     }
 
     .main-table th,
