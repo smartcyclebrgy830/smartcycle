@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let editRow = null;
     let currentSearch = '';
+    let currentSort   = '';
     let allRows = [];
     let currentPage = 1;
     const itemsPerPage = 10;
@@ -406,10 +407,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getFilteredRows() {
-        if (!currentSearch) return allRows;
-        return allRows.filter(item =>
+        let rows = !currentSearch ? [...allRows] : allRows.filter(item =>
             item.material_name.toLowerCase().includes(currentSearch)
         );
+
+        if (currentSort === 'asc') {
+            rows.sort((a, b) => a.material_name.localeCompare(b.material_name));
+        } else if (currentSort === 'desc') {
+            rows.sort((a, b) => b.material_name.localeCompare(a.material_name));
+        }
+
+        return rows;
     }
     
     function renderPage() {
@@ -493,6 +501,41 @@ document.addEventListener('DOMContentLoaded', () => {
             applySearch();
         });
     }
+
+    // Filter panel toggle
+    const filterBtn   = document.getElementById('filterBtn');
+    const filterPanel = document.getElementById('filterPanel');
+    if (filterBtn && filterPanel) {
+        filterBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            filterPanel.classList.toggle('open');
+            filterBtn.classList.toggle('open');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        });
+        document.addEventListener('click', (e) => {
+            if (!filterPanel.contains(e.target) && e.target !== filterBtn) {
+                filterPanel.classList.remove('open');
+                filterBtn.classList.remove('open');
+            }
+        });
+    }
+
+    // Sort by material
+    document.getElementById('sortMaterial')?.addEventListener('change', (e) => {
+        currentSort = e.target.value;
+        filterBtn?.classList.toggle('active', !!currentSort);
+        currentPage = 1;
+        renderPage();
+    });
+
+    // Clear filter
+    document.getElementById('clearFilter')?.addEventListener('click', () => {
+        currentSort = '';
+        document.getElementById('sortMaterial').value = '';
+        filterBtn?.classList.remove('active');
+        currentPage = 1;
+        renderPage();
+    });
 
     (async () => {
         await initRoleControl();
