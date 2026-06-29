@@ -27,9 +27,30 @@
             <div class="card">
                 <div class="table-controls">
                     <span class="item-count" id="itemCount">0 materials</span>
-                    <div class="search-input" role="search">
-                        <i data-lucide="search" width="18" height="18" aria-hidden="true"></i>
-                        <input type="text" id="priceSearch" placeholder="Search Material" aria-label="Search price list">
+                    <div class="toolbar-right">
+                        <div class="search-input" role="search">
+                            <i data-lucide="search" width="18" height="18" aria-hidden="true"></i>
+                            <input type="text" id="priceSearch" placeholder="Search Material" aria-label="Search price list">
+                        </div>
+                        <button class="filter-btn" id="filterBtn" title="Sort">
+                            <i data-lucide="sliders-horizontal"></i>
+                        </button>
+                        <div class="filter-panel" id="filterPanel">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label class="filter-label">Sort by Material</label>
+                                    <select class="filter-select" id="sortMaterial">
+                                        <option value="">Default</option>
+                                        <option value="asc">A → Z</option>
+                                        <option value="desc">Z → A</option>
+                                    </select>
+                                </div>
+                                <button class="filter-clear-btn" id="clearFilter">
+                                    <i data-lucide="x"></i>
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="table-wrapper">
