@@ -26,9 +26,30 @@
                 </nav>
 
                 <div class="search-container">
-                    <div class="search-input">
-                        <i data-lucide="search" class="search-icon"></i>
-                        <input type="text" id="searchInput" placeholder="Search Customer Name/ID" aria-label="Search contacts">
+                    <div class="toolbar-right">
+                        <div class="search-input">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="searchInput" placeholder="Search Customer Name/ID" aria-label="Search contacts">
+                        </div>
+                        <button class="filter-btn" id="filterBtn" title="Sort Filter">
+                            <i data-lucide="sliders-horizontal"></i>
+                        </button>
+                        <div class="filter-panel" id="filterPanel">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label class="filter-label">Sort by Name</label>
+                                    <select class="filter-select" id="sortName">
+                                        <option value="">Default</option>
+                                        <option value="asc">A → Z</option>
+                                        <option value="desc">Z → A</option>
+                                    </select>
+                                </div>
+                                <button class="filter-clear-btn" id="clearFilter">
+                                    <i data-lucide="x"></i>
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
