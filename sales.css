@@ -133,13 +133,13 @@ body {
 }
 
 .search-input {
-    margin-bottom: 8px;
     display: inline-flex;
     align-items: center;
     height: 38px;
     gap: 8px;
+    box-sizing: border-box;
     background: #f8fafc;
-    padding: 8px 12px;
+    padding: 0 12px;
     border-radius: 999px;
     border: 1px solid rgba(15, 23, 42, 0.06);
 }
