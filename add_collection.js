@@ -698,7 +698,6 @@ window.submitCollection = async function(e) {
             if (headerError) throw headerError;
             
             activeCollectionId = headerData.id; // Assign for item insertion later
-            showSuccessConfirm("Collection entry added successfully!");
 
             if (typeof logAction === 'function') {
                 logAction(`Added collection for ${formattedCustomer}`, window.location.pathname);
@@ -725,6 +724,7 @@ window.submitCollection = async function(e) {
 
         window.closeAddModal();
         if (typeof fetchAllCollections === 'function') await fetchAllCollections();
+        showSuccessConfirm("Collection entry added successfully!");
 
     } catch (err) {
         console.error("Database Transaction Error:", err.message);
