@@ -7,11 +7,11 @@ function showSuccessConfirm(message) {
         overlay.innerHTML = `
             <div class="delete-confirm-box">
                 <div class="success-confirm-icon">
-                    <i data-lucide="check-circle"></i>
+                    <i data-lucide="badge-check"></i>
                 </div>
                 <h2 class="delete-confirm-title">Success</h2>
                 <p class="delete-confirm-msg" id="successConfirmMsg"></p>
-                <div class="delete-confirm-actions">
+                <div class="success-confirm-actions">
                     <button class="btn-confirm-ok" id="successConfirmOk">OK</button>
                 </div>
             </div>
