@@ -15,8 +15,14 @@
     color: #46B336;
 }
 
+.success-confirm-actions {
+    display: flex;
+    justify-content: center;
+}
+
 .btn-confirm-ok {
-    flex: 1;
+    width: 140px;
+    margin: 0 auto;
     background: #46B336;
     color: #fff;
     border: none;
