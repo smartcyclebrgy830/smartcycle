@@ -903,7 +903,7 @@ window.deleteEntry = function(index) {
             window.collections = window.collections.filter(c => c.id !== collection.id);
             renderTable();
             modal.style.display = 'none';
-            alert("Collection deleted successfully.");
+            showSuccessConfirm("Collection deleted successfully.");
             if (typeof logAction === 'function') {
                 logAction(`Deleted collection for ${collection.customer}`, window.location.pathname);
             }
