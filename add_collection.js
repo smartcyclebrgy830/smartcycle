@@ -698,7 +698,7 @@ window.submitCollection = async function(e) {
             if (headerError) throw headerError;
             
             activeCollectionId = headerData.id; // Assign for item insertion later
-            alert("Collection entry added successfully!");
+            showSuccessConfirm("Collection entry added successfully!");
 
             if (typeof logAction === 'function') {
                 logAction(`Added collection for ${formattedCustomer}`, window.location.pathname);
