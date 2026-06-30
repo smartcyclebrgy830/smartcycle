@@ -392,6 +392,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
                 modal.style.display = 'none';
                 loadDataAndRender();
+                showSuccessConfirm("Sale deleted successfully.", "delete");
             } else {
                 alert(`Delete failed: ${error.message}`);
             }
