@@ -492,6 +492,7 @@ function wireModal() {
         
             closeModal();
             if (typeof window.renderTable === 'function') await window.renderTable();
+            showSuccessConfirm("Sale entry added successfully!");
         } catch (dbError) {
             alert(dbError.message); 
         } finally {
