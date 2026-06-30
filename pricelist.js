@@ -371,6 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
             );
             allRows = allRows.filter(r => String(r.id) !== String(id));
             checkEmptyState();
+            showSuccessConfirm(`"${name}" has been removed from the price list.`, "delete");
         });
     }
 
