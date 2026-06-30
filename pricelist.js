@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderPage(); 
         
             // === ADD NATIVE ALERT HERE ===
-            alert(`Success! "${material}" has been added to the price list.`);
+            showSuccessConfirm(`"${material}" has been added to the price list.`);
         }
         
         closeModal();
