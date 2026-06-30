@@ -15,6 +15,14 @@
     color: #46B336;
 }
 
+.success-confirm-icon.delete {
+    background: #fef2f2;
+}
+
+.success-confirm-icon.delete i {
+    color: #ef4444;
+}
+
 .success-confirm-actions {
     display: flex;
     justify-content: center;
