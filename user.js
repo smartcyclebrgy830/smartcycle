@@ -588,13 +588,12 @@ function openDeleteUser(id) {
     
             users = users.filter(x => x.id !== deletingUserId);
             renderUsers();
+            deleteModal.style.display = 'none';
+            showSuccessConfirm("User deleted successfully.", "delete");
         } else {
             console.error(error);
             alert('Failed to delete user.');
         }
-    
-        deleteModal.style.display = 'none';
-        showSuccessConfirm("User deleted successfully.", "delete");
     });
 
     newCancel.addEventListener('click', function() {
