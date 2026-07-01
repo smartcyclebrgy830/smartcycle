@@ -331,7 +331,7 @@ document.getElementById('editProfileForm').addEventListener('submit', async func
     editProfileModal.classList.remove('show');
     clearProfileErrors();
 
-    alert('Profile updated successfully!');
+    showSuccessConfirm('Profile updated successfully!');
 });
 
 document.getElementById('cancelEditBtn').addEventListener('click', function() {
@@ -462,7 +462,7 @@ document.getElementById('userForm').addEventListener('submit', async function(e)
         renderUsers();
         userModal.classList.remove('show');
         
-        alert('User updated successfully!');
+        showSuccessConfirm('User updated successfully!');
     } else {
         window._supabase.functions.invoke('invite-user', {
                 body: { 
@@ -481,7 +481,7 @@ document.getElementById('userForm').addEventListener('submit', async function(e)
                 var errorMsg = error ? error.message : data.error;
                 alert('Error: ' + errorMsg);
             } else {
-                alert('Success: ' + (data ? data.message : "Invitation sent!"));
+                showSuccessConfirm('Success: ' + (data ? data.message : "Invitation sent!"));
                 
                 // Temporarily add to local UI state using dynamic inputs
                 users.push({ 
@@ -594,6 +594,7 @@ function openDeleteUser(id) {
         }
     
         deleteModal.style.display = 'none';
+        showSuccessConfirm("User deleted successfully.", "delete");
     });
 
     newCancel.addEventListener('click', function() {
