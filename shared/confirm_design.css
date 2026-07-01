@@ -9,7 +9,8 @@
     margin: 0 auto 1.25rem;
 }
 
-.success-confirm-icon i {
+.success-confirm-icon i, 
+.success-confirm-icon svg{
     width: 26px;
     height: 26px;
     color: #46B336;
@@ -19,7 +20,8 @@
     background: #fef2f2;
 }
 
-.success-confirm-icon.delete i {
+.success-confirm-icon.delete i,
+.success-confirm-icon.delete svg{
     color: #ef4444;
 }
 
