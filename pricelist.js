@@ -183,6 +183,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (editRow) {
             // UPDATE EXISTING ITEM
             const id = editRow.dataset.id;
+
+            var oldMaterial = editRow.cells[0].textContent.trim();
+            var oldUnit     = editRow.cells[1].textContent.trim();
+            var oldPrice    = editRow.cells[2].textContent.trim();
     
             const { data, error } = await _supabase
                 .from('price_list')
@@ -198,10 +202,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Update failed: ' + error.message);
                 return;
             }
-             logAction(
+            var changes = [];
+            if (oldMaterial !== material) changes.push(`name from "${oldMaterial}" to "${material}"`);
+            if (oldUnit !== unit) changes.push(`unit from "${oldUnit}" to "${unit}"`);
+            if (oldPrice !== `₱${parseFloat(price).toFixed(2)}`) changes.push(`price from ${oldPrice} to ₱${parseFloat(price).toFixed(2)}`);
+
+            var changeStr = changes.length > 0 ? changes.join(', ') : 'no changes';
+            logAction(
                 'Updated material',
-                `Updated "${material}" (Unit: ${unit}, Price: ₱${parseFloat(price).toFixed(2)})`
+                `Updated "${oldMaterial}": ${changeStr}`
             );
+            
             // Update UI row
             editRow.cells[0].textContent = material;
             editRow.cells[1].textContent = unit;
