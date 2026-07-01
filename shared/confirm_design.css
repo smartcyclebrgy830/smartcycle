@@ -33,7 +33,7 @@
 .btn-confirm-ok {
     width: 140px;
     margin: 0 auto;
-    background: #46B336;
+    background: #9ca3af;
     color: #fff;
     border: none;
     padding: 0.7rem 1rem;
@@ -46,7 +46,7 @@
 }
 
 .btn-confirm-ok:hover {
-    background: #3d9b2d;
+    background: #6b7280;
 }
 
 .delete-confirm-overlay {
