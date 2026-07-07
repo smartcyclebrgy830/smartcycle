@@ -46,7 +46,7 @@ async function initRoleControl() {
         // Hide Add button
         if (addBtn) addBtn.style.display = 'none';
 
-        // Remove ACTION column header
+        // Remove ACTION column 
         const actionHeader = document.querySelector('.action-column');
         if (actionHeader) actionHeader.remove();
     }
