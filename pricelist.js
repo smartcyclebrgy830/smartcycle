@@ -208,9 +208,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (oldPrice !== `₱${parseFloat(price).toFixed(2)}`) changes.push(`price from ${oldPrice} to ₱${parseFloat(price).toFixed(2)}`);
 
             var changeStr = changes.length > 0 ? changes.join(', ') : 'no changes';
+            // REPLACE THE OLD logAction WITH THIS:
             logAction(
-                'Updated material',
-                `Updated "${oldMaterial}": ${changeStr}`
+                `Updated material: "${oldMaterial}" (${changeStr})`, // Now specific detail is the main action
+                'Price List'                                         // Keeps the page context clear
             );
             
             // Update UI row
@@ -235,11 +236,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Insert failed: ' + error.message);
                 return;
             }
+            // REPLACE THE OLD logAction WITH THIS:
             logAction(
-                'Added material',
-                `Added "${material}" (Unit: ${unit}, Price: ₱${parseFloat(price).toFixed(2)})`
+                `Added material: "${material}" (Unit: ${unit}, Price: ₱${parseFloat(price).toFixed(2)})`,
+                'Price List'
             );
-            
+                        
             // FIX: Change 'allItems' to 'allRows' so it matches your state variable name
             allRows.push(data[0]); 
             
@@ -376,9 +378,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Delete failed: ' + error.message);
                 return;
             }
+            // REPLACE THE OLD logAction WITH THIS:
             logAction(
-                'Deleted material',
-                `Deleted "${name}" (ID: ${id})`
+                `Deleted material: "${name}"`,
+                'Price List'
             );
             allRows = allRows.filter(r => String(r.id) !== String(id));
             checkEmptyState();
