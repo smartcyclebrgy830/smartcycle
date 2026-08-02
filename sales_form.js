@@ -246,40 +246,33 @@ function wireModal() {
     });
 
     // Contact Formatting and Validation
-    function validateContact(value) {
-        if (!value) return true;
-        const cleanVal = value.trim().toUpperCase();
-        if (cleanVal === 'N/A') return true; // Allow explicit N/A
-        return /^09\d{9}$/.test(cleanVal.replace(/[-\s]/g, ''));
-    }
+ function validateContact(value) {
+    if (!value) return true;
+    const cleanVal = value.trim().toUpperCase();
+    if (cleanVal === 'N/A') return true;
+    
+    // Validates any 11-digit mobile number (or change to /^09\d{9}$/ if submission must strictly be 09)
+    return /^\d{11}$/.test(cleanVal.replace(/[-\s]/g, ''));
+}
 
     contactInput?.addEventListener('input', (e) => {
         let rawValue = e.target.value;
         
-        // If user is trying to type 'N/A', bypass the strict 09 format filter
+        // Allow N/A or custom text entry if starting with N/n
         if (rawValue.toUpperCase().startsWith('N')) {
-            // Keep what they type but clamp it to max 3 chars ("N/A")
             e.target.value = rawValue.slice(0, 3);
             return;
         }
-
-        let digits = rawValue.replace(/\D/g, '');
     
-        // FORCE "09" prefix for standard numbers
-        if (digits.length > 0 && !digits.startsWith('09')) {
-            digits = '09' + digits.replace(/^0+/, ''); // avoid multiple 0s
-        }
+        // Extract numbers only
+        let digits = rawValue.replace(/\D/g, '').slice(0, 11);
     
-        // Limit to 11 digits total
-        digits = digits.slice(0, 11);
-    
-        // FORMAT: 09XX-XXX-XXXX
+        // Dynamic dash formatting without enforcing the '09' prefix
         let formatted = digits;
-    
         if (digits.length > 4 && digits.length <= 7) {
-            formatted = `${digits.slice(0,4)}-${digits.slice(4)}`;
+            formatted = `${digits.slice(0, 4)}-${digits.slice(4)}`;
         } else if (digits.length > 7) {
-            formatted = `${digits.slice(0,4)}-${digits.slice(4,7)}-${digits.slice(7,11)}`;
+            formatted = `${digits.slice(0, 4)}-${digits.slice(4, 7)}-${digits.slice(7, 11)}`;
         }
     
         e.target.value = formatted;
