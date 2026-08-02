@@ -75,7 +75,6 @@ function wireModal() {
 
             let [whole, decimal] = value.split('.');
 
-            // max 5 digits before decimal
             if (whole) {
                 whole = whole.slice(0, 5);
             }
