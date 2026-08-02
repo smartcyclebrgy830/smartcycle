@@ -1,5 +1,5 @@
 window.editingIndex = typeof window.editingIndex !== 'undefined' ? window.editingIndex : -1;
-window.currentCategory = typeof window.currentCategory !== 'undefined' ? window.currentCategory : 'School';
+window.currentCategory = typeof window.currentCategory !== 'undefined' ? window.currentCategory : 'Walk-ins';
 window.currentItems = window.currentItems || []; 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,7 +17,7 @@ window.openAddModal = async () => {
     // 1. Force state variables to
     window.editingIndex = -1; 
     window.currentItems = []; 
-    window.currentCategory = 'School';
+    window.currentCategory = 'Walk-ins';
 
     // 2. Clear inputs and empty table containers IMMEDIATELY before fetching data
     resetForm();
@@ -280,8 +280,9 @@ function resetForm() {
     }
 
     // Set styling indicators back to category tabs default state
-    document.querySelectorAll('.m-tab').forEach((tab, idx) => {
-        tab.classList.toggle('active', idx === 0);
+    document.querySelectorAll('.m-tab').forEach((tab) => {
+        const tabCategory = tab.getAttribute('onclick')?.match(/'([^']+)'/)?.[1] || tab.innerText.trim();
+        tab.classList.toggle('active', tabCategory === window.currentCategory);
     });
 
     // Reset Submit Action Button Label & Handler Target
