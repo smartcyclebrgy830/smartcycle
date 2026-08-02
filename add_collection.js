@@ -235,28 +235,27 @@ function validateContact(value) {
 function formatContact(value) {
     if (!value) return '';
 
-    // 1. Preserve "N/A" typing inputs
+    // Preserve "N/A" inputs
     let upperVal = value.trim().toUpperCase();
     if (upperVal === 'N' || upperVal === 'N/' || upperVal === 'N/A') {
         return upperVal; 
     }
 
-    // 2. Extract digits only
+    // Extract digits only
     let cleaned = value.replace(/\D/g, '');
 
-    // 3. If the user cleared everything, return an empty string
-    if (!cleaned) return '';
+    // Return empty string if no digits exist
+    if (!cleaned || cleaned.length === 0) return '';
 
-    // 4. Hard cap to 11 digits
+    // Hard cap to 11 digits
     cleaned = cleaned.slice(0, 11);
 
-    // 5. IF LESS THAN 3 DIGITS (e.g. user deleted back down to "0" or "09"),
-    // return the raw digits directly without forcing hyphens or prefixes!
-    if (cleaned.length < 3) {
+    // Return raw digits while typing under 4 digits so backspacing is never blocked
+    if (cleaned.length < 4) {
         return cleaned;
     }
 
-    // 6. Build 09XX-XXX-XXXX format dynamically as the user types 3+ digits
+    // Build 09XX-XXX-XXXX format dynamically
     let parts = [];
     parts.push(cleaned.slice(0, 4));                 // 09XX
     if (cleaned.length > 4) parts.push(cleaned.slice(4, 7));  // XXX
@@ -760,24 +759,53 @@ window.setupFieldListeners = function() {
         inDate.addEventListener('change', () => { if (inDate.value) clearError('inDate'); else showError('inDate', 'Date is required'); });
     }
 
-    const inContact = document.getElementById('inContact');
+  const inContact = document.getElementById('inContact');
     
     if (inContact) {
+        // 1. Instant Backspace handler: If value is '09' or '0', wipe it out on Backspace
+        inContact.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace') {
+                const raw = e.target.value.replace(/\D/g, '');
+                if (raw === '09' || raw === '0' || e.target.value.trim() === '09') {
+                    e.preventDefault();
+                    e.target.value = '';
+                    clearError('inContact');
+                    updatePreview();
+                }
+            }
+        });
+    
+        // 2. Prevent focus events from restoring "09" if input is empty
+        inContact.addEventListener('focus', (e) => {
+            if (e.target.value.trim() === '09') {
+                e.target.value = '';
+                updatePreview();
+            }
+        });
+    
+        // 3. Format input dynamically
         inContact.addEventListener('input', (e) => {
-            // Run input through formatContact
-            const formatted = formatContact(e.target.value);
-            e.target.value = formatted;
-            
-            // Clear error message if input is empty or valid
+            const rawValue = e.target.value;
+    
+            // If field was wiped or empty space
+            if (!rawValue || !rawValue.trim()) {
+                e.target.value = '';
+                clearError('inContact');
+                updatePreview();
+                return;
+            }
+    
+            e.target.value = formatContact(rawValue);
+    
             if (!e.target.value || validateContact(e.target.value)) {
                 clearError('inContact');
             }
-            
+    
             updatePreview();
         });
     
+        // 4. Keypress whitelist (numbers, backspace, N/A characters)
         inContact.addEventListener('keypress', (e) => {
-            // Allow numbers and keys needed for "N/A"
             if (!/[0-9nNaA\/]/.test(e.key)) {
                 e.preventDefault();
             }
