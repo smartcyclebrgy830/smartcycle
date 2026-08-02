@@ -28,7 +28,7 @@ window.openAddModal = async () => {
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    // 3. Update preview displays back to original clean placeholders
+    // 3. Update preview displays back to original clean
     updatePreview();
     renderItems();
 
