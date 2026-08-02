@@ -14,7 +14,7 @@ function toTitleCase(str) {
 }
 
 window.openAddModal = async () => {
-    // 1. Force state variables to reset instantly
+    // 1. Force state variables to
     window.editingIndex = -1; 
     window.currentItems = []; 
     window.currentCategory = 'School';
