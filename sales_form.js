@@ -52,7 +52,7 @@ function renderMaterialsTable() {
 }
 
 function wireModal() {
-    if (isModalWired) return; // Prevent multiple events 
+    if (isModalWired) return; // Prevent 
     isModalWired = true;
     
     const saleModal = document.getElementById('saleModal');
