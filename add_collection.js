@@ -19,8 +19,17 @@ window.openAddModal = async () => {
     window.currentItems = []; 
     window.currentCategory = 'Walk-ins';
 
-    // 2. Clear inputs and empty table containers IMMEDIATELY before fetching data
+    // 2. Clear inputs and reset UI tabs
     resetForm();
+
+    // Force visual sync for the Walk-ins tab element if available
+    const walkInsTab = Array.from(document.querySelectorAll('.m-tab')).find(
+        tab => tab.textContent.trim().toLowerCase() === 'walk-ins'
+    );
+    if (walkInsTab) {
+        document.querySelectorAll('.m-tab').forEach(t => t.classList.remove('active'));
+        walkInsTab.classList.add('active');
+    }
     
     const modal = document.getElementById('addCollectionModal');
     if (!modal) return;
@@ -281,10 +290,15 @@ function resetForm() {
 
     // Set styling indicators back to category tabs default state
     document.querySelectorAll('.m-tab').forEach((tab) => {
-        const tabCategory = tab.getAttribute('onclick')?.match(/'([^']+)'/)?.[1] || tab.innerText.trim();
-        tab.classList.toggle('active', tabCategory === window.currentCategory);
+        // 1. Try reading the onclick argument value, fallback to inner text
+        const onclickAttr = tab.getAttribute('onclick') || '';
+        const match = onclickAttr.match(/'([^']+)'/);
+        const categoryName = match ? match[1] : tab.innerText.trim();
+    
+        // 2. Compare cleanly ignoring accidental whitespace/casing discrepancies
+        const isActive = categoryName.toLowerCase() === window.currentCategory.toLowerCase();
+        tab.classList.toggle('active', isActive);
     });
-
     // Reset Submit Action Button Label & Handler Target
     const submitBtn = document.querySelector('.btn-submit-green');
     if (submitBtn) {
