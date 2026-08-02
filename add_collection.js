@@ -221,41 +221,36 @@ function clearAllErrors() {
 }
 
 function validateContact(value) {
-    if (!value) return true;
+    // 1. Optional: Allow completely empty inputs
+    if (!value || !value.trim()) return true;
     
-    // Check if the value is explicitly "N/A" (case-insensitive)
+    // 2. Preserve 'N/A' as valid
     if (value.trim().toUpperCase() === 'N/A') return true;
 
+    // 3. Must be exactly 11 digits starting with '09' (e.g. 09123456789)
     const cleaned = value.replace(/\D/g, '');
     return /^09\d{9}$/.test(cleaned);
 }
 
 function formatContact(value) {
-    // 1. If the user is trying to type or paste "N/A", preserve it cleanly
+    if (!value) return '';
+
+    // 1. Preserve "N/A" typing inputs
     let upperVal = value.trim().toUpperCase();
     if (upperVal === 'N' || upperVal === 'N/' || upperVal === 'N/A') {
         return upperVal; 
     }
 
-    // 2. Instantly strip out all non-numeric characters for standard phone numbers
+    // 2. Extract digits only
     let cleaned = value.replace(/\D/g, '');
 
-    // 3. If completely empty, allow clearing the field
+    // 3. If no digits, return empty string (prevents forcing "09")
     if (!cleaned) return '';
 
-    // 4. Guarantee that it starts with '09'
-    if (!cleaned.startsWith('09')) {
-        if (cleaned.startsWith('9')) {
-            cleaned = '0' + cleaned;
-        } else {
-            cleaned = '09' + cleaned;
-        }
-    }
-
-    // 5. Hard cap the raw digits to 11
+    // 4. Hard cap to 11 digits
     cleaned = cleaned.slice(0, 11);
 
-    // 6. Build out the 09XX-XXX-XXXX dash sequence systematically
+    // 5. Build 09XX-XXX-XXXX format dynamically as the user types
     let parts = [];
     if (cleaned.length > 0) parts.push(cleaned.slice(0, 4));  // 09XX
     if (cleaned.length > 4) parts.push(cleaned.slice(4, 7));  // XXX
@@ -766,25 +761,17 @@ window.setupFieldListeners = function() {
             // Apply clean mask formatting (now handles N/A values safely)
             e.target.value = formatContact(e.target.value);
             
-            // Force-sync preview immediately so the receipt matches character-for-character
-            if (typeof updatePreview === 'function') {
-                updatePreview();
+            if (!e.target.value || validateContact(e.target.value)) {
+                clearError('inContact');
             }
-            clearError('inContact');
+            
+            updatePreview();
         });
     
         // UPDATED: Allow numbers AND the specific characters needed for "N/A"
         inContact.addEventListener('keypress', (e) => {
             if (!/[0-9nNaA\/]/.test(e.key)) {
                 e.preventDefault();
-            }
-        });
-    
-        // Optional Quality of Life: Auto-fill '09' ONLY if it doesn't already contain values like 'N/A'
-        inContact.addEventListener('focus', (e) => {
-            if (!e.target.value) {
-                e.target.value = '09';
-                if (typeof updatePreview === 'function') updatePreview();
             }
         });
     }
