@@ -244,13 +244,13 @@ function formatContact(value) {
     // 2. Extract digits only
     let cleaned = value.replace(/\D/g, '');
 
-    // 3. If no digits, return empty string (prevents forcing "09")
-    if (!cleaned) return '';
+    // 3. If empty / no digits entered, return empty string
+    if (!cleaned || cleaned.length === 0) return '';
 
     // 4. Hard cap to 11 digits
     cleaned = cleaned.slice(0, 11);
 
-    // 5. Build 09XX-XXX-XXXX format dynamically as the user types
+    // 5. Build format dynamically ONLY when digits are present
     let parts = [];
     if (cleaned.length > 0) parts.push(cleaned.slice(0, 4));  // 09XX
     if (cleaned.length > 4) parts.push(cleaned.slice(4, 7));  // XXX
@@ -757,9 +757,26 @@ window.setupFieldListeners = function() {
     const inContact = document.getElementById('inContact');
     
     if (inContact) {
+        // Explicitly prevent any focus event from inserting "09"
+        inContact.addEventListener('focus', (e) => {
+            if (!e.target.value || e.target.value.trim() === '09') {
+                e.target.value = '';
+            }
+        });
+    
         inContact.addEventListener('input', (e) => {
-            // Apply clean mask formatting (now handles N/A values safely)
-            e.target.value = formatContact(e.target.value);
+            const rawValue = e.target.value;
+    
+            // If user cleared the input completely, keep it empty
+            if (!rawValue || !rawValue.trim()) {
+                e.target.value = '';
+                clearError('inContact');
+                updatePreview();
+                return;
+            }
+    
+            // Apply formatting
+            e.target.value = formatContact(rawValue);
             
             if (!e.target.value || validateContact(e.target.value)) {
                 clearError('inContact');
@@ -768,7 +785,6 @@ window.setupFieldListeners = function() {
             updatePreview();
         });
     
-        // UPDATED: Allow numbers AND the specific characters needed for "N/A"
         inContact.addEventListener('keypress', (e) => {
             if (!/[0-9nNaA\/]/.test(e.key)) {
                 e.preventDefault();
