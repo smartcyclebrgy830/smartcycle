@@ -288,17 +288,20 @@ function resetForm() {
         selMaterial.selectedIndex = 0;
     }
 
-    // Set styling indicators back to category tabs default state
+    // --- FIX FOR TAB SELECTION ---
+    // Match the tab text directly against currentCategory
     document.querySelectorAll('.m-tab').forEach((tab) => {
-        // 1. Try reading the onclick argument value, fallback to inner text
-        const onclickAttr = tab.getAttribute('onclick') || '';
-        const match = onclickAttr.match(/'([^']+)'/);
-        const categoryName = match ? match[1] : tab.innerText.trim();
-    
-        // 2. Compare cleanly ignoring accidental whitespace/casing discrepancies
-        const isActive = categoryName.toLowerCase() === window.currentCategory.toLowerCase();
-        tab.classList.toggle('active', isActive);
+        // Clean text inside the tab button (e.g., "Walk-ins")
+        const tabText = tab.textContent.trim().toLowerCase();
+        const targetCategory = (window.currentCategory || 'Walk-ins').trim().toLowerCase();
+
+        if (tabText === targetCategory) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
     });
+
     // Reset Submit Action Button Label & Handler Target
     const submitBtn = document.querySelector('.btn-submit-green');
     if (submitBtn) {
