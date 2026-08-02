@@ -246,14 +246,12 @@ function wireModal() {
     });
 
     // Contact Formatting and Validation
- function validateContact(value) {
-    if (!value) return true;
-    const cleanVal = value.trim().toUpperCase();
-    if (cleanVal === 'N/A') return true;
-    
-    // Validates any 11-digit mobile number (or change to /^09\d{9}$/ if submission must strictly be 09)
-    return /^\d{11}$/.test(cleanVal.replace(/[-\s]/g, ''));
-}
+    function validateContact(value) {
+        if (!value) return true;
+        const cleanVal = value.trim().toUpperCase();
+        if (cleanVal === 'N/A') return true; // Allow explicit N/A
+        return /^09\d{9}$/.test(cleanVal.replace(/[-\s]/g, ''));
+    }
 
     contactInput?.addEventListener('input', (e) => {
         let rawValue = e.target.value;
