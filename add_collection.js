@@ -244,15 +244,21 @@ function formatContact(value) {
     // 2. Extract digits only
     let cleaned = value.replace(/\D/g, '');
 
-    // 3. If empty / no digits entered, return empty string
-    if (!cleaned || cleaned.length === 0) return '';
+    // 3. If the user cleared everything, return an empty string
+    if (!cleaned) return '';
 
     // 4. Hard cap to 11 digits
     cleaned = cleaned.slice(0, 11);
 
-    // 5. Build format dynamically ONLY when digits are present
+    // 5. IF LESS THAN 3 DIGITS (e.g. user deleted back down to "0" or "09"),
+    // return the raw digits directly without forcing hyphens or prefixes!
+    if (cleaned.length < 3) {
+        return cleaned;
+    }
+
+    // 6. Build 09XX-XXX-XXXX format dynamically as the user types 3+ digits
     let parts = [];
-    if (cleaned.length > 0) parts.push(cleaned.slice(0, 4));  // 09XX
+    parts.push(cleaned.slice(0, 4));                 // 09XX
     if (cleaned.length > 4) parts.push(cleaned.slice(4, 7));  // XXX
     if (cleaned.length > 7) parts.push(cleaned.slice(7, 11)); // XXXX
 
@@ -757,27 +763,12 @@ window.setupFieldListeners = function() {
     const inContact = document.getElementById('inContact');
     
     if (inContact) {
-        // Explicitly prevent any focus event from inserting "09"
-        inContact.addEventListener('focus', (e) => {
-            if (!e.target.value || e.target.value.trim() === '09') {
-                e.target.value = '';
-            }
-        });
-    
         inContact.addEventListener('input', (e) => {
-            const rawValue = e.target.value;
-    
-            // If user cleared the input completely, keep it empty
-            if (!rawValue || !rawValue.trim()) {
-                e.target.value = '';
-                clearError('inContact');
-                updatePreview();
-                return;
-            }
-    
-            // Apply formatting
-            e.target.value = formatContact(rawValue);
+            // Run input through formatContact
+            const formatted = formatContact(e.target.value);
+            e.target.value = formatted;
             
+            // Clear error message if input is empty or valid
             if (!e.target.value || validateContact(e.target.value)) {
                 clearError('inContact');
             }
@@ -786,6 +777,7 @@ window.setupFieldListeners = function() {
         });
     
         inContact.addEventListener('keypress', (e) => {
+            // Allow numbers and keys needed for "N/A"
             if (!/[0-9nNaA\/]/.test(e.key)) {
                 e.preventDefault();
             }
