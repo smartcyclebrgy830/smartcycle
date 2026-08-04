@@ -51,6 +51,11 @@ function renderMaterialsTable() {
     lucide.createIcons();
 }
 
+function toTitleCase(str) {
+    if (!str) return '';
+    return str.toLowerCase().replace(/(^|\s)\S/g, (L) => L.toUpperCase());
+}
+
 function wireModal() {
     if (isModalWired) return; // Prevent 
     isModalWired = true;
@@ -276,7 +281,12 @@ function wireModal() {
     });
 
     // Real-time clear error text inputs
-    partnerInput?.addEventListener('input', () => { if (partnerErr) partnerErr.textContent = ''; });
+    partnerInput?.addEventListener('input', function () {
+        const cursorStart = this.selectionStart;
+        this.value = toTitleCase(this.value);
+        this.setSelectionRange(cursorStart, cursorStart);
+        if (partnerErr) partnerErr.textContent = '';
+    });
     addressInput?.addEventListener('input', () => { if (addressErr) addressErr.textContent = ''; });
     dateInput?.addEventListener('change', () => { if (dateErr) dateErr.textContent = ''; });
     contactInput?.addEventListener('input', () => { if (contactErr) contactErr.textContent = ''; });
@@ -286,7 +296,7 @@ function wireModal() {
         if (isSubmitting) return; 
         isSubmitting = true;
         
-        const partnerVal = partnerInput?.value.trim();
+        const partnerVal = toTitleCase(partnerInput?.value.trim());
         const addressVal = addressInput?.value.trim();
         const dateVal = dateInput?.value;
         const contactVal = contactInput?.value.trim();
