@@ -306,7 +306,7 @@ function wireModal() {
         }
 
         const activeTab = saleModal.querySelector('.m-tab.active');
-        const type = activeTab?.getAttribute('data-type') || 'organization';
+        const type = activeTab?.getAttribute('data-type') || 'junkshop';
 
         let determinedProfileType = 'customer';
         const typeLower = type.toLowerCase();
@@ -513,9 +513,10 @@ function wireModal() {
         attachReceiptBtn?.classList.remove('hidden');
         if (receiptFilenameLabel) receiptFilenameLabel.textContent = '';
         
+        // Set Junk-Shop (index 1) as active default
         saleModal.querySelectorAll('.m-tab').forEach((t, i) => {
-            t.classList.toggle('active', i === 0);
-            t.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+            t.classList.toggle('active', i === 1);
+            t.setAttribute('aria-selected', i === 1 ? 'true' : 'false');
         });
         
         [partnerErr, addressErr, dateErr, contactErr, matErr].forEach(el => { if (el) el.textContent = ''; });
