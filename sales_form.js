@@ -189,7 +189,7 @@ function wireModal() {
         const rateEl = document.getElementById('materialRateInput');
         const weightEl = document.getElementById('materialWeightInput');
     
-        const name = nameEl.value.trim();
+        const name = nameEl.value.trim().toUpperCase();
         const rate = parseFloat(rateEl.value);
         const weight = parseFloat(weightEl.value);
     
@@ -295,6 +295,18 @@ function wireModal() {
     addressInput?.addEventListener('input', () => { if (addressErr) addressErr.textContent = ''; });
     dateInput?.addEventListener('change', () => { if (dateErr) dateErr.textContent = ''; });
     contactInput?.addEventListener('input', () => { if (contactErr) contactErr.textContent = ''; });
+    // Real-time uppercase conversion for Material Name input
+    materialNameInput?.addEventListener('input', function () {
+        const cursorStart = this.selectionStart;
+    
+        // Remove numbers/special chars (letters & spaces only) and force UPPERCASE
+        let value = this.value.replace(/[^a-zA-Z\s]/g, '');
+        value = value.replace(/\s+/g, ' ');
+        value = value.slice(0, 30).toUpperCase();
+    
+        this.value = value;
+        this.setSelectionRange(cursorStart, cursorStart);
+    });
 
     // Submit / Update Operations
     submitSaleBtn?.addEventListener('click', async () => {
