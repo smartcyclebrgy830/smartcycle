@@ -51,9 +51,10 @@ function renderMaterialsTable() {
     lucide.createIcons();
 }
 
-function toTitleCase(str) {
+function capitalizeFirstLetters(str) {
     if (!str) return '';
-    return str.toLowerCase().replace(/(^|\s)\S/g, (L) => L.toUpperCase());
+    // Matches the first character of each word and converts it to uppercase
+    return str.replace(/(^|\s)\w/g, (char) => char.toUpperCase());
 }
 
 function wireModal() {
@@ -281,9 +282,13 @@ function wireModal() {
     });
 
     // Real-time clear error text inputs
+    // Real-time auto-capitalization for Partner Name
     partnerInput?.addEventListener('input', function () {
         const cursorStart = this.selectionStart;
-        this.value = toTitleCase(this.value);
+        
+        // Capitalizes first letter of every word, preserves uppercase acronyms
+        this.value = capitalizeFirstLetters(this.value);
+        
         this.setSelectionRange(cursorStart, cursorStart);
         if (partnerErr) partnerErr.textContent = '';
     });
@@ -296,7 +301,7 @@ function wireModal() {
         if (isSubmitting) return; 
         isSubmitting = true;
         
-        const partnerVal = toTitleCase(partnerInput?.value.trim());
+        const partnerVal = capitalizeFirstLetters(partnerInput?.value.trim());
         const addressVal = addressInput?.value.trim();
         const dateVal = dateInput?.value;
         const contactVal = contactInput?.value.trim();
